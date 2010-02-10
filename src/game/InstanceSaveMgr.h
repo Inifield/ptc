@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2005-2008 MaNGOS <http://www.mangosproject.org/>
  *
- * Copyright (C) 2008 Oregon <http://www.oregoncore.com/>
+ * Copyright (C) 2008 Trinity <http://www.trinitycore.org/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -113,7 +113,7 @@ class InstanceSave
         bool m_canReset;
 };
 
-class OREGON_DLL_DECL InstanceSaveManager : public Oregon::Singleton<InstanceSaveManager, Oregon::ClassLevelLockable<InstanceSaveManager, ZThread::Mutex> >
+class OREGON_DLL_DECL InstanceSaveManager : public Oregon::Singleton<InstanceSaveManager, Oregon::ClassLevelLockable<InstanceSaveManager, ACE_Thread_Mutex> >
 {
     friend class InstanceSave;
     public:

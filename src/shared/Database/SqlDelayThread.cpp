@@ -30,6 +30,10 @@ SqlDelayThread::SqlDelayThread(Database* db, const char* infoString) :m_running(
 
 }
 
+SqlDelayThread::SqlDelayThread(Database* db) : m_dbEngine(db), m_running(true)
+{
+}
+
 void SqlDelayThread::run()
 {
     SqlOperation* s;
@@ -39,17 +43,15 @@ void SqlDelayThread::run()
 
     while (m_running)
     {
-      try
-	{
-	  s = m_sqlQueue.next();
-	}
-      catch(...)
-	{continue;}
-      if(!s)
-	continue;
-      s->Execute(m_dbEngine);
-      delete s;
-      
+        // if the running state gets turned off while sleeping
+        // empty the queue before exiting
+        ACE_Based::Thread::Sleep(10);
+        SqlOperation* s;
+        while (m_sqlQueue.next(s))
+        {
+            s->Execute(m_dbEngine);
+            delete s;
+        }
     }
 
     #ifndef DO_POSTGRESQL

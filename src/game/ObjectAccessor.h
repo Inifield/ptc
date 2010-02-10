@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2005-2008 MaNGOS <http://www.mangosproject.org/>
  *
- * Copyright (C) 2008 Oregon <http://www.oregoncore.com/>
+ * Copyright (C) 2008 Trinity <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 
 #include "Platform/Define.h"
 #include "Policies/Singleton.h"
-#include "zthread/FastMutex.h"
+#include <ace/Thread_Mutex.h>
 #include "Utilities/UnorderedMap.h"
 #include "Policies/ThreadingModel.h"
 
@@ -50,7 +50,7 @@ class HashMapHolder
     public:
 
         typedef UNORDERED_MAP< uint64, T* >   MapType;
-        typedef ZThread::FastMutex LockType;
+        typedef ACE_Thread_Mutex LockType;
         typedef Oregon::GeneralLock<LockType > Guard;
 
         static void Insert(T* o) { m_objectMap[o->GetGUID()] = o; }
@@ -81,7 +81,7 @@ class HashMapHolder
         static MapType  m_objectMap;
 };
 
-class OREGON_DLL_DECL ObjectAccessor : public Oregon::Singleton<ObjectAccessor, Oregon::ClassLevelLockable<ObjectAccessor, ZThread::FastMutex> >
+class OREGON_DLL_DECL ObjectAccessor : public Oregon::Singleton<ObjectAccessor, Oregon::ClassLevelLockable<ObjectAccessor, ACE_Thread_Mutex> >
 {
 
     friend class Oregon::OperatorNew<ObjectAccessor>;
@@ -216,7 +216,7 @@ class OREGON_DLL_DECL ObjectAccessor : public Oregon::Singleton<ObjectAccessor, 
         friend struct WorldObjectChangeAccumulator;
         Player2CorpsesMapType   i_player2corpse;
 
-        typedef ZThread::FastMutex LockType;
+        typedef ACE_Thread_Mutex LockType;
         typedef Oregon::GeneralLock<LockType > Guard;
 
         static void _buildChangeObjectForPlayer(WorldObject *, UpdateDataMapType &);

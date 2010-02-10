@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2005-2008 MaNGOS <http://www.mangosproject.org/>
  *
- * Copyright (C) 2008 Oregon <http://www.oregoncore.com/>
+ * Copyright (C) 2008 Trinity <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -656,7 +656,7 @@ class OREGON_DLL_SPEC WorldSession
         int m_sessionDbLocaleIndex;
         uint32 m_latency;
 
-        ZThread::LockedQueue<WorldPacket*,ZThread::FastMutex> _recvQueue;
+        ACE_Based::LockedQueue<WorldPacket*,ACE_Thread_Mutex> _recvQueue;
 };
 #endif
 /// @}

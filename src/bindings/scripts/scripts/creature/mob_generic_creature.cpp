@@ -164,10 +164,13 @@ CreatureAI* GetAI_generic_creature(Creature *_Creature)
 
 void AddSC_generic_creature()
 {
+    /*
+    [Disabled to prevent "CRASH ALERT!"]
     Script *newscript;
     newscript = new Script;
     newscript->Name="generic_creature";
     newscript->GetAI = &GetAI_generic_creature;
     newscript->RegisterSelf();
+	*/
 }
 

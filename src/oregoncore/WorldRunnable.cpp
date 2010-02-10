@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2005-2008 MaNGOS <http://www.mangosproject.org/>
  *
- * Copyright (C) 2008 Oregon <http://www.oregoncore.com/>
+ * Copyright (C) 2008 Trinity <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -69,7 +69,7 @@ void WorldRunnable::run()
         if (diff <= WORLD_SLEEP_CONST+prevSleepTime)
         {
             prevSleepTime = WORLD_SLEEP_CONST+prevSleepTime-diff;
-            ZThread::Thread::sleep(prevSleepTime);
+            ACE_Based::Thread::Sleep(prevSleepTime);
         }
         else
             prevSleepTime = 0;

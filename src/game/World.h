@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2005-2008 MaNGOS <http://www.mangosproject.org/>
  *
- * Copyright (C) 2008 Oregon <http://www.oregoncore.com/>
+ * Copyright (C) 2008 Trinity <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -625,7 +625,7 @@ class World
         uint16 m_MvAnticheatIgnoreAfterTeleport;
 
         // CLI command holder to be thread safe
-        ZThread::LockedQueue<CliCommandHolder*, ZThread::FastMutex> cliCmdQueue;
+        ACE_Based::LockedQueue<CliCommandHolder*, ACE_Thread_Mutex> cliCmdQueue;
         SqlResultQueue *m_resultQueue;
 
         // next daily quests reset time
@@ -636,7 +636,7 @@ class World
 
         //sessions that are added async
         void AddSession_(WorldSession* s);
-        ZThread::LockedQueue<WorldSession*, ZThread::FastMutex> addSessQueue;
+        ACE_Based::LockedQueue<WorldSession*, ACE_Thread_Mutex> addSessQueue;
 
         //used versions
         std::string m_DBVersion;

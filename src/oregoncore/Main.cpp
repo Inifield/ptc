@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2005-2008 MaNGOS <http://www.mangosproject.org/>
  *
- * Copyright (C) 2008 Oregon <http://www.oregoncore.com/>
+ * Copyright (C) 2008 Trinitycore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
 // Format is YYYYMMDDRR where RR is the change in the conf file
 // for that day.
 #ifndef _OREGON_CORE_CONFVER
-# define _OREGON_CORE_CONFVER 2009081701
+# define _OREGON_CORE_CONFVER 2010020501
 #endif //_OREGON_CORE_CONFVER
 
 #ifdef WIN32

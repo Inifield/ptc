@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2005-2008 MaNGOS <http://www.mangosproject.org/>
  *
- * Copyright (C) 2008 Oregon <http://www.oregoncore.com/>
+ * Copyright (C) 2008 Trinity <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,14 +23,14 @@
 
 #include "Platform/Define.h"
 #include "Policies/Singleton.h"
-#include "zthread/Mutex.h"
+#include "ace/Thread_Mutex.h"
 #include "Common.h"
 #include "Map.h"
 #include "GridStates.h"
 
 class Transport;
 
-class OREGON_DLL_DECL MapManager : public Oregon::Singleton<MapManager, Oregon::ClassLevelLockable<MapManager, ZThread::Mutex> >
+class OREGON_DLL_DECL MapManager : public Oregon::Singleton<MapManager, Oregon::ClassLevelLockable<MapManager, ACE_Thread_Mutex> >
 {
 
     friend class Oregon::OperatorNew<MapManager>;
@@ -134,7 +134,7 @@ class OREGON_DLL_DECL MapManager : public Oregon::Singleton<MapManager, Oregon::
             return (iter == i_maps.end() ? NULL : iter->second);
         }
 
-        typedef Oregon::ClassLevelLockable<MapManager, ZThread::Mutex>::Lock Guard;
+        typedef Oregon::ClassLevelLockable<MapManager, ACE_Thread_Mutex>::Lock Guard;
         uint32 i_gridCleanUpDelay;
         MapMapType i_maps;
         IntervalTimer i_timer;

@@ -1,8 +1,10 @@
 /*
  * Copyright (C) 2005-2008 MaNGOS <http://www.mangosproject.org/>
  *
- * Copyright (C) 2008 Oregon <http://www.oregoncore.com/>
- *
+ * Copyright (C) 2008 Trinity <http://www.trinitycore.org/>
+ * 
+ * Copyright (C) 2010 Oregon <http://www.oregoncore.com/>
+ * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -60,7 +62,7 @@ INSTANTIATE_SINGLETON_1( Master );
 
 volatile uint32 Master::m_masterLoopCounter = 0;
 
-class FreezeDetectorRunnable : public ZThread::Runnable
+class FreezeDetectorRunnable : public ACE_Based::Runnable
 {
 public:
     FreezeDetectorRunnable() { _delaytime = 0; }
@@ -79,7 +81,7 @@ public:
         w_lastchange = 0;
         while(!World::IsStopped())
         {
-            ZThread::Thread::sleep(1000);
+            ACE_Based::Thread::Sleep(1000);
             uint32 curtime = getMSTime();
             //DEBUG_LOG("anti-freeze: time=%u, counters=[%u; %u]",curtime,Master::m_masterLoopCounter,World::m_worldLoopCounter);
 
@@ -115,7 +117,7 @@ public:
     }
 };
 
-class RARunnable : public ZThread::Runnable
+class RARunnable : public ACE_Based::Runnable
 {
 public:
   uint32 numLoops, loopCounter;
@@ -180,7 +182,7 @@ public:
     else
       while (!World::IsStopped())
         {
-          ZThread::Thread::sleep (static_cast<unsigned long> (socketSelecttime / 1000));
+          ACE_Based::Thread::Sleep (static_cast<unsigned long> (socketSelecttime / 1000));
           checkping ();
         }
   }
@@ -199,16 +201,18 @@ int Master::Run()
 {
     sLog.outString( "%s (core-daemon)", _FULLVERSION );
     sLog.outString( "<Ctrl-C> to stop.\n" );
-
-    sLog.outTitle( "");
-    sLog.outTitle( "");
-    sLog.outTitle( "");
-    sLog.outTitle( "");
-    sLog.outTitle( "");
-    sLog.outTitle( "");
-    sLog.outTitle( "");
-    sLog.outTitle( "");
-    sLog.outTitle( "http://www.OregonCore.com                    \n");
+// Remove the warnings C4129 while compiling
+#pragma warning (disable : 4129)
+    sLog.outTitle( "  _____                                          " );
+    sLog.outTitle( " /\\  __`\\                                        " );
+    sLog.outTitle( " \\ \\ \\/\\ \\  _ __   __     __     ___    ___      " );
+    sLog.outTitle( "  \\ \\ \\ \\ \\/\\`'__\\'__`\\ /'_ `\\  / __`\\/' _ `\\    " );
+    sLog.outTitle( "   \\ \\ \\_\\ \\ \\ \\/\\  __//\\ \\L\\ \\/\\ \\L\\ \\\\ \\/\\ \\   " );
+    sLog.outTitle( "    \\ \\_____\\ \\_\\ \\____\\ \\____ \\ \\____/ \\_\\ \\_\\  " );
+    sLog.outTitle( "     \\/_____/\\/_/\\/____/\\/___L\\ \\/___/ \\/_/\\/_/  " );
+    sLog.outTitle( "                          /\\____/                " );
+    sLog.outTitle( "                          \\_/__/                 " );
+    sLog.outTitle( " http://www.OregonCore.com                    \n " );
 
     /// worldd PID file creation
     std::string pidfile = sConfig.GetStringDefault("PidFile", "");
@@ -235,8 +239,8 @@ int Master::Run()
     _HookSignals();
 
     ///- Launch WorldRunnable thread
-    ZThread::Thread t(new WorldRunnable);
-    t.setPriority ((ZThread::Priority )2);
+    ACE_Based::Thread t(new WorldRunnable);
+    t.setPriority(ACE_Based::Highest);
 
     // set server online
     LoginDatabase.PExecute("UPDATE realmlist SET color = 0, population = 0 WHERE id = '%d'",realmID);
@@ -248,10 +252,10 @@ int Master::Run()
 #endif
     {
         ///- Launch CliRunnable thread
-        ZThread::Thread td1(new CliRunnable);
+        ACE_Based::Thread td1(new CliRunnable);
     }
 
-    ZThread::Thread td2(new RARunnable);
+    ACE_Based::Thread td2(new RARunnable);
 
     ///- Handle affinity for multiple processors and process priority on Windows
     #ifdef WIN32
@@ -312,8 +316,8 @@ int Master::Run()
     {
         FreezeDetectorRunnable *fdr = new FreezeDetectorRunnable();
         fdr->SetDelayTime(freeze_delay*1000);
-        ZThread::Thread t(fdr);
-        t.setPriority(ZThread::High);
+        ACE_Based::Thread t(fdr);
+        t.setPriority(ACE_Based::Highest);
     }
 
     ///- Launch the world listener socket

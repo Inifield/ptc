@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2005-2008 MaNGOS <http://www.mangosproject.org/>
  *
- * Copyright (C) 2008 Oregon <http://www.oregoncore.com/>
+ * Copyright (C) 2008 Trinity <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,9 +26,9 @@
 #include "Policies/SingletonImp.h"
 #include "Config/ConfigEnv.h"
 
-#define CLASS_LOCK Oregon::ClassLevelLockable<WorldLog, ZThread::FastMutex>
+#define CLASS_LOCK Oregon::ClassLevelLockable<WorldLog, ACE_Thread_Mutex>
 INSTANTIATE_SINGLETON_2(WorldLog, CLASS_LOCK);
-INSTANTIATE_CLASS_MUTEX(WorldLog, ZThread::FastMutex);
+INSTANTIATE_CLASS_MUTEX(WorldLog, ACE_Thread_Mutex);
 
 #define WORLD_LOG_FILE_STRING   "world.log"
 

@@ -7,6 +7,7 @@
 #include "Database/DatabaseEnv.h"
 #include "Database/DBCStores.h"
 #include "ObjectMgr.h"
+#include "Platform/Define.h"
 #include "ProgressBar.h"
 #include "../system/ScriptLoader.h"
 #include "../system/system.h"
@@ -79,15 +80,20 @@ void ScriptsFree()
 OREGON_DLL_EXPORT
 void ScriptsInit(char const* cfg_file = "oregoncore.conf")
 {
-    //Oregon Script startup
-    outstring_log("");
-    outstring_log("");
-    outstring_log("");
-    outstring_log("");
-    outstring_log("");
-    outstring_log("");
+
+#if PLATFORM == PLATFORM_WINDOWS
+    // Remove the warnings C4129 while compiling
+    #pragma warning (disable : 4129)
+    outstring_log("   ____                              _____           _       _   ");
+    outstring_log("  / __ \\                            / ____|         (_)     | |  ");
+    outstring_log(" | |  | |_ __ ___  __ _  ___  _ __ | (___   ___ _ __ _ _ __ | |_ ");
+    outstring_log(" | |  | | '__/ _ \\/ _` |/ _ \\| '_ \\ \\___ \\ / __| '__| | '_ \\| __|");
+    outstring_log(" | |__| | | |  __/ (_| | (_) | | | |____) | (__| |  | | |_) | |_ ");
+    outstring_log("  \\____/|_|  \\___|\\__, |\\___/|_| |_|_____/ \\___|_|  |_| .__/ \\__|");
+	outstring_log("                   __/ |                              | |        ");
+	outstring_log("                  |___/                               |_|  ");
+#endif
     outstring_log("Oregon Script initializing %s", _FULLVERSION);
-    outstring_log("");
 
     //Get configuration file
     if (!TScriptConfig.SetSource(cfg_file))
