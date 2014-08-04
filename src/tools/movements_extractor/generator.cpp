@@ -18,6 +18,7 @@
 
 #include "MMapCommon.h"
 #include "MapBuilder.h"
+#include "Timer.h"
 
 using namespace MMAP;
 
@@ -203,10 +204,14 @@ bool handleArgs(int argc, char** argv,
         else if (strcmp(argv[i], "--threads") == 0)
         {
             param = argv[++i];
+            if (!param)
+                return false;
             threads = atoi(param);
 
+            // Default to one thread, not sure if needed with previous check
             if (threads <= 0)
                 threads = 1;
+             printf("Using %i threads to extract mmaps\n", threads);
         }
         else
         {
@@ -235,7 +240,7 @@ int main(int argc, char** argv)
 {
     int mapnum = -1;
     int threads = 1;
-    float maxAngle = 60.0f;
+    float maxAngle = 55.0f;
     int tileX = -1, tileY = -1;
     bool skipLiquid = false,
          skipContinents = false,
@@ -272,6 +277,8 @@ int main(int argc, char** argv)
     MapBuilder builder(maxAngle, skipLiquid, skipContinents, skipJunkMaps,
                        skipBattlegrounds, debugOutput, bigBaseUnit, offMeshInputPath);
 
+    uint32 start = getMSTime();
+
     if (tileX > -1 && tileY > -1 && mapnum >= 0)
         builder.buildSingleTile(mapnum, tileX, tileY);
     else if (mapnum >= 0)
@@ -279,5 +286,7 @@ int main(int argc, char** argv)
     else
         builder.buildAllMaps(threads);
 
-    return silent ? 1 : finish("Movemap build is complete!", 1);
+    if (!silent)
+        printf("Finished. MMAPS were built in %u ms!\n", GetMSTimeDiffToNow(start));
+    return 0;
 }
