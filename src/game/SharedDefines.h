@@ -2325,7 +2325,8 @@ enum
     SPELL_WEAPON_SWITCH_COOLDOWN_1_5s   =  6119,
     SPELL_WEAPON_SWITCH_COOLDOWN_1_0s   =  6123,
     SPELL_DUEL_BEG                      =  7267, // beg
-    SPELL_PERMANENT_INVISIBILITY        = 44036
+    SPELL_PERMANENT_INVISIBILITY        = 44036,
+    SPELL_INC_OUTDOOR_SPEED_30          =  1206
 };
 
 enum WeatherType
@@ -2416,7 +2417,7 @@ enum PetDiet
 
 #define MAX_PET_DIET 9
 
-#define PET_FOLLOW_DIST  1
+#define PET_FOLLOW_DIST  (0.2f)
 #define PET_FOLLOW_ANGLE (M_PI/2)
 
 #define CHAIN_SPELL_JUMP_RADIUS 10
