@@ -98,7 +98,7 @@ ChatCommand * ChatHandler::getCommandTable()
         { "corpses",        SEC_GAMEMASTER,     true,  &ChatHandler::HandleServerCorpsesCommand,       "", NULL },
         { "exit",           SEC_CONSOLE,        true,  &ChatHandler::HandleServerExitCommand,          "", NULL },
         { "idlerestart",    SEC_ADMINISTRATOR,  true,  NULL,                                           "", serverIdleRestartCommandTable },
-        { "idleshutdown",   SEC_ADMINISTRATOR,  true,  NULL,                                           "", serverShutdownCommandTable },
+        { "idleshutdown",   SEC_ADMINISTRATOR,  true,  NULL,                                           "", serverIdleShutdownCommandTable },
         { "info",           SEC_PLAYER,         true,  &ChatHandler::HandleServerInfoCommand,          "", NULL },
         { "motd",           SEC_PLAYER,         true,  &ChatHandler::HandleServerMotdCommand,          "", NULL },
         { "plimit",         SEC_ADMINISTRATOR,  true,  &ChatHandler::HandleServerPLimitCommand,        "", NULL },
@@ -597,6 +597,7 @@ ChatCommand * ChatHandler::getCommandTable()
         { "event",          SEC_GAMEMASTER,     false, NULL,                                           "", eventCommandTable    },
         { "gobject",        SEC_GAMEMASTER,     false, NULL,                                           "", gobjectCommandTable  },
         { "honor",          SEC_GAMEMASTER,     false, NULL,                                           "", honorCommandTable    },
+        { "group",          SEC_GAMEMASTER,     false, NULL,                                           "", groupCommandTable    },
 
         //wp commands
         { "path",           SEC_GAMEMASTER,     false, NULL,                                           "", wpCommandTable },
@@ -1866,7 +1867,7 @@ bool CliHandler::isAvailable(ChatCommand const& cmd) const
 void CliHandler::SendSysMessage(const char *str)
 {
     m_print(m_callbackArg, str);
-    m_print(m_callbackArg, "\r\n");
+    m_print(m_callbackArg, "\n");
 }
 
 const char *CliHandler::GetName() const

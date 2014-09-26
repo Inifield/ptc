@@ -17,7 +17,6 @@
 
 #include "PoolHandler.h"
 #include "ObjectMgr.h"
-#include "ProgressBar.h"
 #include "Log.h"
 #include "MapManager.h"
 #include "Policies/SingletonImp.h"
@@ -453,7 +452,6 @@ void PoolGroup<Quest>::SpawnObject(ActivePoolData& spawns, uint32 limit, uint32 
             return;
         }
     }
-    uint32 lastDespawned = 0;
     ActivePoolObjects currentQuests = spawns.GetActiveQuests();
     ActivePoolObjects newQuests;
 
@@ -554,7 +552,6 @@ void PoolHandler::LoadFromDB()
     if (!result)
     {
         sLog.outString(">> Loaded 0 object pools. DB table `pool_template` is empty.");
-        sLog.outString();
         return;
     }
     else
@@ -570,7 +567,6 @@ void PoolHandler::LoadFromDB()
     {
         mPoolTemplate.clear();
         sLog.outString(">> Loaded 0 object pools. DB table `pool_template` is empty.");
-        sLog.outString();
         return;
     }
 
@@ -588,7 +584,6 @@ void PoolHandler::LoadFromDB()
 
     } while (result->NextRow());
 
-    sLog.outString();
     sLog.outString(">> Loaded %u objects pools", count);
 
     // Creatures
@@ -603,21 +598,16 @@ void PoolHandler::LoadFromDB()
     count = 0;
     if (!result)
     {
-        barGoLink bar2(1);
-        bar2.step();
 
         sLog.outString(">> Loaded 0 creatures in  pools. DB table `pool_creature` is empty.");
-        sLog.outString();
     }
     else
     {
 
-        barGoLink bar2(result->GetRowCount());
         do
         {
             Field* fields = result->Fetch();
 
-            bar2.step();
 
             uint32 guid    = fields[0].GetUInt32();
             uint32 pool_id = fields[1].GetUInt32();
@@ -651,7 +641,6 @@ void PoolHandler::LoadFromDB()
 
         } while (result->NextRow());
         sLog.outString(">> Loaded %u creatures in pools", count);
-        sLog.outString();
     }
 
     // Gameobjects
@@ -666,21 +655,16 @@ void PoolHandler::LoadFromDB()
     count = 0;
     if (!result)
     {
-        barGoLink bar2(1);
-        bar2.step();
 
         sLog.outString(">> Loaded 0 gameobjects in pools. DB table `pool_gameobject` is empty.");
-        sLog.outString();
     }
     else
     {
 
-        barGoLink bar2(result->GetRowCount());
         do
         {
             Field* fields = result->Fetch();
 
-            bar2.step();
 
             uint32 guid    = fields[0].GetUInt32();
             uint32 pool_id = fields[1].GetUInt32();
@@ -723,7 +707,6 @@ void PoolHandler::LoadFromDB()
 
         } while (result->NextRow());
         sLog.outString(">> Loaded %u gameobject in pools", count);
-        sLog.outString();
     }
 
     // Pool of pools
@@ -737,21 +720,16 @@ void PoolHandler::LoadFromDB()
     count = 0;
     if (!result)
     {
-        barGoLink bar2(1);
-        bar2.step();
 
         sLog.outString(">> Loaded 0 pools in pools");
-        sLog.outString();
     }
     else
     {
 
-        barGoLink bar2(result->GetRowCount());
         do
         {
             Field* fields = result->Fetch();
 
-            bar2.step();
 
             uint32 child_pool_id  = fields[0].GetUInt32();
             uint32 mother_pool_id = fields[1].GetUInt32();
@@ -805,7 +783,7 @@ void PoolHandler::LoadFromDB()
                         ss << *itr << " ";
                     ss << "create(s) a circular reference, which can cause the server to freeze.\nRemoving the last link between mother pool "
                         << poolItr->first << " and child pool " << poolItr->second;
-                    sLog.outErrorDb(ss.str().c_str());
+                    sLog.outErrorDb("%s", ss.str().c_str());
                     mPoolPoolGroups[poolItr->second].RemoveOneRelation(poolItr->first);
                     mPoolSearchMap.erase(poolItr);
                     --count;
@@ -815,7 +793,6 @@ void PoolHandler::LoadFromDB()
         }
 
         sLog.outString(">> Loaded %u pools in mother pools", count);
-        sLog.outString();
     }
 }
 
@@ -831,7 +808,6 @@ void PoolHandler::LoadQuestPools()
     if (!result)
     {
         sLog.outString(">> Loaded 0 quests in pools");
-        sLog.outString();
         return;
     }
 
@@ -907,7 +883,6 @@ void PoolHandler::LoadQuestPools()
     }
     while (result->NextRow());
 
-	sLog.outString();
     sLog.outString(">> Loaded %u quests in pools", count);
 }
 
@@ -975,7 +950,7 @@ void PoolHandler::ChangeDailyQuests()
 {
     for (PoolGroupQuestMap::iterator itr = mPoolQuestGroups.begin(); itr != mPoolQuestGroups.end(); ++itr)
     {
-        if (Quest const* pQuest = objmgr.GetQuestTemplate(itr->GetFirstEqualChancedObjectId()))
+        if (/*Quest const* pQuest = */objmgr.GetQuestTemplate(itr->GetFirstEqualChancedObjectId()))
         {
             UpdatePool<Quest>(itr->GetPoolId(), 1);    // anything non-zero means don't load from db
         }

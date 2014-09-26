@@ -58,6 +58,8 @@
 
 #include "Platform/Define.h"
 
+#define STRINGIFY(x) #x
+
 #if COMPILER == COMPILER_MICROSOFT
 #   pragma warning(disable:4996)                            // 'function': was declared deprecated
 #ifndef __SHOW_STUPID_WARNINGS__
@@ -134,6 +136,8 @@
 #define finite(X) _finite(X)
 #define strtoull _strtoui64
 #define strtoll _strtoi64
+#define fileno _fileno
+#define dup2 _dup2
 
 #else
 

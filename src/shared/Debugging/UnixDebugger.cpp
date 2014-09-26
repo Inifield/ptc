@@ -132,10 +132,6 @@ void SignalHandler(int num, siginfo_t* info, void* ctx)
 
     DumpDebugInfo(strsig, reason.str().c_str());
 
-    // Fix terminal (unload readline)
-    rl_free_line_state();
-    rl_cleanup_after_signal();
-
     struct sigaction sa;
     sa.sa_handler = SIG_DFL;
     sa.sa_flags = 0;
@@ -167,7 +163,6 @@ void WriteBacktrace(std::stringstream& ss)
 
     std::string module, func, offset, addr;
     char* demangled;
-    int status;
 
     ss << "BackTrace ";
     if (size == BACKTRACE_SIZE)
@@ -330,7 +325,7 @@ void DumpDebugInfo(const char* sig, const char* reason)
 
     ss << "Date: " << dateString << std::endl;
     ss << "Version: " << _FULLVERSION << std::endl;
-    ss << "Build Type: " << _BUILD_DIRECTIVE << std::endl;
+    ss << "Build Type: " << STRINGIFY(_BUILD_DIRECTIVE) << std::endl;
     #if COMPILER == COMPILER_BORLAND
     ss << "Compiler: Borland" << std::endl;
     #elif COMPILER == COMPILER_GNU
@@ -451,7 +446,7 @@ abfd(0), syms(0), text(0), function("??"), filename("??"), line(0)
 
     unsigned storage_needed = bfd_get_symtab_upper_bound(abfd);
     syms = (asymbol **) malloc(storage_needed);
-    unsigned cSymbols = bfd_canonicalize_symtab(abfd, syms);
+    /*unsigned cSymbols = */bfd_canonicalize_symtab(abfd, syms);
 
     text = bfd_get_section_by_name(abfd, ".text");
 }
