@@ -143,20 +143,11 @@ class ReactorRunnable : protected ACE_Task_Base
 
         virtual int svc()
         {
-            sLog.outStaticDebug ("Network Thread Starting");
+            DEBUG_LOG ("Network Thread Starting");
 
-            bool needInit = true;
-            if (!(LoginDatabase.GetBundleMask() & MYSQL_BUNDLE_RAR))
-            {
-                LoginDatabase.Init_MySQL_Connection();
-                needInit = false;
-            }
+            WorldDatabase.ThreadStart();
 
-
-            if (needInit)
-                MySQL::Thread_Init();
-
-            ACE_ASSERT(m_Reactor);
+            ACE_ASSERT (m_Reactor);
 
             SocketSet::iterator i, t;
 
@@ -187,14 +178,9 @@ class ReactorRunnable : protected ACE_Task_Base
                 }
             }
 
-            ///- Free MySQL thread resources and deallocate lingering connections
-            if (!(LoginDatabase.GetBundleMask() & MYSQL_BUNDLE_RAR))
-                LoginDatabase.End_MySQL_Connection();
+            WorldDatabase.ThreadEnd();
 
-            if (needInit)
-                MySQL::Thread_End();
-
-            sLog.outStaticDebug("Network Thread Exitting");
+            DEBUG_LOG ("Network Thread Exitting");
 
             return 0;
         }

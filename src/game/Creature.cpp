@@ -532,7 +532,7 @@ void Creature::Update(uint32 diff)
             if (m_corpseRemoveTime <= uint32(time(NULL)))
             {
                 RemoveCorpse(false);
-                sLog.outStaticDebug("Removing corpse... %u ", GetUInt32Value(OBJECT_FIELD_ENTRY));
+                DEBUG_LOG("Removing corpse... %u ", GetUInt32Value(OBJECT_FIELD_ENTRY));
             }
             else
             {
@@ -562,7 +562,7 @@ void Creature::Update(uint32 diff)
                 if (m_corpseRemoveTime <= uint32(time(NULL)))
                 {
                     RemoveCorpse(false);
-                    sLog.outStaticDebug("Removing alive corpse... %u ", GetUInt32Value(OBJECT_FIELD_ENTRY));
+                    DEBUG_LOG("Removing alive corpse... %u ", GetUInt32Value(OBJECT_FIELD_ENTRY));
                 }
             }
 
@@ -986,9 +986,9 @@ void Creature::SaveToDB(uint32 mapid, uint8 spawnMask)
     data.spawnMask = spawnMask;
 
     // updated in DB
-    SQLTransaction trans = WorldDatabase.BeginTransaction();
+    WorldDatabase.BeginTransaction();
 
-    trans->PAppend("DELETE FROM creature WHERE guid = '%u'", m_DBTableGuid);
+    WorldDatabase.PExecuteLog("DELETE FROM creature WHERE guid = '%u'", m_DBTableGuid);
 
     std::ostringstream ss;
     ss << "INSERT INTO creature VALUES ("
@@ -1010,9 +1010,9 @@ void Creature::SaveToDB(uint32 mapid, uint8 spawnMask)
         << (m_isDeadByDefault ? 1 : 0) << ","               //is_dead
         << GetDefaultMovementType() << ")";                 //default movement generator type
 
-    trans->PAppend("%s", ss.str().c_str());
+    WorldDatabase.PExecuteLog("%s", ss.str().c_str());
 
-    WorldDatabase.CommitTransaction(trans);
+    WorldDatabase.CommitTransaction();
 }
 
 void Creature::SelectLevel(const CreatureInfo *cinfo)
@@ -1317,12 +1317,12 @@ void Creature::DeleteFromDB()
     objmgr.SaveCreatureRespawnTime(m_DBTableGuid,GetInstanceId(),0);
     objmgr.DeleteCreatureData(m_DBTableGuid);
 
-    SQLTransaction trans = WorldDatabase.BeginTransaction();
-    trans->PAppend("DELETE FROM creature WHERE guid = '%u'", m_DBTableGuid);
-    trans->PAppend("DELETE FROM creature_addon WHERE guid = '%u'", m_DBTableGuid);
-    trans->PAppend("DELETE FROM game_event_creature WHERE guid = '%u'", m_DBTableGuid);
-    trans->PAppend("DELETE FROM game_event_model_equip WHERE guid = '%u'", m_DBTableGuid);
-    WorldDatabase.CommitTransaction(trans);
+    WorldDatabase.BeginTransaction();
+    WorldDatabase.PExecuteLog("DELETE FROM creature WHERE guid = '%u'", m_DBTableGuid);
+    WorldDatabase.PExecuteLog("DELETE FROM creature_addon WHERE guid = '%u'", m_DBTableGuid);
+    WorldDatabase.PExecuteLog("DELETE FROM game_event_creature WHERE guid = '%u'", m_DBTableGuid);
+    WorldDatabase.PExecuteLog("DELETE FROM game_event_model_equip WHERE guid = '%u'", m_DBTableGuid);
+    WorldDatabase.CommitTransaction();
 }
 
 bool Creature::canSeeOrDetect(Unit const* u, bool detect, bool /*inVisibleList*/, bool /*is3dDistance*/) const
@@ -1561,7 +1561,7 @@ void Creature::Respawn(bool force)
         if (m_DBTableGuid)
             objmgr.SaveCreatureRespawnTime(m_DBTableGuid,GetInstanceId(),0);
 
-        sLog.outStaticDebug("Respawning...");
+        DEBUG_LOG("Respawning...");
         m_respawnTime = 0;
         lootForPickPocketed = false;
         lootForBody         = false;

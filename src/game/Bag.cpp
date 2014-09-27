@@ -100,12 +100,12 @@ bool Bag::Create(uint32 guidlow, uint32 itemid, Player const* owner)
     return true;
 }
 
-void Bag::SaveToDB(SQLTransaction& trans)
+void Bag::SaveToDB()
 {
-    Item::SaveToDB(trans);
+    Item::SaveToDB();
 }
 
-bool Bag::LoadFromDB(uint32 guid, uint64 owner_guid, QueryResult result)
+bool Bag::LoadFromDB(uint32 guid, uint64 owner_guid, QueryResult_AutoPtr result)
 {
     if (!Item::LoadFromDB(guid, owner_guid, result))
         return false;
@@ -121,13 +121,13 @@ bool Bag::LoadFromDB(uint32 guid, uint64 owner_guid, QueryResult result)
     return true;
 }
 
-void Bag::DeleteFromDB(SQLTransaction& trans)
+void Bag::DeleteFromDB()
 {
     for (uint8 i = 0; i < MAX_BAG_SIZE; ++i)
         if (m_bagslot[i])
-            m_bagslot[i]->DeleteFromDB(trans);
+            m_bagslot[i]->DeleteFromDB();
 
-    Item::DeleteFromDB(trans);
+    Item::DeleteFromDB();
 }
 
 uint32 Bag::GetFreeSlots() const

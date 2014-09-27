@@ -18,6 +18,8 @@
 #include "SQLStorage.h"
 #include "SQLStorageImpl.h"
 
+extern Database WorldDatabase;
+
 const char CreatureInfosrcfmt[]="iiiiiiiisssiiiiiiiiiiiffiffiiiiiiiiiiiffiiiiiiiiiiiiiiiiiiisiilliiis";
 const char CreatureInfodstfmt[]="iiiiiiiisssiiiiiiiiiiiffiffiiiiiiiiiiiffiiiiiiiiiiiiiiiiiiisiilliiii";
 const char CreatureDataAddonInfofmt[]="iiiiiiiiis";

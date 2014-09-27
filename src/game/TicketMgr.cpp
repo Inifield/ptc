@@ -102,7 +102,7 @@ void TicketMgr::LoadGMTickets()
     // Delete all out of object holder
     GM_TicketList.clear();
 
-    QueryResult result = CharacterDatabase.Query("SELECT guid, playerGuid, name, message, createtime, map, posX, posY, posZ, timestamp, closed, assignedto, comment, escalated, viewed FROM gm_tickets");
+    QueryResult_AutoPtr result = CharacterDatabase.Query("SELECT guid, playerGuid, name, message, createtime, map, posX, posY, posZ, timestamp, closed, assignedto, comment, escalated, viewed FROM gm_tickets");
     GM_Ticket *ticket;
 
     if (!result)
@@ -144,7 +144,7 @@ void TicketMgr::LoadGMTickets()
 void TicketMgr::LoadGMSurveys()
 {
     // we don't actually load anything into memory here as there's no reason to
-    QueryResult result = CharacterDatabase.Query("SELECT MAX(surveyid) FROM gm_surveys");
+    QueryResult_AutoPtr result = CharacterDatabase.Query("SELECT MAX(surveyid) FROM gm_surveys");
     if (result)
     {
         Field *fields = result->Fetch();
@@ -204,9 +204,9 @@ void TicketMgr::SaveGMTicket(GM_Ticket* ticket)
     ss << ticket->comment << "', '";
     ss << ticket->escalated << "', '";
     ss << (ticket->viewed ? 1 : 0) << "');";
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
-    trans->Append(ss.str().c_str());
-    CharacterDatabase.CommitTransaction(trans);
+    CharacterDatabase.BeginTransaction();
+    CharacterDatabase.Execute(ss.str().c_str());
+    CharacterDatabase.CommitTransaction();
 
 }
 
@@ -217,7 +217,7 @@ void TicketMgr::UpdateGMTicket(GM_Ticket *ticket)
 
 void TicketMgr::InitTicketID()
 {
-    QueryResult result = CharacterDatabase.Query("SELECT MAX(guid) FROM gm_tickets");
+    QueryResult_AutoPtr result = CharacterDatabase.Query("SELECT MAX(guid) FROM gm_tickets");
     if (result)
         m_ticketid = result->Fetch()[0].GetUInt64();
 }

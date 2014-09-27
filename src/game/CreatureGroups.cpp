@@ -78,7 +78,7 @@ void CreatureGroupManager::LoadCreatureGroups()
     CreatureGroupDataMap.clear();
 
     //Check Integrity of the table
-    QueryResult result = WorldDatabase.Query("SELECT MAX(groupId) FROM creature_groups");
+    QueryResult_AutoPtr result = WorldDatabase.Query("SELECT MAX(groupId) FROM creature_groups");
 
     if (!result)
     {
@@ -112,7 +112,7 @@ void CreatureGroupManager::LoadCreatureGroups()
     }
 
     //Get groups
-    QueryResult result_data = WorldDatabase.Query("SELECT groupId, leaderGUID, groupType FROM creature_groups WHERE groupId IN (SELECT groupId FROM creature_group_data) ORDER BY groupId");
+    QueryResult_AutoPtr result_data = WorldDatabase.Query("SELECT groupId, leaderGUID, groupType FROM creature_groups WHERE groupId IN (SELECT groupId FROM creature_group_data) ORDER BY groupId");
 
     if (!result_data)
     {
@@ -122,7 +122,7 @@ void CreatureGroupManager::LoadCreatureGroups()
     }
 
     //Get member
-    QueryResult result_member = WorldDatabase.Query("SELECT groupId, memberGUID FROM creature_group_data WHERE groupId IN (SELECT groupId FROM creature_groups) ORDER BY groupId");
+    QueryResult_AutoPtr result_member = WorldDatabase.Query("SELECT groupId, memberGUID FROM creature_group_data WHERE groupId IN (SELECT groupId FROM creature_groups) ORDER BY groupId");
 
     if (!result_member)
     {

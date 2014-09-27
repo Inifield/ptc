@@ -2979,7 +2979,7 @@ void Spell::SendSpellStart()
     if (!IsNeedSendToClient())
         return;
 
-    sLog.outStaticDebug("Sending SMSG_SPELL_START id=%u", m_spellInfo->Id);
+    DEBUG_LOG("Sending SMSG_SPELL_START id=%u", m_spellInfo->Id);
 
     uint32 castFlags = CAST_FLAG_UNKNOWN1;
     if (IsRangedSpell())
@@ -3012,7 +3012,7 @@ void Spell::SendSpellGo()
     if (!IsNeedSendToClient())
         return;
 
-    sLog.outStaticDebug("Sending SMSG_SPELL_GO id=%u", m_spellInfo->Id);
+    DEBUG_LOG("Sending SMSG_SPELL_GO id=%u", m_spellInfo->Id);
 
     //Unit *target = m_targets.getUnitTarget() ? m_targets.getUnitTarget() : m_caster;
 
@@ -3474,7 +3474,7 @@ void Spell::HandleThreatSpells(uint32 spellId)
 
     m_targets.getUnitTarget()->AddThreat(m_caster, float(threatSpell->threat));
 
-    sLog.outStaticDebug("Spell %u, rank %u, added an additional %i threat", spellId, spellmgr.GetSpellRank(spellId), threatSpell->threat);
+    DEBUG_LOG("Spell %u, rank %u, added an additional %i threat", spellId, spellmgr.GetSpellRank(spellId), threatSpell->threat);
 }
 
 void Spell::HandleEffects(Unit *pUnitTarget,Item *pItemTarget,GameObject *pGOTarget,uint32 i, float /*DamageMultiplier*/)
@@ -3485,7 +3485,7 @@ void Spell::HandleEffects(Unit *pUnitTarget,Item *pItemTarget,GameObject *pGOTar
 
     uint8 eff = m_spellInfo->Effect[i];
 
-    sLog.outStaticDebug("Spell: Effect : %u", eff);
+    DEBUG_LOG("Spell: Effect : %u", eff);
 
     //we do not need DamageMultiplier here.
     damage = CalculateDamage(i, NULL);
@@ -4499,9 +4499,6 @@ SpellCastResult Spell::CheckCast(bool strict)
                 if (int32(m_targets.getUnitTarget()->getLevel()) > CalculateDamage(i,m_targets.getUnitTarget()))
                     return SPELL_FAILED_HIGHLEVEL;
 
-                if (m_spellInfo->EffectApplyAuraName[i] == SPELL_AURA_MOD_POSSESS)
-                    if (m_targets.getUnitTarget()->getLevel() > m_spellInfo->EffectBasePoints[i])
-                        return SPELL_FAILED_HIGHLEVEL;
                 break;
             }
             case SPELL_AURA_MOUNTED:
@@ -5637,7 +5634,7 @@ void Spell::DelayedChannel()
     else
         m_timer -= delaytime;
 
-    sLog.outStaticDebug("Spell %u partially interrupted for %i ms, new duration: %u ms", m_spellInfo->Id, delaytime, m_timer);
+    DEBUG_LOG("Spell %u partially interrupted for %i ms, new duration: %u ms", m_spellInfo->Id, delaytime, m_timer);
 
     for (std::list<TargetInfo>::iterator ihit= m_UniqueTargetInfo.begin();ihit != m_UniqueTargetInfo.end();++ihit)
     {

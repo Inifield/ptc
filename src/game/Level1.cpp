@@ -2407,12 +2407,8 @@ bool ChatHandler::HandleSendMailCommand(const char* args)
 
     Player *receiver = objmgr.GetPlayer(receiver_guid);
 
-    //- TODO: Fix poor design
-   SQLTransaction trans = CharacterDatabase.BeginTransaction();
-   MailDraft(subject, itemTextId)
-        .SendMailTo(trans, MailReceiver(receiver,GUID_LOPART(receiver_guid)),sender);
-
-    CharacterDatabase.CommitTransaction(trans);
+    MailDraft(subject, itemTextId)
+        .SendMailTo(MailReceiver(receiver,GUID_LOPART(receiver_guid)),sender);
 
     PSendSysMessage(LANG_MAIL_SENT, name.c_str());
     return true;

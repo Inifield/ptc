@@ -132,7 +132,7 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petentry, uint32 petnumber, bool c
 {
     uint32 ownerid = owner->GetGUIDLow();
 
-    QueryResult result;
+    QueryResult_AutoPtr result;
 
     if (petnumber)
         // known petnumber entry                  0   1      2      3        4      5    6           7              8        9           10    11    12       13         14       15            16      17              18        19                 20                 21              22
@@ -267,10 +267,10 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petentry, uint32 petnumber, bool c
     // set current pet as current
     if (fields[10].GetUInt32() != 0)
     {
-        SQLTransaction trans = CharacterDatabase.BeginTransaction();
-        trans->PAppend("UPDATE character_pet SET slot = '3' WHERE owner = '%u' AND slot = '0' AND id <> '%u'",ownerid, m_charmInfo->GetPetNumber());
-        trans->PAppend("UPDATE character_pet SET slot = '0' WHERE owner = '%u' AND id = '%u'",ownerid, m_charmInfo->GetPetNumber());
-        CharacterDatabase.CommitTransaction(trans);
+        CharacterDatabase.BeginTransaction();
+        CharacterDatabase.PExecute("UPDATE character_pet SET slot = '3' WHERE owner = '%u' AND slot = '0' AND id <> '%u'",ownerid, m_charmInfo->GetPetNumber());
+        CharacterDatabase.PExecute("UPDATE character_pet SET slot = '0' WHERE owner = '%u' AND id = '%u'",ownerid, m_charmInfo->GetPetNumber());
+        CharacterDatabase.CommitTransaction();
     }
 
     if (!is_temporary_summoned)
@@ -339,7 +339,7 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petentry, uint32 petnumber, bool c
             m_declinedname = new DeclinedName;
             Field *fields = result->Fetch();
             for (uint8 i = 0; i < MAX_DECLINED_NAME_CASES; ++i)
-                m_declinedname->name[i] = fields[i].GetString();
+                m_declinedname->name[i] = fields[i].GetCppString();
         }
     }
 
@@ -358,8 +358,6 @@ void Pet::SavePetToDB(PetSaveMode mode)
     uint32 curhealth = GetHealth();
     uint32 curmana = GetPower(POWER_MANA);
 
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
-
     switch(mode)
     {
         case PET_SAVE_IN_STABLE_SLOT_1:
@@ -376,10 +374,9 @@ void Pet::SavePetToDB(PetSaveMode mode)
             break;
     }
 
-    _SaveSpells(trans);
-    _SaveSpellCooldowns(trans);
-    _SaveAuras(trans);
-    CharacterDatabase.CommitTransaction(trans);
+    _SaveSpells();
+    _SaveSpellCooldowns();
+    _SaveAuras();
 
     switch(mode)
     {
@@ -391,17 +388,17 @@ void Pet::SavePetToDB(PetSaveMode mode)
             uint32 owner = GUID_LOPART(GetOwnerGUID());
             std::string name = m_name;
             CharacterDatabase.escape_string(name);
-            SQLTransaction trans = CharacterDatabase.BeginTransaction();
+            CharacterDatabase.BeginTransaction();
             // remove current data
-            trans->PAppend("DELETE FROM character_pet WHERE owner = '%u' AND id = '%u'", owner,m_charmInfo->GetPetNumber());
+            CharacterDatabase.PExecute("DELETE FROM character_pet WHERE owner = '%u' AND id = '%u'", owner,m_charmInfo->GetPetNumber());
 
             // prevent duplicate using slot (except PET_SAVE_NOT_IN_SLOT)
             if (mode != PET_SAVE_NOT_IN_SLOT)
-                trans->PAppend("UPDATE character_pet SET slot = 3 WHERE owner = '%u' AND slot = '%u'", owner, uint32(mode));
+                CharacterDatabase.PExecute("UPDATE character_pet SET slot = 3 WHERE owner = '%u' AND slot = '%u'", owner, uint32(mode));
 
             // prevent existence another hunter pet in PET_SAVE_AS_CURRENT and PET_SAVE_NOT_IN_SLOT
             if (getPetType() == HUNTER_PET && (mode == PET_SAVE_AS_CURRENT||mode == PET_SAVE_NOT_IN_SLOT))
-                trans->PAppend("DELETE FROM character_pet WHERE owner = '%u' AND (slot = '0' OR slot = '3')", owner);
+                CharacterDatabase.PExecute("DELETE FROM character_pet WHERE owner = '%u' AND (slot = '0' OR slot = '3')", owner);
             // save pet
             std::ostringstream ss;
             ss  << "INSERT INTO character_pet (id, entry,  owner, modelid, level, exp, Reactstate, loyaltypoints, loyalty, trainpoint, slot, name, renamed, curhealth, curmana, curhappiness, abdata,TeachSpelldata,savetime,resettalents_cost,resettalents_time,CreatedBySpell,PetType) "
@@ -443,9 +440,9 @@ void Pet::SavePetToDB(PetSaveMode mode)
                 << GetUInt32Value(UNIT_CREATED_BY_SPELL) << ", "
                 << uint32(getPetType()) << ")";
 
-            trans->Append(ss.str().c_str());
+            CharacterDatabase.Execute(ss.str().c_str());
 
-            CharacterDatabase.CommitTransaction(trans);
+            CharacterDatabase.CommitTransaction();
             break;
         }
         case PET_SAVE_AS_DELETED:
@@ -461,13 +458,11 @@ void Pet::SavePetToDB(PetSaveMode mode)
 
 void Pet::DeleteFromDB(uint32 guidlow)
 {
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
-    trans->PAppend("DELETE FROM character_pet WHERE id = '%u'", guidlow);
-    trans->PAppend("DELETE FROM character_pet_declinedname WHERE id = '%u'", guidlow);
-    trans->PAppend("DELETE FROM pet_aura WHERE guid = '%u'", guidlow);
-    trans->PAppend("DELETE FROM pet_spell WHERE guid = '%u'", guidlow);
-    trans->PAppend("DELETE FROM pet_spell_cooldown WHERE guid = '%u'", guidlow);
-    CharacterDatabase.CommitTransaction(trans);
+    CharacterDatabase.PExecute("DELETE FROM character_pet WHERE id = '%u'", guidlow);
+    CharacterDatabase.PExecute("DELETE FROM character_pet_declinedname WHERE id = '%u'", guidlow);
+    CharacterDatabase.PExecute("DELETE FROM pet_aura WHERE guid = '%u'", guidlow);
+    CharacterDatabase.PExecute("DELETE FROM pet_spell WHERE guid = '%u'", guidlow);
+    CharacterDatabase.PExecute("DELETE FROM pet_spell_cooldown WHERE guid = '%u'", guidlow);
 }
 
 void Pet::setDeathState(DeathState s)                       // overwrite virtual Creature::setDeathState and Unit::setDeathState
@@ -1231,7 +1226,7 @@ void Pet::_LoadSpellCooldowns()
     m_CreatureSpellCooldowns.clear();
     m_CreatureCategoryCooldowns.clear();
 
-    QueryResult result = CharacterDatabase.PQuery("SELECT spell,time FROM pet_spell_cooldown WHERE guid = '%u'",m_charmInfo->GetPetNumber());
+    QueryResult_AutoPtr result = CharacterDatabase.PQuery("SELECT spell,time FROM pet_spell_cooldown WHERE guid = '%u'",m_charmInfo->GetPetNumber());
 
     if (result)
     {
@@ -1272,12 +1267,12 @@ void Pet::_LoadSpellCooldowns()
     }
 }
 
-void Pet::_SaveSpellCooldowns(SQLTransaction& trans)
+void Pet::_SaveSpellCooldowns()
 {
     if (getPetType() == SUMMON_PET) //don't save cooldowns for temp pets, thats senseless
         return;
 
-    trans->PAppend("DELETE FROM pet_spell_cooldown WHERE guid = '%u'", m_charmInfo->GetPetNumber());
+    CharacterDatabase.PExecute("DELETE FROM pet_spell_cooldown WHERE guid = '%u'", m_charmInfo->GetPetNumber());
 
     time_t curTime = time(NULL);
 
@@ -1288,7 +1283,7 @@ void Pet::_SaveSpellCooldowns(SQLTransaction& trans)
             m_CreatureSpellCooldowns.erase(itr++);
         else
         {
-            trans->PAppend("INSERT INTO pet_spell_cooldown (guid,spell,time) VALUES ('%u', '%u', '" UI64FMTD "')", m_charmInfo->GetPetNumber(), itr->first, uint64(itr->second));
+            CharacterDatabase.PExecute("INSERT INTO pet_spell_cooldown (guid,spell,time) VALUES ('%u', '%u', '" UI64FMTD "')", m_charmInfo->GetPetNumber(), itr->first, uint64(itr->second));
             ++itr;
         }
     }
@@ -1296,7 +1291,7 @@ void Pet::_SaveSpellCooldowns(SQLTransaction& trans)
 
 void Pet::_LoadSpells()
 {
-    QueryResult result = CharacterDatabase.PQuery("SELECT spell,active FROM pet_spell WHERE guid = '%u'",m_charmInfo->GetPetNumber());
+    QueryResult_AutoPtr result = CharacterDatabase.PQuery("SELECT spell,active FROM pet_spell WHERE guid = '%u'",m_charmInfo->GetPetNumber());
 
     if (result)
     {
@@ -1310,7 +1305,7 @@ void Pet::_LoadSpells()
     }
 }
 
-void Pet::_SaveSpells(SQLTransaction& trans)
+void Pet::_SaveSpells()
 {
     for (PetSpellMap::iterator itr = m_spells.begin(), next = m_spells.begin(); itr != m_spells.end(); itr = next)
     {
@@ -1323,15 +1318,15 @@ void Pet::_SaveSpells(SQLTransaction& trans)
         switch (itr->second.state)
         {
             case PETSPELL_REMOVED:
-                trans->PAppend("DELETE FROM pet_spell WHERE guid = '%u' and spell = '%u'", m_charmInfo->GetPetNumber(), itr->first);
+                CharacterDatabase.PExecute("DELETE FROM pet_spell WHERE guid = '%u' and spell = '%u'", m_charmInfo->GetPetNumber(), itr->first);
                 m_spells.erase(itr);
                 continue;
             case PETSPELL_CHANGED:
-                trans->PAppend("DELETE FROM pet_spell WHERE guid = '%u' and spell = '%u'", m_charmInfo->GetPetNumber(), itr->first);
-                trans->PAppend("INSERT INTO pet_spell (guid,spell,active) VALUES ('%u', '%u', '%u')", m_charmInfo->GetPetNumber(), itr->first, itr->second.active);
+                CharacterDatabase.PExecute("DELETE FROM pet_spell WHERE guid = '%u' and spell = '%u'", m_charmInfo->GetPetNumber(), itr->first);
+                CharacterDatabase.PExecute("INSERT INTO pet_spell (guid,spell,active) VALUES ('%u', '%u', '%u')", m_charmInfo->GetPetNumber(), itr->first, itr->second.active);
                 break;
             case PETSPELL_NEW:
-                trans->PAppend("INSERT INTO pet_spell (guid,spell,active) VALUES ('%u', '%u', '%u')", m_charmInfo->GetPetNumber(), itr->first, itr->second.active);
+                CharacterDatabase.PExecute("INSERT INTO pet_spell (guid,spell,active) VALUES ('%u', '%u', '%u')", m_charmInfo->GetPetNumber(), itr->first, itr->second.active);
                 break;
             case PETSPELL_UNCHANGED:
                 continue;
@@ -1351,7 +1346,7 @@ void Pet::_LoadAuras(uint32 timediff)
     for (int i = UNIT_FIELD_AURA; i <= UNIT_FIELD_AURASTATE; ++i)
         SetUInt32Value(i, 0);
 
-    QueryResult result = CharacterDatabase.PQuery("SELECT caster_guid,spell,effect_index,stackcount,amount,maxduration,remaintime,remaincharges FROM pet_aura WHERE guid = '%u'",m_charmInfo->GetPetNumber());
+    QueryResult_AutoPtr result = CharacterDatabase.PQuery("SELECT caster_guid,spell,effect_index,stackcount,amount,maxduration,remaintime,remaincharges FROM pet_aura WHERE guid = '%u'",m_charmInfo->GetPetNumber());
 
     if (result)
     {
@@ -1416,9 +1411,9 @@ void Pet::_LoadAuras(uint32 timediff)
     }
 }
 
-void Pet::_SaveAuras(SQLTransaction& trans)
+void Pet::_SaveAuras()
 {
-    trans->PAppend("DELETE FROM pet_aura WHERE guid = '%u'", m_charmInfo->GetPetNumber());
+    CharacterDatabase.PExecute("DELETE FROM pet_aura WHERE guid = '%u'", m_charmInfo->GetPetNumber());
 
     AuraMap const& auras = GetAuras();
     if (auras.empty())
@@ -1450,7 +1445,7 @@ void Pet::_SaveAuras(SQLTransaction& trans)
 
                     if (i == 3)
                     {
-                        trans->PAppend("INSERT INTO pet_aura (guid,caster_guid,spell,effect_index,stackcount,amount,maxduration,remaintime,remaincharges) "
+                        CharacterDatabase.PExecute("INSERT INTO pet_aura (guid,caster_guid,spell,effect_index,stackcount,amount,maxduration,remaintime,remaincharges) "
                             "VALUES ('%u', '" UI64FMTD "', '%u', '%u', '%u', '%d', '%d', '%d', '%d')",
                             m_charmInfo->GetPetNumber(), itr2->second->GetCasterGUID(),(uint32)itr2->second->GetId(), (uint32)itr2->second->GetEffIndex(), (uint32)itr2->second->GetStackAmount(), itr2->second->GetModifier()->m_amount,int(itr2->second->GetAuraMaxDuration()),int(itr2->second->GetAuraDuration()),int(itr2->second->m_procCharges));
                     }

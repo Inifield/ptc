@@ -16,211 +16,88 @@
  */
 
 #include "DatabaseEnv.h"
-#include "Log.h"
 
-ResultSet::ResultSet(MYSQL_RES *result, MYSQL_FIELD *fields, uint64 rowCount, uint32 fieldCount) :
-m_result(result),
-m_fields(fields),
-m_rowCount(rowCount),
-m_fieldCount(fieldCount)
+QueryResult::QueryResult(MYSQL_RES *result, MYSQL_FIELD *fields, uint64 rowCount, uint32 fieldCount)
+: mFieldCount(fieldCount)
+, mRowCount(rowCount)
+, mResult(result)
 {
-    m_currentRow = new Field[m_fieldCount];
-    ASSERT(m_currentRow);
+    mCurrentRow = new Field[mFieldCount];
+    ASSERT(mCurrentRow);
+
+    for (uint32 i = 0; i < mFieldCount; i++)
+         mCurrentRow[i].SetType(ConvertNativeType(fields[i].type));
 }
 
-PreparedResultSet::PreparedResultSet(MYSQL_STMT* stmt, MYSQL_RES *result, MYSQL_FIELD *fields, uint64 rowCount, uint32 fieldCount) :
-m_rBind(NULL),
-m_stmt(stmt),
-m_res(result),
-m_isNull(NULL),
-m_length(NULL),
-m_rowCount(rowCount),
-m_fieldCount(fieldCount),
-m_rowPosition(0)
+QueryResult::~QueryResult()
 {
-    if (!m_res)
-        return;
-
-    if (m_stmt->bind_result_done)
-    {
-        delete[] m_stmt->bind->length;
-        delete[] m_stmt->bind->is_null;
-    }
-
-    m_rBind = new MYSQL_BIND[m_fieldCount];
-    m_isNull = new my_bool[m_fieldCount];
-    m_length = new unsigned long[m_fieldCount];
-    
-    memset(m_isNull, 0, sizeof(my_bool) * m_fieldCount);
-    memset(m_rBind, 0, sizeof(MYSQL_BIND) * m_fieldCount);
-    memset(m_length, 0, sizeof(unsigned long) * m_fieldCount);
-
-    //- This is where we store the (entire) resultset
-    if (mysql_stmt_store_result(m_stmt))
-    {
-        sLog.outSQLDriver("%s:mysql_stmt_store_result, cannot bind result from MySQL server. Error: %s", __FUNCTION__, mysql_stmt_error(m_stmt));
-        return;
-    }
-
-    //- This is where we prepare the buffer based on metadata
-    uint32 i = 0;
-    MYSQL_FIELD* field;
-    while ((field = mysql_fetch_field(m_res)))
-    {
-        size_t size = Field::SizeForType(field);
-
-        m_rBind[i].buffer_type = field->type;
-        m_rBind[i].buffer = malloc(size);
-        memset(m_rBind[i].buffer, 0, size);
-        m_rBind[i].buffer_length = size;
-        m_rBind[i].length = &m_length[i];
-        m_rBind[i].is_null = &m_isNull[i];
-        m_rBind[i].error = NULL;
-        m_rBind[i].is_unsigned = field->flags & UNSIGNED_FLAG;
-
-        ++i;
-    }
-
-    //- This is where we bind the bind the buffer to the statement
-    if (mysql_stmt_bind_result(m_stmt, m_rBind))
-    {
-        sLog.outSQLDriver("%s:mysql_stmt_bind_result, cannot bind result from MySQL server. Error: %s", __FUNCTION__, mysql_stmt_error(m_stmt));
-        delete[] m_rBind;
-        delete[] m_isNull;
-        delete[] m_length;
-        return;
-    }
-
-    m_rowCount = mysql_stmt_num_rows(m_stmt);
-
-    m_rows.resize(m_rowCount);
-    while (_NextRow())
-    {
-        m_rows[m_rowPosition] = new Field[m_fieldCount];
-        for (uint64 fIndex = 0; fIndex < m_fieldCount; ++fIndex)
-        {
-            if (!*m_rBind[fIndex].is_null)
-                m_rows[m_rowPosition][fIndex].SetByteValue( m_rBind[fIndex].buffer,
-                                                            m_rBind[fIndex].buffer_length,
-                                                            m_rBind[fIndex].buffer_type,
-                                                           *m_rBind[fIndex].length );
-            else
-                switch (m_rBind[fIndex].buffer_type)
-                {
-                    case MYSQL_TYPE_TINY_BLOB:
-                    case MYSQL_TYPE_MEDIUM_BLOB:
-                    case MYSQL_TYPE_LONG_BLOB:
-                    case MYSQL_TYPE_BLOB:
-                    case MYSQL_TYPE_STRING:
-                    case MYSQL_TYPE_VAR_STRING:
-                    m_rows[m_rowPosition][fIndex].SetByteValue( "",
-                                                            m_rBind[fIndex].buffer_length,
-                                                            m_rBind[fIndex].buffer_type,
-                                                           *m_rBind[fIndex].length );
-                    break;
-                    default:
-                    m_rows[m_rowPosition][fIndex].SetByteValue( 0,
-                                                            m_rBind[fIndex].buffer_length,
-                                                            m_rBind[fIndex].buffer_type,
-                                                           *m_rBind[fIndex].length );
-                }
-        }
-        m_rowPosition++;
-    }
-    m_rowPosition = 0;
-
-    /// All data is buffered, let go of mysql c api structures
-    CleanUp();
+    EndQuery();
 }
 
-ResultSet::~ResultSet()
-{
-    CleanUp();
-}
-
-PreparedResultSet::~PreparedResultSet()
-{
-    for (uint64 i = 0; i < m_rowCount; ++i)
-        delete[] m_rows[i];
-}
-
-bool ResultSet::NextRow()
+bool QueryResult::NextRow()
 {
     MYSQL_ROW row;
 
-    if (!m_result)
+    if (!mResult)
         return false;
 
-    row = mysql_fetch_row(m_result);
+    row = mysql_fetch_row(mResult);
     if (!row)
     {
-        CleanUp();
+        EndQuery();
         return false;
     }
 
-    for (uint32 i = 0; i < m_fieldCount; i++)
-        m_currentRow[i].SetStructuredValue(row[i], m_fields[i].type);
+    for (uint32 i = 0; i < mFieldCount; i++)
+        mCurrentRow[i].SetValue(row[i]);
 
     return true;
 }
 
-bool PreparedResultSet::NextRow()
+void QueryResult::EndQuery()
 {
-    /// Only updates the m_rowPosition so upper level code knows in which element
-    /// of the rows vector to look
-    if (++m_rowPosition >= m_rowCount)
-        return false;
-
-    return true;
-}
-
-bool PreparedResultSet::_NextRow()
-{
-    /// Only called in low-level code, namely the constructor
-    /// Will iterate over every row of data and buffer it
-    if (m_rowPosition >= m_rowCount)
-        return false;
-
-    int retval = mysql_stmt_fetch( m_stmt );
-
-    if (!retval || retval == MYSQL_DATA_TRUNCATED)
-        retval = true;
-
-    if (retval == MYSQL_NO_DATA)
-        retval = false;
-
-    return retval;
-}
-
-void ResultSet::CleanUp()
-{
-    if (m_currentRow)
+    if (mCurrentRow)
     {
-        delete [] m_currentRow;
-        m_currentRow = NULL;
+        delete [] mCurrentRow;
+        mCurrentRow = 0;
     }
 
-    if (m_result)
+    if (mResult)
     {
-        mysql_free_result(m_result);
-        m_result = NULL;
+        mysql_free_result(mResult);
+        mResult = 0;
     }
 }
 
-void PreparedResultSet::CleanUp()
+enum Field::DataTypes QueryResult::ConvertNativeType(enum_field_types mysqlType) const
 {
-    /// More of the in our code allocated sources are deallocated by the poorly documented mysql c api
-    if (m_res)
-        mysql_free_result(m_res);
+    switch (mysqlType)
+    {
+        case FIELD_TYPE_TIMESTAMP:
+        case FIELD_TYPE_DATE:
+        case FIELD_TYPE_TIME:
+        case FIELD_TYPE_DATETIME:
+        case FIELD_TYPE_YEAR:
+        case FIELD_TYPE_STRING:
+        case FIELD_TYPE_VAR_STRING:
+        case FIELD_TYPE_BLOB:
+        case FIELD_TYPE_SET:
+        case FIELD_TYPE_NULL:
+            return Field::DB_TYPE_STRING;
+        case FIELD_TYPE_TINY:
 
-    FreeBindBuffer();
-    mysql_stmt_free_result(m_stmt);
-
-    delete[] m_rBind;    
+        case FIELD_TYPE_SHORT:
+        case FIELD_TYPE_LONG:
+        case FIELD_TYPE_INT24:
+        case FIELD_TYPE_LONGLONG:
+        case FIELD_TYPE_ENUM:
+            return Field::DB_TYPE_INTEGER;
+        case FIELD_TYPE_DECIMAL:
+        case FIELD_TYPE_FLOAT:
+        case FIELD_TYPE_DOUBLE:
+            return Field::DB_TYPE_FLOAT;
+        default:
+            return Field::DB_TYPE_UNKNOWN;
+    }
 }
 
-void PreparedResultSet::FreeBindBuffer()
-{
-    for (uint32 i = 0; i < m_fieldCount; ++i)
-        free (m_rBind[i].buffer);
-}

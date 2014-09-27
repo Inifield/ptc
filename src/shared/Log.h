@@ -20,6 +20,7 @@
 
 #include "Common.h"
 #include "Policies/Singleton.h"
+#include "Database/DatabaseEnv.h"
 
 class Config;
 
@@ -100,7 +101,6 @@ class Log : public Oregon::Singleton<Log, Oregon::ClassLevelLockable<Log, ACE_Th
         void outBasic( const char * str, ... )                  ATTR_PRINTF(2,3);
         void outDetail( const char * str, ... )                 ATTR_PRINTF(2,3);
         void outDebug( const char * str, ... )                  ATTR_PRINTF(2,3);
-        void outStaticDebug( const char * str, ... )            ATTR_PRINTF(2,3);
         void outDebugInLine( const char * str, ... )            ATTR_PRINTF(2,3);
         void outErrorDb( const char * str, ... )                ATTR_PRINTF(2,3);
         void outChar( const char * str, ... )                   ATTR_PRINTF(2,3);
@@ -109,7 +109,6 @@ class Log : public Oregon::Singleton<Log, Oregon::ClassLevelLockable<Log, ACE_Th
         void outChat( const char * str, ... )                   ATTR_PRINTF(2,3);
         void outWarden( const char * str, ... )                 ATTR_PRINTF(2,3);
         void outArena( const char * str, ... )                  ATTR_PRINTF(2,3);
-        void outSQLDriver( const char* str, ... )               ATTR_PRINTF(2,3);
         void outCharDump( const char * str, uint32 account_id, uint32 guid, const char * name );
 
         static void outTimestamp(FILE* file);
@@ -141,7 +140,6 @@ class Log : public Oregon::Singleton<Log, Oregon::ClassLevelLockable<Log, ACE_Th
         FILE* chatLogfile;
         FILE* arenaLogFile;
         FILE* wardenLogFile;
-        FILE* sqlLogFile;
 
         // cache values for after initilization use (like gm log per account case)
         std::string m_logsDir;
@@ -173,6 +171,12 @@ class Log : public Oregon::Singleton<Log, Oregon::ClassLevelLockable<Log, ACE_Th
 };
 
 #define sLog Oregon::Singleton<Log>::Instance()
+
+#ifdef OREGON_DEBUG
+#define DEBUG_LOG Oregon::Singleton<Log>::Instance().outDebug
+#else
+#define DEBUG_LOG(...)
+#endif
 
 // primary for script library
 #define outstring_log Oregon::Singleton<Log>::Instance().outString

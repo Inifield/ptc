@@ -18,6 +18,7 @@
 #include "Common.h"
 #include "Language.h"
 #include "Database/DatabaseEnv.h"
+#include "Database/DatabaseImpl.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
 #include "Opcodes.h"
@@ -57,8 +58,7 @@ void WorldSession::SendNameQueryOpcode(Player *p)
 
 void WorldSession::SendNameQueryOpcodeFromDB(uint64 guid)
 {
-    ACE_Future<QueryResult> lFutureResult = 
-        CharacterDatabase.AsyncPQuery(
+    CharacterDatabase.AsyncPQuery(&WorldSession::SendNameQueryOpcodeFromDBCallBack, GetAccountId(),
         !sWorld.getConfig(CONFIG_DECLINED_NAMES_USED) ?
     //   ------- Query Without Declined Names --------
     //          0                1     2
@@ -71,25 +71,24 @@ void WorldSession::SendNameQueryOpcodeFromDB(uint64 guid)
     //   3         4       5           6             7
         "genitive, dative, accusative, instrumental, prepositional "
         "FROM characters LEFT JOIN character_declinedname ON characters.guid = character_declinedname.guid WHERE characters.guid = '%u'",
-        UNIT_FIELD_BYTES_0, UNIT_FIELD_BYTES_0+1, UNIT_FIELD_BYTES_0, GUID_LOPART(guid)
-        );
-
-    m_nameQueryCallbacks.insert(lFutureResult);
-
-    // CharacterDatabase.AsyncPQuery(&WorldSession::SendNameQueryOpcodeFromDBCallBack, GetAccountId(),
+        UNIT_FIELD_BYTES_0, UNIT_FIELD_BYTES_0+1, UNIT_FIELD_BYTES_0, GUID_LOPART(guid));
 }
 
-void WorldSession::SendNameQueryOpcodeFromDBCallBack(QueryResult result)
+void WorldSession::SendNameQueryOpcodeFromDBCallBack(QueryResult_AutoPtr result, uint32 accountId)
 {
     if (!result)
         return;
 
+    WorldSession * session = sWorld.FindSession(accountId);
+    if (!session)
+        return;
+
     Field *fields = result->Fetch();
     uint32 guid      = fields[0].GetUInt32();
-    std::string name = fields[1].GetString();
+    std::string name = fields[1].GetCppString();
     uint32 field     = 0;
     if (name == "")
-        name         = GetOregonString(LANG_NON_EXIST_CHARACTER);
+        name         = session->GetOregonString(LANG_NON_EXIST_CHARACTER);
     else
         field        = fields[2].GetUInt32();
 
@@ -103,16 +102,16 @@ void WorldSession::SendNameQueryOpcodeFromDBCallBack(QueryResult result)
     data << (uint32)((field >> 8) & 0xFF);
 
     // if the first declined name field (3) is empty, the rest must be too
-    if (sWorld.getConfig(CONFIG_DECLINED_NAMES_USED) && fields[3].GetString() != "")
+    if (sWorld.getConfig(CONFIG_DECLINED_NAMES_USED) && fields[3].GetCppString() != "")
     {
         data << uint8(1);                                   // is declined
         for (int i = 3; i < MAX_DECLINED_NAME_CASES+3; ++i)
-            data << fields[i].GetString();
+            data << fields[i].GetCppString();
     }
     else
         data << uint8(0);                                   // is not declined
 
-    SendPacket(&data);
+    session->SendPacket(&data);
 }
 
 void WorldSession::HandleNameQueryOpcode(WorldPacket & recv_data)

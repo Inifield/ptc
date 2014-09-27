@@ -438,7 +438,7 @@ void PoolGroup<Quest>::SpawnObject(ActivePoolData& spawns, uint32 limit, uint32 
     // load state from db
     if (!triggerFrom)
     {
-        QueryResult result = CharacterDatabase.PQuery("SELECT quest_id FROM pool_quest_save WHERE pool_id = %u", poolId);
+        QueryResult_AutoPtr result = CharacterDatabase.PQuery("SELECT quest_id FROM pool_quest_save WHERE pool_id = %u", poolId);
         if (result)
         {
             do
@@ -548,7 +548,7 @@ PoolHandler::PoolHandler()
 
 void PoolHandler::LoadFromDB()
 {
-    QueryResult result = WorldDatabase.Query("SELECT MAX(entry) FROM pool_template");
+    QueryResult_AutoPtr result = WorldDatabase.Query("SELECT MAX(entry) FROM pool_template");
     if (!result)
     {
         sLog.outString(">> Loaded 0 object pools. DB table `pool_template` is empty.");
@@ -798,8 +798,7 @@ void PoolHandler::LoadFromDB()
 
 void PoolHandler::LoadQuestPools()
 {
-    PreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_LOAD_QUEST_POOLS);
-    PreparedQueryResult result = WorldDatabase.Query(stmt);
+    QueryResult_AutoPtr result = WorldDatabase.Query("SELECT entry, pool_entry FROM pool_quest");
 
     mQuestSearchMap.clear();
     mPoolQuestGroups.resize(max_pool_id + 1);
@@ -825,7 +824,8 @@ void PoolHandler::LoadQuestPools()
 
     do
     {
-		Field* fields = result->Fetch();
+        Field* fields = result->Fetch();
+        
 
         uint32 entry   = fields[0].GetUInt32();
         uint32 pool_id = fields[1].GetUInt32();
@@ -880,17 +880,15 @@ void PoolHandler::LoadQuestPools()
         SearchPair p(entry, pool_id);
         mQuestSearchMap.insert(p);
 
-    }
-    while (result->NextRow());
-
+    } while (result->NextRow());
     sLog.outString(">> Loaded %u quests in pools", count);
 }
 
 // The initialize method will spawn all pools not in an event and not in another pool, this is why there is 2 left joins with 2 null checks
 void PoolHandler::Initialize()
 {
-    QueryResult result = WorldDatabase.Query("SELECT DISTINCT pool_template.entry, pool_pool.pool_id, pool_pool.mother_pool FROM pool_template LEFT JOIN game_event_pool ON pool_template.entry=game_event_pool.pool_entry LEFT JOIN pool_pool ON pool_template.entry=pool_pool.pool_id WHERE game_event_pool.pool_entry IS NULL");
-    uint32 count = 0;
+    QueryResult_AutoPtr result = WorldDatabase.Query("SELECT DISTINCT pool_template.entry, pool_pool.pool_id, pool_pool.mother_pool FROM pool_template LEFT JOIN game_event_pool ON pool_template.entry=game_event_pool.pool_entry LEFT JOIN pool_pool ON pool_template.entry=pool_pool.pool_id WHERE game_event_pool.pool_entry IS NULL");
+    uint32 count=0;
     if (result)
     {
         do
@@ -923,27 +921,44 @@ void PoolHandler::Initialize()
 
 void PoolHandler::SaveQuestsToDB()
 {
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
-
+    CharacterDatabase.BeginTransaction();
+    std::ostringstream query;
+    query << "DELETE FROM pool_quest_save WHERE pool_id IN (";
+    bool first = true;
     for (PoolGroupQuestMap::iterator itr = mPoolQuestGroups.begin(); itr != mPoolQuestGroups.end(); ++itr)
     {
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_QUEST_POOL_SAVE);
-        stmt->setUInt32(0, itr->GetPoolId());
-        trans->Append(stmt);
+        if(itr->GetPoolId() != 0)
+        {
+            if (!first)
+                query << ",";
+            first = false;
+                query << itr->GetPoolId();
+        }
+    }
+    if (!first)
+    {
+        query << ")";
+        CharacterDatabase.PExecute("%s", query.str().c_str());
     }
 
+    first = true;
+    query.rdbuf()->str("");
+    query << "INSERT INTO pool_quest_save (pool_id, quest_id) VALUES ";
     for (SearchMap::iterator itr = mQuestSearchMap.begin(); itr != mQuestSearchMap.end(); ++itr)
     {
-         if (IsSpawnedObject<Quest>(itr->first))
-         {
-            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_ADD_QUEST_POOL_SAVE);
-            stmt->setUInt32(0, itr->second);
-            stmt->setUInt32(1, itr->first);
-            trans->Append(stmt);
+        if (IsSpawnedObject<Quest>(itr->first))
+        {
+            if (!first)
+                query << ",";
+            first = false;
+            query << "(" << itr->second << "," << itr->first << ")";
         }
     }
 
-    CharacterDatabase.CommitTransaction(trans);
+    if (!first)
+        CharacterDatabase.PExecute("%s", query.str().c_str());
+
+    CharacterDatabase.CommitTransaction();
 }
 
 void PoolHandler::ChangeDailyQuests()

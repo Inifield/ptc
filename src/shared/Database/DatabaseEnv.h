@@ -15,31 +15,26 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DATABASEENV_H
+#if !defined(DATABASEENV_H)
 #define DATABASEENV_H
 
 #include "Common.h"
-#include "Errors.h"
 #include "Log.h"
+#include "Errors.h"
 
 #include "Database/Field.h"
 #include "Database/QueryResult.h"
 
-#include "Database/MySQLThreading.h"
-#include "Database/Transaction.h"
-
+#include "Database/Database.h"
+typedef Database DatabaseType;
 #define _LIKE_           "LIKE"
 #define _TABLE_SIM_      "`"
 #define _CONCAT3_(A,B,C) "CONCAT( " A " , " B " , " C " )"
 #define _OFFSET_         "LIMIT %d,1"
 
-#include "Implementation/LoginDatabase.h"
-#include "Implementation/CharacterDatabase.h"
-#include "Implementation/WorldDatabase.h"
-
-extern WorldDatabaseWorkerPool WorldDatabase;
-extern CharacterDatabaseWorkerPool CharacterDatabase;
-extern LoginDatabaseWorkerPool LoginDatabase;
+extern DatabaseType WorldDatabase;
+extern DatabaseType CharacterDatabase;
+extern DatabaseType LoginDatabase;
 
 #endif
 

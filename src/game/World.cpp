@@ -49,6 +49,7 @@
 #include "MoveMap.h"
 #include "GameEventMgr.h"
 #include "PoolHandler.h"
+#include "Database/DatabaseImpl.h"
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
 #include "InstanceSaveMgr.h"
@@ -93,6 +94,7 @@ World::World()
     m_startTime=m_gameTime;
     m_maxActiveSessionCount = 0;
     m_maxQueuedSessionCount = 0;
+    m_resultQueue = NULL;
     m_NextDailyQuestReset = 0;
     m_scheduledScripts = 0;
 
@@ -126,6 +128,8 @@ World::~World()
 
     VMAP::VMapFactory::clear();
     MMAP::MMapFactory::clear();
+
+    delete m_resultQueue;
 
     //TODO free addSessQueue
 }
@@ -1610,7 +1614,7 @@ void World::LoadAutobroadcasts()
 {
     m_Autobroadcasts.clear();
 
-    QueryResult result = WorldDatabase.Query("SELECT text FROM autobroadcast");
+    QueryResult_AutoPtr result = WorldDatabase.Query("SELECT text FROM autobroadcast");
 
     if (!result)
     {
@@ -1623,7 +1627,7 @@ void World::LoadAutobroadcasts()
     do
     {
         Field *fields = result->Fetch();
-        std::string message = fields[0].GetString();
+        std::string message = fields[0].GetCppString();
         m_Autobroadcasts.push_back(message);
         ++count;
     }
@@ -1636,7 +1640,7 @@ void World::LoadAutobroadcasts()
  	
 void World::LoadIp2nation()
 {
- 	QueryResult result = WorldDatabase.Query("SELECT count(c.code) FROM ip2nationCountries c, ip2nation i WHERE c.code = i.country");
+ 	QueryResult_AutoPtr result = WorldDatabase.Query("SELECT count(c.code) FROM ip2nationCountries c, ip2nation i WHERE c.code = i.country");
  	uint32 count = 0;
 
     if (result)
@@ -1790,8 +1794,8 @@ void World::Update(uint32 diff)
     }
 
     // execute callbacks from sql queries that were queued recently
-    ProcessQueryCallbacks();
-    RecordTimeDiff("ProcessQueryCallbacks");
+    UpdateResultQueue();
+    RecordTimeDiff("UpdateResultQueue");
 
     // Erase corpses once every 20 minutes
     if (m_timers[WUPDATE_CORPSES].Passed())
@@ -2069,7 +2073,7 @@ BanReturn World::BanAccount(BanMode mode, std::string nameOrIP, std::string dura
     LoginDatabase.escape_string(safe_author);
 
     uint32 duration_secs = TimeStringToSecs(duration);
-    QueryResult resultAccounts = QueryResult(NULL);                     //used for kicking
+    QueryResult_AutoPtr resultAccounts = QueryResult_AutoPtr(NULL);                     //used for kicking
 
     // Update the database with ban information
     switch(mode)
@@ -2224,7 +2228,7 @@ void World::ShutdownMsg(bool show, Player* player)
         ServerMessageType msgid = (m_ShutdownMask & SHUTDOWN_MASK_RESTART) ? SERVER_MSG_RESTART_TIME : SERVER_MSG_SHUTDOWN_TIME;
 
         SendServerMessage(msgid,str.c_str(),player);
-        sLog.outStaticDebug("Server is %s in %s",(m_ShutdownMask & SHUTDOWN_MASK_RESTART ? "restart" : "shutting down"),str.c_str());
+        DEBUG_LOG("Server is %s in %s",(m_ShutdownMask & SHUTDOWN_MASK_RESTART ? "restart" : "shutting down"),str.c_str());
     }
 }
 
@@ -2242,7 +2246,7 @@ void World::ShutdownCancel()
     m_ExitCode = SHUTDOWN_EXIT_CODE;                       // to default value
     SendServerMessage(msgid);
 
-    sLog.outStaticDebug("Server %s cancelled.",(m_ShutdownMask & SHUTDOWN_MASK_RESTART ? "restart" : "shutdown"));
+    DEBUG_LOG("Server %s cancelled.",(m_ShutdownMask & SHUTDOWN_MASK_RESTART ? "restart" : "shutdown"));
 }
 
 // Send a server message to the user(s)
@@ -2342,15 +2346,24 @@ void World::SendAutoBroadcast()
     sLog.outString("AutoBroadcast: '%s'", msg.c_str());
 }
 
-void World::UpdateRealmCharCount(uint32 accountId)
+void World::InitResultQueue()
 {
-    m_realmCharCallback.SetParam(accountId);
-    m_realmCharCallback.SetFutureResult(
-        LoginDatabase.AsyncPQuery("SELECT COUNT(guid) FROM characters WHERE account = '%u'", accountId)
-        );
+    m_resultQueue = new SqlResultQueue;
+    CharacterDatabase.SetResultQueue(m_resultQueue);
 }
 
-void World::_UpdateRealmCharCount(QueryResult resultCharCount, uint32 accountId)
+void World::UpdateResultQueue()
+{
+    m_resultQueue->Update();
+}
+
+void World::UpdateRealmCharCount(uint32 accountId)
+{
+    CharacterDatabase.AsyncPQuery(this, &World::_UpdateRealmCharCount, accountId,
+        "SELECT COUNT(guid) FROM characters WHERE account = '%u'", accountId);
+}
+
+void World::_UpdateRealmCharCount(QueryResult_AutoPtr resultCharCount, uint32 accountId)
 {
     if (resultCharCount)
     {
@@ -2366,7 +2379,7 @@ void World::InitDailyQuestResetTime()
 {
     time_t mostRecentQuestTime;
 
-    QueryResult result = CharacterDatabase.Query("SELECT MAX(time) FROM character_queststatus_daily");
+    QueryResult_AutoPtr result = CharacterDatabase.Query("SELECT MAX(time) FROM character_queststatus_daily");
     if (result)
     {
         Field *fields = result->Fetch();
@@ -2401,7 +2414,7 @@ void World::InitDailyQuestResetTime()
 
 void World::UpdateAllowedSecurity()
 {
-     QueryResult result = LoginDatabase.PQuery("SELECT allowedSecurityLevel from realmlist WHERE id = '%d'", realmID);
+     QueryResult_AutoPtr result = LoginDatabase.PQuery("SELECT allowedSecurityLevel from realmlist WHERE id = '%d'", realmID);
      if (result)
      {
         m_allowedSecurityLevel = AccountTypes(result->Fetch()->GetUInt16());
@@ -2434,7 +2447,7 @@ void World::UpdateMaxSessionCounters()
 
 void World::LoadDBVersion()
 {
-    QueryResult result = WorldDatabase.Query("SELECT db_version FROM version LIMIT 1");
+    QueryResult_AutoPtr result = WorldDatabase.Query("SELECT db_version FROM version LIMIT 1");
     if (result)
     {
         Field* fields = result->Fetch();
@@ -2445,16 +2458,3 @@ void World::LoadDBVersion()
         m_DBVersion = "unknown world database";
 }
 
-void World::ProcessQueryCallbacks()
-{
-    QueryResult result;
-
-    //-UpdateRealmCharCount
-    if (m_realmCharCallback.IsReady())
-    {
-        uint32 param = m_realmCharCallback.GetParam();
-        m_realmCharCallback.GetResult(result);
-        _UpdateRealmCharCount(result, param);
-        m_realmCharCallback.FreeResult();
-    }
-}

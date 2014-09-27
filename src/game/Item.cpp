@@ -284,7 +284,7 @@ void Item::UpdateDuration(Player* owner, uint32 diff)
     SetState(ITEM_CHANGED, owner);                          // save new time in database
 }
 
-void Item::SaveToDB(SQLTransaction& trans)
+void Item::SaveToDB()
 {
     uint32 guid = GetGUIDLow();
     switch (uState)
@@ -296,7 +296,7 @@ void Item::SaveToDB(SQLTransaction& trans)
             for (uint16 i = 0; i < m_valuesCount; ++i)
                 ss << GetUInt32Value(i) << " ";
             ss << "')";
-            trans->Append(ss.str().c_str());
+            CharacterDatabase.Execute(ss.str().c_str());
         } break;
         case ITEM_CHANGED:
         {
@@ -306,7 +306,7 @@ void Item::SaveToDB(SQLTransaction& trans)
                 ss << GetUInt32Value(i) << " ";
             ss << "', owner_guid = '" << GUID_LOPART(GetOwnerGUID()) << "' WHERE guid = '" << guid << "'";
 
-            trans->Append(ss.str().c_str());
+            CharacterDatabase.Execute(ss.str().c_str());
 
             if (HasFlag(ITEM_FIELD_FLAGS, ITEM_FLAGS_WRAPPED))
                 CharacterDatabase.PExecute("UPDATE character_gifts SET guid = '%u' WHERE item_guid = '%u'", GUID_LOPART(GetOwnerGUID()),GetGUIDLow());
@@ -314,10 +314,10 @@ void Item::SaveToDB(SQLTransaction& trans)
         case ITEM_REMOVED:
         {
             if (GetUInt32Value(ITEM_FIELD_ITEM_TEXT_ID) > 0)
-                trans->PAppend("DELETE FROM item_text WHERE id = '%u'", GetUInt32Value(ITEM_FIELD_ITEM_TEXT_ID));
+                CharacterDatabase.PExecute("DELETE FROM item_text WHERE id = '%u'", GetUInt32Value(ITEM_FIELD_ITEM_TEXT_ID));
             CharacterDatabase.PExecute("DELETE FROM item_instance WHERE guid = '%u'", guid);
             if (HasFlag(ITEM_FIELD_FLAGS, ITEM_FLAGS_WRAPPED))
-                trans->PAppend("DELETE FROM character_gifts WHERE item_guid = '%u'", GetGUIDLow());
+                CharacterDatabase.PExecute("DELETE FROM character_gifts WHERE item_guid = '%u'", GetGUIDLow());
             delete this;
             return;
         }
@@ -327,7 +327,7 @@ void Item::SaveToDB(SQLTransaction& trans)
     SetState(ITEM_UNCHANGED);
 }
 
-bool Item::LoadFromDB(uint32 guid, uint64 owner_guid, QueryResult result)
+bool Item::LoadFromDB(uint32 guid, uint64 owner_guid, QueryResult_AutoPtr result)
 {
     // create item before any checks for store correct guid
     // and allow use "FSetState(ITEM_REMOVED); SaveToDB();" for deleting item from DB
@@ -344,7 +344,7 @@ bool Item::LoadFromDB(uint32 guid, uint64 owner_guid, QueryResult result)
 
     Field *fields = result->Fetch();
 
-    if (!LoadValues(fields[0].GetCString()))
+    if (!LoadValues(fields[0].GetString()))
     {
         sLog.outError("Item #%d has invalid data in data field.  Not loaded.",guid);
         return false;
@@ -406,14 +406,14 @@ bool Item::LoadFromDB(uint32 guid, uint64 owner_guid, QueryResult result)
     return true;
 }
 
-void Item::DeleteFromDB(SQLTransaction& trans)
+void Item::DeleteFromDB()
 {
-    trans->PAppend("DELETE FROM item_instance WHERE guid = '%u'",GetGUIDLow());
+    CharacterDatabase.PExecute("DELETE FROM item_instance WHERE guid = '%u'",GetGUIDLow());
 }
 
-void Item::DeleteFromInventoryDB(SQLTransaction& trans)
+void Item::DeleteFromInventoryDB()
 {
-    trans->PAppend("DELETE FROM character_inventory WHERE item = '%u'",GetGUIDLow());
+    CharacterDatabase.PExecute("DELETE FROM character_inventory WHERE item = '%u'",GetGUIDLow());
 }
 
 ItemPrototype const *Item::GetProto() const

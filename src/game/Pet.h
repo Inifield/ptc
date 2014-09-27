@@ -200,11 +200,11 @@ class Pet : public Guardian
         void CastPetAura(PetAura const* aura);
 
         void _LoadSpellCooldowns();
-        void _SaveSpellCooldowns(SQLTransaction& trans);
+        void _SaveSpellCooldowns();
         void _LoadAuras(uint32 timediff);
-        void _SaveAuras(SQLTransaction& trans);
+        void _SaveAuras();
         void _LoadSpells();
-        void _SaveSpells(SQLTransaction& trans);
+        void _SaveSpells();
 
         bool addSpell(uint16 spell_id,uint16 active = ACT_DECIDE, PetSpellState state = PETSPELL_NEW, PetSpellType type = PETSPELL_NORMAL);
         bool learnSpell(uint16 spell_id);
