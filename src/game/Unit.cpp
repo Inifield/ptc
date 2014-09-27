@@ -806,15 +806,6 @@ uint32 Unit::DealDamage(Unit *pVictim, uint32 damage, CleanDamage const* cleanDa
             return 0;
     }
 
-    // Paladin Blessed Life 4/7/10% chance to cause 50% dmg
-    AuraList const& blessedLife = pVictim->GetAurasByType(SPELL_AURA_REUSED_BLESSED_LIFE);
-    AuraList::const_iterator blessedAura = blessedLife.begin();
-    if (blessedAura != blessedLife.end() && *blessedAura)
-    {
-        if (urand(0, 100) <= (*blessedAura)->GetSpellProto()->procChance)
-            damage /= 2;
-    }
-
     //Script Event damage taken
     if (pVictim->GetTypeId() == TYPEID_UNIT && (pVictim->ToCreature())->IsAIEnabled)
     {
@@ -1911,6 +1902,14 @@ void Unit::CalcAbsorbResist(Unit *pVictim, SpellSchoolMask schoolMask, DamageEff
 
     int32 RemainingDamage = damage - *resist;
 
+    // Paladin Blessed Life 4/7/10% chance to cause 50% dmg
+    AuraList const& blessedLife = pVictim->GetAurasByType(SPELL_AURA_REUSED_BLESSED_LIFE);
+    AuraList::const_iterator blessedAura = blessedLife.begin();
+    if (blessedAura != blessedLife.end() && *blessedAura)
+    {
+        if (urand(0, 100) <= (*blessedAura)->GetSpellProto()->procChance)
+            RemainingDamage /= 2;
+    }
 
     // Need to remove expired auras after
     bool expiredExists = false;
@@ -2575,6 +2574,19 @@ SpellMissInfo Unit::MeleeSpellHitResult(Unit *pVictim, SpellEntry const *spell, 
     tmp += resist_chance;
     if (roll < tmp)
         return SPELL_MISS_RESIST;
+
+    // @XXX: Tidal Charm: Increased chance to be resisted when used against targets over level 60.
+    if (spell->Id == 835)
+    {
+        if (pVictim->getLevel() > 60)
+        {
+            int32 tmp = pVictim->getLevel();
+            uint32 rand = urand(60, 160);
+
+            if (rand > tmp)
+                return SPELL_MISS_RESIST;
+        }
+    }
 
     // Ranged attack can`t miss too
     if (attType == RANGED_ATTACK)
@@ -3553,7 +3565,7 @@ bool Unit::AddAura(Aura *Aur)
                 }
 
                 // XXX:Allow mongoose procs from different weapon stacks
-                if (Aur->GetId() == 28093 || (Aur->GetId() == 20007 && Aur->GetCastItemGUID() != i2->second->GetCastItemGUID()))
+                if (Aur->GetId() == 28093 && Aur->GetCastItemGUID() != i2->second->GetCastItemGUID())
                 {
                     i2++;
                     continue;
