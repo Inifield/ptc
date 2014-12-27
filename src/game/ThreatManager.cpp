@@ -24,6 +24,7 @@
 #include "Player.h"
 #include "ObjectAccessor.h"
 #include "UnitEvents.h"
+#include "SpellMgr.h"
 
 //==============================================================
 //================= ThreatCalcHelper ===========================
@@ -34,6 +35,18 @@ float ThreatCalcHelper::calcThreat(Unit* pHatedUnit, Unit* /*pHatingUnit*/, floa
 {
     if (pThreatSpell)
     {
+        if (pThreatSpell->AttributesEx & SPELL_ATTR_EX_NO_THREAT)
+            return 0.0f;
+
+        if (SpellThreatEntry const*  threatEntry = sSpellMgr.GetSpellThreatEntry(pThreatSpell->Id))
+            if (threatEntry->pctMod != 1.0f)
+                pThreat *= threatEntry->pctMod;
+
+        // Energize is not affected by Mods
+        for (uint8 i = 0; i < MAX_SPELL_EFFECTS; i++)
+            if (pThreatSpell->Effect[i] == SPELL_EFFECT_ENERGIZE || pThreatSpell->EffectApplyAuraName[i] == SPELL_AURA_PERIODIC_ENERGIZE)
+                return pThreat;
+
         if (Player* modOwner = pHatedUnit->GetSpellModOwner())
             modOwner->ApplySpellMod(pThreatSpell->Id, SPELLMOD_THREAT, pThreat);
     }
@@ -105,7 +118,7 @@ void HostileReference::addThreat(float pMod)
     if (isValid() && pMod >= 0)
     {
         Unit* victim_owner = getTarget()->GetCharmerOrOwner();
-        if (victim_owner && victim_owner->isAlive())
+        if (victim_owner && victim_owner->IsAlive())
             getSource()->addThreat(victim_owner, 0.0f);     // create a threat to the owner of a pet, if the pet attacks
     }
 }
@@ -362,7 +375,7 @@ void ThreatManager::addThreat(Unit* pVictim, float pThreat, SpellSchoolMask scho
         return;
 
     // not to dead and not for dead
-    if (!pVictim->isAlive() || !getOwner()->isAlive())
+    if (!pVictim->IsAlive() || !getOwner()->IsAlive())
         return;
 
     ASSERT(getOwner()->GetTypeId() == TYPEID_UNIT);

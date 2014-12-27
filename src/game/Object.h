@@ -220,7 +220,7 @@ class Object
         void BuildOutOfRangeUpdateBlock(UpdateData* data) const;
         void BuildMovementUpdateBlock(UpdateData* data, uint32 flags = 0) const;
 
-        virtual void DestroyForPlayer(Player* target) const;
+        virtual void DestroyForPlayer(Player* target, bool onDeath = false) const;
 
         const int32& GetInt32Value(uint16 index) const
         {
@@ -433,7 +433,7 @@ class Object
         virtual void _SetUpdateBits(UpdateMask* updateMask, Player* target) const;
 
         virtual void _SetCreateBits(UpdateMask* updateMask, Player* target) const;
-        void _BuildMovementUpdate(ByteBuffer* data, uint8 updateFlags) const;
+        void BuildMovementUpdate(ByteBuffer* data, uint16 flags) const;
         void _BuildValuesUpdate(uint8 updatetype, ByteBuffer* data, UpdateMask* updateMask, Player* target) const;
 
         uint16 m_objectType;
@@ -616,6 +616,7 @@ struct Position
     {
         return GetExactDistSq(pos) < dist * dist;
     }
+    void GetSinCos(float x, float y, float &vsin, float &vcos) const;
     bool HasInArc(float arcangle, const Position* pos) const;
     bool HasInLine(const Unit* target, float distance, float width) const;
 };
@@ -1003,9 +1004,9 @@ class WorldObject : public Object, public WorldLocation
             return SummonCreature(id, pos, spwtype, despwtime);
         }
         GameObject* SummonGameObject(uint32 entry, float x, float y, float z, float ang, float rotation0, float rotation1, float rotation2, float rotation3, uint32 respawnTime);
-        Creature*   SummonTrigger(float x, float y, float z, float ang, uint32 dur, CreatureAI * (*GetAI)(Creature*) = NULL);
+        Creature* SummonTrigger(float x, float y, float z, float ang, uint32 dur, CreatureAI * (*GetAI)(Creature*) = NULL);
 
-        Creature*   FindNearestCreature(uint32 entry, float range, bool alive = true);
+        Creature* FindNearestCreature(uint32 entry, float range, bool alive = true);
         GameObject* FindNearestGameObject(uint32 entry, float range);
         GameObject* FindNearestChair(float range);
 
@@ -1049,18 +1050,9 @@ class WorldObject : public Object, public WorldLocation
         }
         void setActive(bool isActiveObject);
         void SetWorldObject(bool apply);
-        template<class NOTIFIER> void VisitNearbyObject(const float& radius, NOTIFIER& notifier) const
-        {
-            GetMap()->VisitAll(GetPositionX(), GetPositionY(), radius, notifier);
-        }
-        template<class NOTIFIER> void VisitNearbyGridObject(const float& radius, NOTIFIER& notifier) const
-        {
-            GetMap()->VisitGrid(GetPositionX(), GetPositionY(), radius, notifier);
-        }
-        template<class NOTIFIER> void VisitNearbyWorldObject(const float& radius, NOTIFIER& notifier) const
-        {
-            GetMap()->VisitWorld(GetPositionX(), GetPositionY(), radius, notifier);
-        }
+        template<class NOTIFIER> void VisitNearbyObject(float const& radius, NOTIFIER& notifier) const { if (IsInWorld()) GetMap()->VisitAll(GetPositionX(), GetPositionY(), radius, notifier); }
+        template<class NOTIFIER> void VisitNearbyGridObject(float const& radius, NOTIFIER& notifier) const { if (IsInWorld()) GetMap()->VisitGrid(GetPositionX(), GetPositionY(), radius, notifier); }
+        template<class NOTIFIER> void VisitNearbyWorldObject(float const& radius, NOTIFIER& notifier) const { if (IsInWorld()) GetMap()->VisitWorld(GetPositionX(), GetPositionY(), radius, notifier); }
 
         uint32 m_groupLootTimer;                            // (msecs)timer used for group loot
         uint64 lootingGroupLeaderGUID;                      // used to find group which is looting corpse

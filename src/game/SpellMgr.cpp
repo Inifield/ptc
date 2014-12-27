@@ -285,9 +285,7 @@ bool IsPassiveSpell(uint32 spellId)
 
 bool IsPassiveSpell(SpellEntry const* spellInfo)
 {
-    if (spellInfo->Attributes & SPELL_ATTR_PASSIVE)
-        return true;
-    return false;
+   return (spellInfo->Attributes & SPELL_ATTR_PASSIVE) != 0;
 }
 
 bool IsAutocastableSpell(uint32 spellId)
@@ -1235,8 +1233,8 @@ bool SpellMgr::IsSpellProcEventCanTriggeredBy(SpellProcEventEntry const * spellP
         if (!procSpell)
             return false;
 
-        SkillLineAbilityMap::const_iterator lower = spellmgr.GetBeginSkillLineAbilityMap(procSpell->Id);
-        SkillLineAbilityMap::const_iterator upper = spellmgr.GetEndSkillLineAbilityMap(procSpell->Id);
+        SkillLineAbilityMap::const_iterator lower = sSpellMgr.GetBeginSkillLineAbilityMap(procSpell->Id);
+        SkillLineAbilityMap::const_iterator upper = sSpellMgr.GetEndSkillLineAbilityMap(procSpell->Id);
 
         bool found = false;
         for (SkillLineAbilityMap::const_iterator _spell_idx = lower; _spell_idx != upper; ++_spell_idx)
@@ -1383,7 +1381,6 @@ void SpellMgr::LoadSpellGroups()
     QueryResult_AutoPtr result = WorldDatabase.Query("SELECT id, spell_id FROM spell_group");
     if ( !result )
     {
-        sLog.outString();
         sLog.outString( ">> Loaded %u spell group definitions", count );
         return;
     }
@@ -1451,7 +1448,6 @@ void SpellMgr::LoadSpellGroups()
         }
     }
 
-    sLog.outString();
     sLog.outString( ">> Loaded %u spell group definitions", count );
 }
 
@@ -1465,7 +1461,6 @@ void SpellMgr::LoadSpellGroupStackRules()
     QueryResult_AutoPtr result = WorldDatabase.Query("SELECT group_id, stack_rule FROM spell_group_stack_rules");
     if ( !result )
     {
-        sLog.outString();
         sLog.outString( ">> Loaded %u spell group stack rules", count );
         return;
     }
@@ -1496,17 +1491,47 @@ void SpellMgr::LoadSpellGroupStackRules()
     }
     while ( result->NextRow() );
 
-    sLog.outString();
     sLog.outString( ">> Loaded %u spell group stack rules", count );
 }
 
 void SpellMgr::LoadSpellThreats()
 {
-    sSpellThreatStore.Free();                               // for reload
+    mSpellThreatMap.clear();                                // need for reload case
 
-    sSpellThreatStore.Load();
+    uint32 count = 0;
 
-    sLog.outString(">> Loaded %u aggro generating spells", sSpellThreatStore.RecordCount);
+    //                                                0      1        2       3
+    QueryResult_AutoPtr result = WorldDatabase.Query("SELECT entry, flatMod, pctMod, apPctMod FROM spell_threat");
+
+    if (!result)
+    {
+        sLog.outString( ">> Loaded %u aggro generating spells", count);
+        return;
+    }
+
+    do
+    {
+        Field* fields = result->Fetch();
+
+        uint32 entry = fields[0].GetUInt32();
+
+        if (!sSpellStore.LookupEntry(entry))
+        {
+            sLog.outErrorDb("Spell %u listed in `spell_threat` does not exist", entry);
+            continue;
+        }
+
+        SpellThreatEntry ste;
+        ste.flatMod  = fields[1].GetInt16();
+        ste.pctMod   = fields[2].GetFloat();
+        ste.apPctMod = fields[3].GetFloat();
+
+        mSpellThreatMap[entry] = ste;
+        count++;
+    }
+    while (result->NextRow());
+
+    sLog.outString(">> Loaded %u SpellThreatEntries.", count);
 }
 
 void SpellMgr::LoadSpellEnchantProcData()
@@ -1519,9 +1544,6 @@ void SpellMgr::LoadSpellEnchantProcData()
     QueryResult_AutoPtr result = WorldDatabase.Query("SELECT entry, customChance, PPMChance, procEx FROM spell_enchant_proc_data");
     if (!result)
     {
-
-
-
         sLog.outString(">> Loaded %u spell enchant proc event conditions", count);
         return;
     }
@@ -1529,7 +1551,6 @@ void SpellMgr::LoadSpellEnchantProcData()
     do
     {
         Field* fields = result->Fetch();
-
 
         uint32 enchantId = fields[0].GetUInt32();
 
@@ -2259,8 +2280,8 @@ void SpellMgr::LoadSpellScriptTarget()
         {
             if (spellInfo->EffectImplicitTargetA[j] == TARGET_UNIT_NEARBY_ENTRY || spellInfo->EffectImplicitTargetA[j] != TARGET_UNIT_CASTER && spellInfo->EffectImplicitTargetB[j] == TARGET_UNIT_NEARBY_ENTRY)
             {
-                SpellScriptTarget::const_iterator lower = spellmgr.GetBeginSpellScriptTarget(spellInfo->Id);
-                SpellScriptTarget::const_iterator upper = spellmgr.GetEndSpellScriptTarget(spellInfo->Id);
+                SpellScriptTarget::const_iterator lower = sSpellMgr.GetBeginSpellScriptTarget(spellInfo->Id);
+                SpellScriptTarget::const_iterator upper = sSpellMgr.GetEndSpellScriptTarget(spellInfo->Id);
                 if (lower == upper)
                 {
                     sLog.outErrorDb("Spell (ID: %u) has effect EffectImplicitTargetA/EffectImplicitTargetB = %u (TARGET_UNIT_NEARBY_ENTRY), but does not have record in spell_script_target",spellInfo->Id,TARGET_UNIT_NEARBY_ENTRY);
@@ -2571,7 +2592,11 @@ void SpellMgr::LoadSpellCustomAttr()
         case 7922:                        // Charge stun
         case 25274:                       // Intercept stun
         case 2094:                        // Blind
+        case 20424:                       // Seal of Command Trigger
             spellInfo->speed = 590.0f;    // Minor delay
+            break;
+        case 32220:                       // Judgement of Blood
+            spellInfo->speed = 5.0f;      // Minor delay
             break;
         case 1833:                        // Cheap Shot
             spellInfo->speed = 1230.0f;   // Tiny delay
@@ -2647,6 +2672,11 @@ void SpellMgr::LoadSpellCustomAttr()
             break;
         case 47129: // Totemic Beacon
             spellInfo->EffectImplicitTargetA[1] = TARGET_NONE;
+            break;
+        case 40255: // Molten Flame
+            // Molten Fire triggers itself, resulting in infinite cycling,
+            // memory eating and a non-avoidable crash
+            spellInfo->Effect[1] = 0;
             break;
         default:
             break;
@@ -2905,7 +2935,7 @@ bool IsSpellAllowedInLocation(SpellEntry const* spellInfo, uint32 map_id, uint32
     // elixirs (all area dependent elixirs have family SPELLFAMILY_POTION, use this for speedup)
     if (spellInfo->SpellFamilyName == SPELLFAMILY_POTION)
     {
-        /*if (uint32 mask = spellmgr.GetSpellElixirSpecific(spellInfo->Id))
+        /*if (uint32 mask = sSpellMgr.GetSpellElixirSpecific(spellInfo->Id))
         {
             if (mask & SPELL_BATTLE_ELIXIR)
             {

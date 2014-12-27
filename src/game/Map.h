@@ -44,7 +44,6 @@ class Object;
 class WorldObject;
 class TempSummon;
 class Player;
-class CreatureFormation;
 class CreatureGroup;
 struct ScriptInfo;
 struct ScriptAction;
@@ -254,8 +253,7 @@ typedef UNORDERED_MAP<Creature*, CreatureMover> CreatureMoveList;
 #define DEFAULT_HEIGHT_SEARCH     50.0f                     // default search distance to find height at nearby locations
 #define MIN_UNLOAD_DELAY      1                             // immediate unload
 
-typedef std::map<uint32/*leaderDBGUID*/, CreatureFormation*>        CreatureFormationHolderType;
-typedef std::map<uint32/*groupId*/, CreatureGroup*>            CreatureGroupHolderType;
+typedef std::map<uint32/*leaderDBGUID*/, CreatureGroup*>        CreatureGroupHolderType;
 
 class Map : public GridRefManager<NGridType>, public Oregon::ObjectLevelLockable<Map, ACE_Thread_Mutex>
 {
@@ -273,18 +271,18 @@ class Map : public GridRefManager<NGridType>, public Oregon::ObjectLevelLockable
             return false;
         }
 
-        virtual bool Add(Player*);
-        virtual void Remove(Player*, bool);
-        template<class T> void Add(T*);
-        template<class T> void Remove(T*, bool);
+        virtual bool AddToMap(Player*);
+        virtual void RemoveFromMap(Player*, bool);
+        template<class T> void AddToMap(T*);
+        template<class T> void RemoveFromMap(T*, bool);
 
         virtual void Update(const uint32&);
 
         /*
-        void MessageBroadcast(Player* , WorldPacket *, bool to_self);
-        void MessageBroadcast(WorldObject *, WorldPacket *);
-        void MessageDistBroadcast(Player* , WorldPacket *, float dist, bool to_self, bool own_team_only = false);
-        void MessageDistBroadcast(WorldObject *, WorldPacket *, float dist);
+        void MessageBroadcast(Player* , WorldPacket* , bool to_self);
+        void MessageBroadcast(WorldObject *, WorldPacket* );
+        void MessageDistBroadcast(Player* , WorldPacket* , float dist, bool to_self, bool own_team_only = false);
+        void MessageDistBroadcast(WorldObject *, WorldPacket* , float dist);
         */
 
         float GetVisibilityDistance() const
@@ -499,7 +497,6 @@ class Map : public GridRefManager<NGridType>, public Oregon::ObjectLevelLockable
         template<class NOTIFIER> void VisitAll(const float& x, const float& y, float radius, NOTIFIER& notifier);
         template<class NOTIFIER> void VisitWorld(const float& x, const float& y, float radius, NOTIFIER& notifier);
         template<class NOTIFIER> void VisitGrid(const float& x, const float& y, float radius, NOTIFIER& notifier);
-        CreatureFormationHolderType CreatureFormationHolder;
         CreatureGroupHolderType CreatureGroupHolder;
 
         void UpdateIteratorBack(Player* player);
@@ -665,8 +662,8 @@ class InstanceMap : public Map
     public:
         InstanceMap(uint32 id, time_t, uint32 InstanceId, DungeonDifficulties SpawnMode, Map* _parent);
         ~InstanceMap();
-        bool Add(Player*);
-        void Remove(Player*, bool);
+        bool AddToMap(Player*);
+        void RemoveFromMap(Player*, bool);
         void Update(const uint32&);
         void CreateInstanceData(bool load);
         bool Reset(uint8 method);
@@ -699,8 +696,8 @@ class BattleGroundMap : public Map
         BattleGroundMap(uint32 id, time_t, uint32 InstanceId, Map* _parent);
         ~BattleGroundMap();
 
-        bool Add(Player*);
-        void Remove(Player*, bool);
+        bool AddToMap(Player*);
+        void RemoveFromMap(Player*, bool);
         bool CanEnter(Player* player);
         void SetUnload();
         void RemoveAllPlayers();

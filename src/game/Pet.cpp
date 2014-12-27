@@ -169,7 +169,7 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petentry, uint32 petnumber, bool c
         return false;
 
     Map* map = owner->GetMap();
-    uint32 guid = objmgr.GenerateLowGuid(HIGHGUID_PET);
+    uint32 guid = sObjectMgr.GenerateLowGuid(HIGHGUID_PET);
     uint32 pet_number = fields[0].GetUInt32();
     if (!Create(guid, map, petentry, pet_number))
         return false;
@@ -190,10 +190,10 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petentry, uint32 petnumber, bool c
     SetUInt32Value(UNIT_FIELD_FACTIONTEMPLATE, owner->getFaction());
     SetUInt32Value(UNIT_CREATED_BY_SPELL, summon_spell_id);
 
-    CreatureInfo const* cinfo = GetCreatureInfo();
+    CreatureInfo const* cinfo = GetCreatureTemplate();
     if (cinfo->type == CREATURE_TYPE_CRITTER)
     {
-        map->Add(ToCreature());
+        map->AddToMap(ToCreature());
         return true;
     }
 
@@ -308,7 +308,7 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petentry, uint32 petnumber, bool c
     }
 
     owner->SetMinion(this, true);
-    map->Add(ToCreature());
+    map->AddToMap(ToCreature());
 
     uint32 timediff = (time(NULL) - fields[18].GetUInt32());
     _LoadAuras(timediff);
@@ -367,7 +367,7 @@ void Pet::SavePetToDB(PetSaveMode mode)
             RemoveAllAuras();
 
             //only alive hunter pets get auras saved, the others don't
-            if (!(getPetType() == HUNTER_PET && isAlive()))
+            if (!(getPetType() == HUNTER_PET && IsAlive()))
                 m_Auras.clear();
         }
     default:
@@ -622,7 +622,7 @@ void Pet::LooseHappiness()
     if (curValue <= 0)
         return;
     int32 addvalue = (140 >> GetLoyaltyLevel()) * 125;      //value is 70/35/17/8/4 (per min) * 1000 / 8 (timer 7.5 secs)
-    if (isInCombat())                                        //we know in combat happiness fades faster, multiplier guess
+    if (IsInCombat())                                        //we know in combat happiness fades faster, multiplier guess
         addvalue = int32(addvalue * 1.5);
     ModifyPower(POWER_HAPPINESS, -addvalue);
 }
@@ -727,14 +727,14 @@ bool Pet::CanTakeMoreActiveSpells(uint32 spellid)
     if (IsPassiveSpell(spellid))
         return true;
 
-    chainstartstore[0] = spellmgr.GetFirstSpellInChain(spellid);
+    chainstartstore[0] = sSpellMgr.GetFirstSpellInChain(spellid);
 
     for (PetSpellMap::iterator itr = m_spells.begin(); itr != m_spells.end(); ++itr)
     {
         if (IsPassiveSpell(itr->first))
             continue;
 
-        uint32 chainstart = spellmgr.GetFirstSpellInChain(itr->first);
+        uint32 chainstart = sSpellMgr.GetFirstSpellInChain(itr->first);
 
         uint8 x;
 
@@ -767,8 +767,8 @@ int32 Pet::GetTPForSpell(uint32 spellid)
 {
     uint32 basetrainp = 0;
 
-    SkillLineAbilityMap::const_iterator lower = spellmgr.GetBeginSkillLineAbilityMap(spellid);
-    SkillLineAbilityMap::const_iterator upper = spellmgr.GetEndSkillLineAbilityMap(spellid);
+    SkillLineAbilityMap::const_iterator lower = sSpellMgr.GetBeginSkillLineAbilityMap(spellid);
+    SkillLineAbilityMap::const_iterator upper = sSpellMgr.GetEndSkillLineAbilityMap(spellid);
     for (SkillLineAbilityMap::const_iterator _spell_idx = lower; _spell_idx != upper; ++_spell_idx)
     {
         if (!_spell_idx->second->reqtrainpoints)
@@ -779,17 +779,17 @@ int32 Pet::GetTPForSpell(uint32 spellid)
     }
 
     uint32 spenttrainp = 0;
-    uint32 chainstart = spellmgr.GetFirstSpellInChain(spellid);
+    uint32 chainstart = sSpellMgr.GetFirstSpellInChain(spellid);
 
     for (PetSpellMap::iterator itr = m_spells.begin(); itr != m_spells.end(); ++itr)
     {
         if (itr->second.state == PETSPELL_REMOVED)
             continue;
 
-        if (spellmgr.GetFirstSpellInChain(itr->first) == chainstart)
+        if (sSpellMgr.GetFirstSpellInChain(itr->first) == chainstart)
         {
-            SkillLineAbilityMap::const_iterator _lower = spellmgr.GetBeginSkillLineAbilityMap(itr->first);
-            SkillLineAbilityMap::const_iterator _upper = spellmgr.GetEndSkillLineAbilityMap(itr->first);
+            SkillLineAbilityMap::const_iterator _lower = sSpellMgr.GetBeginSkillLineAbilityMap(itr->first);
+            SkillLineAbilityMap::const_iterator _upper = sSpellMgr.GetEndSkillLineAbilityMap(itr->first);
 
             for (SkillLineAbilityMap::const_iterator _spell_idx2 = _lower; _spell_idx2 != _upper; ++_spell_idx2)
             {
@@ -848,7 +848,7 @@ void Pet::GivePetXP(uint32 xp)
     if (xp < 1)
         return;
 
-    if (!isAlive())
+    if (!IsAlive())
         return;
 
     uint32 level = getLevel();
@@ -895,10 +895,10 @@ bool Pet::CreateBaseAtCreature(Creature* creature)
         sLog.outError("CRITICAL ERROR: NULL pointer parsed into CreateBaseAtCreature()");
         return false;
     }
-    uint32 guid = objmgr.GenerateLowGuid(HIGHGUID_PET);
+    uint32 guid = sObjectMgr.GenerateLowGuid(HIGHGUID_PET);
 
     sLog.outDebug("Create pet");
-    uint32 pet_number = objmgr.GeneratePetNumber();
+    uint32 pet_number = sObjectMgr.GeneratePetNumber();
     if (!Create(guid, creature->GetMap(), creature->GetEntry(), pet_number))
         return false;
 
@@ -911,7 +911,7 @@ bool Pet::CreateBaseAtCreature(Creature* creature)
         return false;
     }
 
-    CreatureInfo const* cinfo = GetCreatureInfo();
+    CreatureInfo const* cinfo = GetCreatureTemplate();
     if (!cinfo)
     {
         sLog.outError("CreateBaseAtCreature() failed, creatureInfo is missing!");
@@ -929,7 +929,7 @@ bool Pet::CreateBaseAtCreature(Creature* creature)
     SetUInt32Value(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE);
     SetUInt32Value(UNIT_NPC_FLAGS, 0);
 
-    CreatureFamilyEntry const* cFamily = sCreatureFamilyStore.LookupEntry(creature->GetCreatureInfo()->family);
+    CreatureFamilyEntry const* cFamily = sCreatureFamilyStore.LookupEntry(creature->GetCreatureTemplate()->family);
     if (char* familyname = cFamily->Name[sWorld.GetDefaultDbcLocale()])
         SetName(familyname);
     else
@@ -951,7 +951,7 @@ bool Pet::CreateBaseAtCreature(Creature* creature)
 
 bool Guardian::InitStatsForLevel(uint32 petlevel)
 {
-    CreatureInfo const* cinfo = GetCreatureInfo();
+    CreatureInfo const* cinfo = GetCreatureTemplate();
     ASSERT(cinfo);
 
     SetLevel(petlevel);
@@ -1016,7 +1016,7 @@ bool Guardian::InitStatsForLevel(uint32 petlevel)
         SetModifierValue(UnitMods(UNIT_MOD_RESISTANCE_START + i), BASE_VALUE, float(createResistance[i]));
 
     //health, mana, armor and resistance
-    PetLevelInfo const* pInfo = objmgr.GetPetLevelInfo(creature_ID, petlevel);
+    PetLevelInfo const* pInfo = sObjectMgr.GetPetLevelInfo(creature_ID, petlevel);
     if (pInfo)                                      // exist in DB
     {
         SetCreateHealth(pInfo->health);
@@ -1065,6 +1065,8 @@ bool Guardian::InitStatsForLevel(uint32 petlevel)
                     }
                 case CLASS_MAGE:
                     {
+                        ApplySpellImmune(0, IMMUNITY_SCHOOL, SPELL_SCHOOL_MASK_FROST, true);
+
                         //40% damage bonus of mage's frost damage
                         float val = m_owner->GetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_POS + SPELL_SCHOOL_FROST) * 0.4;
                         if (val < 0)
@@ -1099,17 +1101,6 @@ bool Guardian::InitStatsForLevel(uint32 petlevel)
         {
             switch (GetEntry())
             {
-
-            case 510: // mage Water Elemental
-                {
-                    //30% damage bonus of mage's spell power
-                    float val = m_owner->GetUInt32Value(PLAYER_FIELD_MOD_DAMAGE_DONE_POS + SPELL_DAMAGE_CLASS_MAGIC) * 0.3;
-                    if (val < 0)
-                        val = 0;
-                    SetBonusDamage(int32(val));
-                    ApplySpellImmune(0, IMMUNITY_SCHOOL, SPELL_SCHOOL_MASK_FROST, true);
-                    break;
-                }
             case 1964: //force of nature
                 {
                     if (!pInfo)
@@ -1120,6 +1111,8 @@ bool Guardian::InitStatsForLevel(uint32 petlevel)
                 }
             case 15352: //earth elemental 36213
                 {
+                    ApplySpellImmune(0, IMMUNITY_SCHOOL, SPELL_SCHOOL_MASK_NATURE, true);
+
                     if (!pInfo)
                         SetCreateHealth(100 + 120 * petlevel);
                     SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, float(petlevel - (petlevel / 4)));
@@ -1128,6 +1121,8 @@ bool Guardian::InitStatsForLevel(uint32 petlevel)
                 }
             case 15438: //fire elemental
                 {
+                    ApplySpellImmune(0, IMMUNITY_SCHOOL, SPELL_SCHOOL_MASK_FIRE, true);
+
                     if (!pInfo)
                     {
                         SetCreateHealth(40 * petlevel);
@@ -1198,7 +1193,7 @@ bool Pet::HaveInDiet(ItemPrototype const* item) const
     if (!item || !item->FoodType)
         return false;
 
-    CreatureInfo const* cInfo = GetCreatureInfo();
+    CreatureInfo const* cInfo = GetCreatureTemplate();
     if (!cInfo)
         return false;
 
@@ -1528,13 +1523,13 @@ bool Pet::addSpell(uint16 spell_id, uint16 active /*= ACT_DECIDE*/, PetSpellStat
     else
         newspell.active = active;
 
-    uint32 chainstart = spellmgr.GetFirstSpellInChain(spell_id);
+    uint32 chainstart = sSpellMgr.GetFirstSpellInChain(spell_id);
 
     for (PetSpellMap::iterator itr2 = m_spells.begin(); itr2 != m_spells.end(); ++itr2)
     {
         if (itr2->second.state == PETSPELL_REMOVED) continue;
 
-        if (spellmgr.GetFirstSpellInChain(itr2->first) == chainstart)
+        if (sSpellMgr.GetFirstSpellInChain(itr2->first) == chainstart)
         {
             newspell.active = itr2->second.active;
 
@@ -1594,7 +1589,7 @@ void Pet::InitPetCreateSpells()
     m_spells.clear();
 
     int32 usedtrainpoints = 0, petspellid;
-    PetCreateSpellEntry const* CreateSpells = objmgr.GetPetCreateSpellEntry(GetEntry());
+    PetCreateSpellEntry const* CreateSpells = sObjectMgr.GetPetCreateSpellEntry(GetEntry());
     if (CreateSpells)
     {
         Unit* owner = GetOwner();
@@ -1628,8 +1623,8 @@ void Pet::InitPetCreateSpells()
             if (petspellid)
                 ToggleAutocast(petspellid, true);
 
-            SkillLineAbilityMap::const_iterator lower = spellmgr.GetBeginSkillLineAbilityMap(learn_spellproto->EffectTriggerSpell[0]);
-            SkillLineAbilityMap::const_iterator upper = spellmgr.GetEndSkillLineAbilityMap(learn_spellproto->EffectTriggerSpell[0]);
+            SkillLineAbilityMap::const_iterator lower = sSpellMgr.GetBeginSkillLineAbilityMap(learn_spellproto->EffectTriggerSpell[0]);
+            SkillLineAbilityMap::const_iterator upper = sSpellMgr.GetEndSkillLineAbilityMap(learn_spellproto->EffectTriggerSpell[0]);
 
             for (SkillLineAbilityMap::const_iterator _spell_idx = lower; _spell_idx != upper; ++_spell_idx)
             {
@@ -1741,7 +1736,7 @@ bool Pet::IsPermanentPetFor(Player* owner)
         switch (owner->getClass())
         {
         case CLASS_WARLOCK:
-            return GetCreatureInfo()->type == CREATURE_TYPE_DEMON;
+            return GetCreatureTemplate()->type == CREATURE_TYPE_DEMON;
         default:
             return false;
         }
@@ -1775,7 +1770,7 @@ bool Pet::Create(uint32 guidlow, Map* map, uint32 Entry, uint32 pet_number)
 
 void Pet::InitPetAuras(const uint32 Entry)
 {
-    CreatureInfo const* cInfo = objmgr.GetCreatureTemplate(Entry);
+    CreatureInfo const* cInfo = sObjectMgr.GetCreatureTemplate(Entry);
     if (!cInfo)
         return;
 
@@ -1918,7 +1913,7 @@ bool Pet::HasSpell(uint32 spell) const
 // Get all passive spells in our skill line
 void Pet::LearnPetPassives()
 {
-    CreatureInfo const* cInfo = GetCreatureInfo();
+    CreatureInfo const* cInfo = GetCreatureTemplate();
     if (!cInfo)
         return;
 
@@ -1966,7 +1961,7 @@ void Pet::CastPetAura(PetAura const* aura)
 
     if (auraId == 35696)                                       // Demonic Knowledge
     {
-        int32 basePoints = CalculatePctF(aura->GetDamage(), GetStat(STAT_STAMINA) + GetStat(STAT_INTELLECT));
+        int32 basePoints = CalculatePct(aura->GetDamage(), GetStat(STAT_STAMINA) + GetStat(STAT_INTELLECT));
         CastCustomSpell(this, auraId, &basePoints, NULL, NULL, true);
     }
     else

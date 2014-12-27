@@ -277,7 +277,7 @@ void WorldSession::HandleItemQuerySingleOpcode(WorldPacket& recv_data)
 
     sLog.outDetail("STORAGE: Item Query = %u", item);
 
-    ItemPrototype const* pProto = objmgr.GetItemPrototype(item);
+    ItemPrototype const* pProto = sObjectMgr.GetItemPrototype(item);
     if (pProto)
     {
         std::string Name        = pProto->Name1;
@@ -286,7 +286,7 @@ void WorldSession::HandleItemQuerySingleOpcode(WorldPacket& recv_data)
         int loc_idx = GetSessionDbLocaleIndex();
         if (loc_idx >= 0)
         {
-            ItemLocale const* il = objmgr.GetItemLocale(pProto->ItemId);
+            ItemLocale const* il = sObjectMgr.GetItemLocale(pProto->ItemId);
             if (il)
             {
                 if (il->Name.size() > size_t(loc_idx) && !il->Name[loc_idx].empty())
@@ -685,7 +685,7 @@ void WorldSession::HandleListInventoryOpcode(WorldPacket& recv_data)
 
     recv_data >> guid;
 
-    if (!GetPlayer()->isAlive())
+    if (!GetPlayer()->IsAlive())
         return;
 
     sLog.outDebug("WORLD: Recvd CMSG_LIST_INVENTORY");
@@ -739,7 +739,7 @@ void WorldSession::SendListInventory(uint64 vendorguid)
     {
         if (VendorItem const* crItem = vItems->GetItem(i))
         {
-            if (ItemPrototype const* pProto = objmgr.GetItemPrototype(crItem->item))
+            if (ItemPrototype const* pProto = sObjectMgr.GetItemPrototype(crItem->item))
             {
                 if ((pProto->AllowableClass & _player->getClassMask()) == 0 && pProto->Bonding == BIND_WHEN_PICKED_UP && !_player->isGameMaster())
                     continue;
@@ -832,7 +832,7 @@ void WorldSession::HandleBuyBankSlotOpcode(WorldPacket& recvPacket)
 
     // cheating protection
     /* not critical if "cheated", and check skip allow by slots in bank windows open by .bank command.
-    Creature *pCreature = GetPlayer()->GetNPCIfCanInteractWith(guid, UNIT_NPC_FLAG_BANKER);
+    Creature* pCreature = GetPlayer()->GetNPCIfCanInteractWith(guid, UNIT_NPC_FLAG_BANKER);
     if (!pCreature)
     {
         sLog.outDebug("WORLD: HandleBuyBankSlotOpcode - Unit (GUID: %u) not found or you can't interact with him.", uint32(GUID_LOPART(guid)));
@@ -939,7 +939,7 @@ void WorldSession::HandleAutoStoreBankItemOpcode(WorldPacket& recvPacket)
 
 void WorldSession::HandleSetAmmoOpcode(WorldPacket& recv_data)
 {
-    if (!GetPlayer()->isAlive())
+    if (!GetPlayer()->IsAlive())
     {
         GetPlayer()->SendEquipError(EQUIP_ERR_YOU_ARE_DEAD, NULL, NULL);
         return;
@@ -985,7 +985,7 @@ void WorldSession::HandleItemNameQueryOpcode(WorldPacket& recv_data)
     recv_data.read_skip<uint64>();                          // guid
 
     sLog.outDebug("WORLD: CMSG_ITEM_NAME_QUERY %u", itemid);
-    ItemPrototype const* pProto = objmgr.GetItemPrototype(itemid);
+    ItemPrototype const* pProto = sObjectMgr.GetItemPrototype(itemid);
     if (pProto)
     {
         std::string Name;
@@ -994,7 +994,7 @@ void WorldSession::HandleItemNameQueryOpcode(WorldPacket& recv_data)
         int loc_idx = GetSessionDbLocaleIndex();
         if (loc_idx >= 0)
         {
-            ItemLocale const* il = objmgr.GetItemLocale(pProto->ItemId);
+            ItemLocale const* il = sObjectMgr.GetItemLocale(pProto->ItemId);
             if (il)
             {
                 if (il->Name.size() > size_t(loc_idx) && !il->Name[loc_idx].empty())
@@ -1011,7 +1011,7 @@ void WorldSession::HandleItemNameQueryOpcode(WorldPacket& recv_data)
     }
     // This is a BS check, there are lots of items listed in Item.dbc that do not even exist on official -- so we can NEVER get the data for them.
     // If you *really* want to spam your error log -- uncomment this.
-    /*    else
+    /*   else
         {
             // listed in dbc or not expected to exist unknown item
             if (sItemStore.LookupEntry(itemid))

@@ -761,6 +761,7 @@ enum PlayerDelayedOperations
     DELAYED_SPELL_CAST_DESERTER = 0x04,
     DELAYED_BG_MOUNT_RESTORE    = 0x08,                     // Flag to restore mount state after teleport from BG
     DELAYED_BG_TAXI_RESTORE     = 0x10,                     // Flag to restore taxi state after teleport from BG
+    DELAYED_BG_GROUP_RESTORE    = 0x20,
     DELAYED_END
 };
 
@@ -1150,7 +1151,7 @@ class Player : public Unit, public GridObject<Player>
         void BuildPlayerChat(WorldPacket* data, uint8 msgtype, const std::string& text, uint32 language) const;
 
         /*********************************************************/
-        /***                    STORAGE SYSTEM                 ***/
+        /***                   STORAGE SYSTEM                 ***/
         /*********************************************************/
 
         void SetVirtualItemSlot(uint8 i, Item* item);
@@ -1163,7 +1164,7 @@ class Player : public Unit, public GridObject<Player>
         Item* GetWeaponForAttack(WeaponAttackType attackType, bool useable = false) const;
         Item* GetShield(bool useable = false) const;
         static uint32 GetAttackBySlot(uint8 slot);        // MAX_ATTACK if not weapon slot
-        std::vector<Item*>& GetItemUpdateQueue()
+        std::vector<Item* >& GetItemUpdateQueue()
         {
             return m_itemUpdateQueue;
         }
@@ -1356,7 +1357,7 @@ class Player : public Unit, public GridObject<Player>
         uint32 m_stableSlots;
 
         /*********************************************************/
-        /***                    GOSSIP SYSTEM                  ***/
+        /***                   GOSSIP SYSTEM                  ***/
         /*********************************************************/
 
         void PrepareGossipMenu(WorldObject* pSource, uint32 menuId = 0);
@@ -1368,7 +1369,7 @@ class Player : public Unit, public GridObject<Player>
         uint32 GetDefaultGossipMenuForSource(WorldObject* pSource);
 
         /*********************************************************/
-        /***                    QUEST SYSTEM                   ***/
+        /***                   QUEST SYSTEM                   ***/
         /*********************************************************/
 
         // Return player level when QuestLevel is dynamic (-1)
@@ -1526,7 +1527,7 @@ class Player : public Unit, public GridObject<Player>
         }
 
         /*********************************************************/
-        /***                   LOAD SYSTEM                     ***/
+        /***                  LOAD SYSTEM                     ***/
         /*********************************************************/
 
         bool LoadFromDB(uint32 guid, SqlQueryHolder* holder);
@@ -1541,7 +1542,7 @@ class Player : public Unit, public GridObject<Player>
         static bool   LoadPositionFromDB(uint32& mapid, float& x, float& y, float& z, float& o, bool& in_flight, uint64 guid);
 
         /*********************************************************/
-        /***                   SAVE SYSTEM                     ***/
+        /***                  SAVE SYSTEM                     ***/
         /*********************************************************/
 
         void SaveToDB();
@@ -1778,6 +1779,7 @@ class Player : public Unit, public GridObject<Player>
         void SendCooldownEvent(SpellEntry const* spellInfo);
         void ProhibitSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs);
         void RemoveSpellCooldown(uint32 spell_id, bool update = false);
+        void SendClearCooldown(uint32 spell_id, Unit* target);
         void RemoveArenaSpellCooldowns();
         void RemoveAllSpellCooldown();
         void _LoadSpellCooldowns(QueryResult_AutoPtr result);
@@ -2192,7 +2194,7 @@ class Player : public Unit, public GridObject<Player>
         void ModifySkillBonus(uint32 skillid, int32 val, bool talent);
 
         /*********************************************************/
-        /***                  PVP SYSTEM                       ***/
+        /***                 PVP SYSTEM                       ***/
         /*********************************************************/
         void UpdateHonorFields();
         bool RewardHonor(Unit* pVictim, uint32 groupsize, float honor = -1, bool pvptoken = false);
@@ -2289,7 +2291,7 @@ class Player : public Unit, public GridObject<Player>
         void SendNotifyLootMoneyRemoved();
 
         /*********************************************************/
-        /***               BATTLEGROUND SYSTEM                 ***/
+        /***              BATTLEGROUND SYSTEM                 ***/
         /*********************************************************/
 
         bool InBattleGround()       const
@@ -2421,7 +2423,7 @@ class Player : public Unit, public GridObject<Player>
         bool CanCaptureTowerPoint();
 
         /*********************************************************/
-        /***               OUTDOOR PVP SYSTEM                  ***/
+        /***              OUTDOOR PVP SYSTEM                  ***/
         /*********************************************************/
 
         OutdoorPvP* GetOutdoorPvP() const;
@@ -2429,7 +2431,7 @@ class Player : public Unit, public GridObject<Player>
         bool IsOutdoorPvPActive();
 
         /*********************************************************/
-        /***                    REST SYSTEM                    ***/
+        /***                   REST SYSTEM                    ***/
         /*********************************************************/
 
         bool isRested() const
@@ -2447,13 +2449,13 @@ class Player : public Unit, public GridObject<Player>
         }
 
         /*********************************************************/
-        /***              ENVIROMENTAL SYSTEM                  ***/
+        /***             ENVIROMENTAL SYSTEM                  ***/
         /*********************************************************/
 
         void EnvironmentalDamage(EnviromentalDamage type, uint32 damage);
 
         /*********************************************************/
-        /***               FLOOD FILTER SYSTEM                 ***/
+        /***              FLOOD FILTER SYSTEM                 ***/
         /*********************************************************/
 
         void UpdateSpeakTime();
@@ -2461,7 +2463,7 @@ class Player : public Unit, public GridObject<Player>
         void ChangeSpeakTime(int utime);
 
         /*********************************************************/
-        /***                 VARIOUS SYSTEMS                   ***/
+        /***                VARIOUS SYSTEMS                   ***/
         /*********************************************************/
         uint32 m_lastFallTime;
         float  m_lastFallZ;
@@ -2496,7 +2498,7 @@ class Player : public Unit, public GridObject<Player>
         void HandleFallDamage(MovementInfo& movementInfo);
         void HandleFallUnderMap();
 
-        void SetClientControl(Unit* target, uint8 allowMove);
+        void SetClientControl(Unit* target, bool allowMove);
 
         void SetMover(Unit* target)
         {
@@ -2665,7 +2667,7 @@ class Player : public Unit, public GridObject<Player>
         void SendCinematicStart(uint32 CinematicSequenceId);
 
         /*********************************************************/
-        /***                 INSTANCE SYSTEM                   ***/
+        /***                INSTANCE SYSTEM                   ***/
         /*********************************************************/
 
         typedef UNORDERED_MAP< uint32 /*mapId*/, InstancePlayerBind > BoundInstancesMap;
@@ -2691,7 +2693,7 @@ class Player : public Unit, public GridObject<Player>
         bool Satisfy(AccessRequirement const*, uint32 target_map, bool report = false);
 
         /*********************************************************/
-        /***                   GROUP SYSTEM                    ***/
+        /***                  GROUP SYSTEM                    ***/
         /*********************************************************/
 
         Group* GetGroupInvite()
@@ -2793,7 +2795,7 @@ class Player : public Unit, public GridObject<Player>
         uint32 m_contestedPvPTimer;
 
         /*********************************************************/
-        /***               BATTLEGROUND SYSTEM                 ***/
+        /***              BATTLEGROUND SYSTEM                 ***/
         /*********************************************************/
 
         /*
@@ -2809,7 +2811,7 @@ class Player : public Unit, public GridObject<Player>
         BGData                    m_bgData;
 
         /*********************************************************/
-        /***                    QUEST SYSTEM                   ***/
+        /***                   QUEST SYSTEM                   ***/
         /*********************************************************/
 
         //We allow only one timed quest active at the same time. Below can then be simple value instead of set.
@@ -2819,7 +2821,7 @@ class Player : public Unit, public GridObject<Player>
         uint32 m_ingametime;
 
         /*********************************************************/
-        /***                   LOAD SYSTEM                     ***/
+        /***                  LOAD SYSTEM                     ***/
         /*********************************************************/
 
         void _LoadActions(QueryResult_AutoPtr result);
@@ -2843,7 +2845,7 @@ class Player : public Unit, public GridObject<Player>
         void _LoadBGData(QueryResult_AutoPtr result);
 
         /*********************************************************/
-        /***                   SAVE SYSTEM                     ***/
+        /***                  SAVE SYSTEM                     ***/
         /*********************************************************/
 
         void _SaveActions();
@@ -2862,7 +2864,7 @@ class Player : public Unit, public GridObject<Player>
         void _SetUpdateBits(UpdateMask* updateMask, Player* target) const;
 
         /*********************************************************/
-        /***              ENVIRONMENTAL SYSTEM                 ***/
+        /***             ENVIRONMENTAL SYSTEM                 ***/
         /*********************************************************/
         void HandleSobering();
         void SendMirrorTimer(MirrorTimerType Type, uint32 MaxValue, uint32 CurrentValue, int32 Regen);
@@ -2871,7 +2873,7 @@ class Player : public Unit, public GridObject<Player>
         int32 getMaxTimer(MirrorTimerType timer);
 
         /*********************************************************/
-        /***                  HONOR SYSTEM                     ***/
+        /***                 HONOR SYSTEM                     ***/
         /*********************************************************/
         time_t m_lastHonorUpdateTime;
 
@@ -3024,13 +3026,13 @@ class Player : public Unit, public GridObject<Player>
         {
             // we should not execute delayed teleports for now dead players but has been alive at teleport
             // because we don't want player's ghost teleported from graveyard
-            return m_bHasDelayedTeleport && (isAlive() || !m_bHasBeenAliveAtDelayedTeleport);
+            return m_bHasDelayedTeleport && (IsAlive() || !m_bHasBeenAliveAtDelayedTeleport);
         }
 
         bool SetDelayedTeleportFlagIfCan()
         {
             m_bHasDelayedTeleport = m_bCanDelayTeleport;
-            m_bHasBeenAliveAtDelayedTeleport = isAlive();
+            m_bHasBeenAliveAtDelayedTeleport = IsAlive();
             return m_bHasDelayedTeleport;
         }
 
@@ -3103,7 +3105,7 @@ template <class T> T Player::ApplySpellMod(uint32 spellId, SpellModOp op, T& bas
             if (mod->op == SPELLMOD_CASTING_TIME  && basevalue >= T(10 * IN_MILLISECONDS) && mod->value <= -100)
                 continue;
 
-            totalpct += CalculatePctF(1.0f, (float)mod->value);
+            totalpct += CalculatePct(1.0f, (float)mod->value);
         }
 
         if (mod->charges > 0)

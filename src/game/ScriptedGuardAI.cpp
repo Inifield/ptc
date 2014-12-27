@@ -66,7 +66,7 @@ void guardAI::UpdateAI(const uint32 diff)
     else GlobalCooldown = 0;
 
     //Buff timer (only buff when we are alive and not in combat
-    if (me->isAlive() && !me->isInCombat())
+    if (me->IsAlive() && !me->IsInCombat())
     {
         if (BuffTimer <= diff)
         {
@@ -174,20 +174,20 @@ void guardAI::DoReplyToTextEmote(uint32 em)
 {
     switch (em)
     {
-    case TEXTEMOTE_KISS:
+    case TEXT_EMOTE_KISS:
         me->HandleEmoteCommand(EMOTE_ONESHOT_BOW);
         break;
-    case TEXTEMOTE_WAVE:
+    case TEXT_EMOTE_WAVE:
         me->HandleEmoteCommand(EMOTE_ONESHOT_WAVE);
         break;
-    case TEXTEMOTE_SALUTE:
+    case TEXT_EMOTE_SALUTE:
         me->HandleEmoteCommand(EMOTE_ONESHOT_SALUTE);
         break;
-    case TEXTEMOTE_SHY:
+    case TEXT_EMOTE_SHY:
         me->HandleEmoteCommand(EMOTE_ONESHOT_FLEX);
         break;
-    case TEXTEMOTE_RUDE:
-    case TEXTEMOTE_CHICKEN:
+    case TEXT_EMOTE_RUDE:
+    case TEXT_EMOTE_CHICKEN:
         me->HandleEmoteCommand(EMOTE_ONESHOT_POINT);
         break;
     }

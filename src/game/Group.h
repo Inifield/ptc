@@ -357,7 +357,7 @@ class Group
         void OfflineReadyCheck();
 
         /*********************************************************/
-        /***                   LOOT SYSTEM                     ***/
+        /***                  LOOT SYSTEM                     ***/
         /*********************************************************/
 
         void SendLootStartRoll(uint32 CountDown, const Roll& r);

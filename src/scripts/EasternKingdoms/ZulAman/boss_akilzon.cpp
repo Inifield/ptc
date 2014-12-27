@@ -169,7 +169,7 @@ struct boss_akilzonAI : public ScriptedAI
         for (uint8 i = 0; i < 8; ++i)
         {
             Unit* bird = Unit::GetUnit(*me, BirdGUIDs[i]);
-            if (bird && bird->isAlive())
+            if (bird && bird->IsAlive())
             {
                 bird->SetVisibility(VISIBILITY_OFF);
                 bird->setDeathState(JUST_DIED);
@@ -203,7 +203,7 @@ struct boss_akilzonAI : public ScriptedAI
             cell.data.Part.reserved = ALL_DISTRICT;
             cell.SetNoCreate();
 
-            std::list<Unit*> tempUnitMap;
+            std::list<Unit* > tempUnitMap;
 
             {
                 Oregon::AnyAoETargetUnitInObjectRangeCheck u_check(me, me, 999);
@@ -262,7 +262,7 @@ struct boss_akilzonAI : public ScriptedAI
         if (StormCount)
         {
             Unit* pTarget = Unit::GetUnit(*me, CloudGUID);
-            if (!pTarget || !pTarget->isAlive())
+            if (!pTarget || !pTarget->IsAlive())
             {
                 EnterEvadeMode();
                 return;

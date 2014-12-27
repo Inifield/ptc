@@ -53,7 +53,7 @@ GM_Ticket* TicketMgr::GetGMTicketByName(const char* name)
     if (!normalizePlayerName(pname))
         return NULL;
 
-    uint64 playerGuid = objmgr.GetPlayerGUIDByName(pname.c_str());
+    uint64 playerGuid = sObjectMgr.GetPlayerGUIDByName(pname.c_str());
     if (!playerGuid)
         return NULL;
 
@@ -102,7 +102,6 @@ void TicketMgr::LoadGMTickets()
     if (!result)
     {
         ticketmgr.InitTicketID();
-        sLog.outString();
         sLog.outString(">> GM Tickets table is empty, no tickets were loaded.");
         return;
     }

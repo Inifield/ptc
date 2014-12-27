@@ -151,11 +151,7 @@ Unit* UnitAI::SelectTarget(SelectAggroTarget targetType, uint32 position, float 
         break;
 
     case SELECT_TARGET_RANDOM:
-        {
-            std::list<Unit*>::iterator itr = targetList.begin();
-            advance(itr, urand(position, targetList.size() - 1));
-            return *itr;
-        }
+        return SelectRandomContainerElement(targetList);
         break;
     }
 
@@ -318,7 +314,7 @@ void SimpleCharmedAI::UpdateAI(const uint32 /*diff*/)
             }
     }
 
-    if (!charmer->isInCombat())
+    if (!charmer->IsInCombat())
         me->GetMotionMaster()->MoveFollow(charmer, PET_FOLLOW_DIST, me->GetFollowAngle());
 
     Unit* target = me->getVictim();

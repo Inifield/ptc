@@ -43,9 +43,9 @@ EndScriptData */
 #define SOUND_AKAMA_LEAVE     11390
 
 // Self explanatory
-const char*  SAY_KILL1        = "Who shall be next to taste my blades?!";
+const char* SAY_KILL1        = "Who shall be next to taste my blades?!";
 #define SOUND_KILL1           11473
-const char*  SAY_KILL2        = "This is too easy!";
+const char* SAY_KILL2        = "This is too easy!";
 #define SOUND_KILL2           11472
 
 // I think I'll fly now and let my subordinates take you on
@@ -398,7 +398,7 @@ struct boss_illidan_stormrageAI : public ScriptedAI
 
     void SummonedCreatureDespawn(Creature* summon)
     {
-        if (summon->GetCreatureInfo()->Entry == FLAME_OF_AZZINOTH)
+        if (summon->GetCreatureTemplate()->Entry == FLAME_OF_AZZINOTH)
         {
             for (uint8 i = 0; i < 2; ++i)
                 if (summon->GetGUID() == FlameGUID[i])
@@ -932,7 +932,7 @@ struct flame_of_azzinothAI : public ScriptedAI
                 DoCast(me, SPELL_FLAME_ENRAGE, true);
                 DoResetThreat();
                 Unit* pTarget = SelectUnit(SELECT_TARGET_RANDOM, 0);
-                if (pTarget && pTarget->isAlive())
+                if (pTarget && pTarget->IsAlive())
                 {
                     me->AddThreat(me->getVictim(), 5000000.0f);
                     AttackStart(me->getVictim());
@@ -1860,7 +1860,7 @@ void boss_illidan_stormrageAI::Reset()
     {
         if (GETCRE(Akama, AkamaGUID))
         {
-            if (!Akama->isAlive())
+            if (!Akama->IsAlive())
                 Akama->Respawn();
             else
             {
@@ -2182,7 +2182,7 @@ void boss_illidan_stormrageAI::EnterPhase(PhaseIllidan NextPhase)
     if (MaievGUID)
     {
         GETCRE(Maiev, MaievGUID);
-        if (Maiev && Maiev->isAlive())
+        if (Maiev && Maiev->IsAlive())
             Maiev->AI()->DoAction(NextPhase);
     }
     Phase = NextPhase;

@@ -63,7 +63,7 @@ struct boss_void_reaverAI : public ScriptedAI
 
         Enraged = false;
 
-        if (pInstance && me->isAlive())
+        if (pInstance && me->IsAlive())
             pInstance->SetData(DATA_VOIDREAVEREVENT, NOT_STARTED);
     }
 
@@ -132,7 +132,7 @@ struct boss_void_reaverAI : public ScriptedAI
             }
             Unit* pTarget = NULL;
             std::list<HostileReference*> t_list = me->getThreatManager().getThreatList();
-            std::vector<Unit*> target_list;
+            std::vector<Unit* > target_list;
             for (std::list<HostileReference*>::iterator itr = t_list.begin(); itr != t_list.end(); ++itr)
             {
                 pTarget = Unit::GetUnit(*me, (*itr)->getUnitGuid());
@@ -141,7 +141,7 @@ struct boss_void_reaverAI : public ScriptedAI
                     continue;
 
                 //18 yard radius minimum
-                if (pTarget && pTarget->GetTypeId() == TYPEID_PLAYER && pTarget->isAlive() && pTarget->GetDistance2d(me) >= 18)
+                if (pTarget && pTarget->GetTypeId() == TYPEID_PLAYER && pTarget->IsAlive() && pTarget->GetDistance2d(me) >= 18)
                     target_list.push_back(pTarget);
                 pTarget = NULL;
             }

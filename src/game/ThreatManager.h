@@ -269,7 +269,7 @@ class ThreatManager
             return iCurrentVictim;
         }
 
-        Unit*  getOwner()
+        Unit* getOwner()
         {
             return iOwner;
         }

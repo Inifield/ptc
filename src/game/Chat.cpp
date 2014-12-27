@@ -243,6 +243,7 @@ ChatCommand* ChatHandler::getCommandTable()
         { "threatlist",     SEC_ADMINISTRATOR,  false, &ChatHandler::HandleDebugThreatList,            "", NULL },
         { "setinstdata",    SEC_ADMINISTRATOR,  false, &ChatHandler::HandleSetInstanceDataCommand,     "", NULL },
         { "getinstdata",    SEC_ADMINISTRATOR,  false, &ChatHandler::HandleGetInstanceDataCommand,     "", NULL },
+        { "spellcrashtest", SEC_ADMINISTRATOR,  false, &ChatHandler::HandleSpellCrashTestCommand,      "", NULL },
         { NULL,             0,                  false, NULL,                                           "", NULL }
     };
 
@@ -488,10 +489,7 @@ ChatCommand* ChatHandler::getCommandTable()
         { "unfollow",       SEC_GAMEMASTER,     false, &ChatHandler::HandleNpcUnFollowCommand,         "", NULL },
         { "whisper",        SEC_MODERATOR,      false, &ChatHandler::HandleNpcWhisperCommand,          "", NULL },
         { "yell",           SEC_MODERATOR,      false, &ChatHandler::HandleNpcYellCommand,             "", NULL },
-        { "setdeathstate",  SEC_GAMEMASTER,     false, &ChatHandler::HandleNpcSetDeathStateCommand,    "", NULL },
         { "addtemp",        SEC_GAMEMASTER,     false, &ChatHandler::HandleTempAddSpwCommand,          "", NULL },
-        { "addformation",   SEC_MODERATOR,      false, &ChatHandler::HandleNpcAddFormationCommand,     "", NULL },
-        { "addgroup",       SEC_MODERATOR,      false, &ChatHandler::HandleNpcAddGroupCommand,         "", NULL },
         { "setlink",        SEC_MODERATOR,      false, &ChatHandler::HandleNpcSetLinkCommand,          "", NULL },
 
         //{ @todo fix or remove this commands
@@ -1127,7 +1125,7 @@ bool ChatHandler::isValidChatMessage(const char* message)
                 // read item entry
                 reader.getline(buffer, 256, ':');
 
-                linkedItem = objmgr.GetItemPrototype(atoi(buffer));
+                linkedItem = sObjectMgr.GetItemPrototype(atoi(buffer));
                 if (!linkedItem)
                 {
                     #ifdef OREGON_DEBUG
@@ -1168,7 +1166,7 @@ bool ChatHandler::isValidChatMessage(const char* message)
                     c = reader.peek();
                 }
 
-                linkedQuest = objmgr.GetQuestTemplate(questid);
+                linkedQuest = sObjectMgr.GetQuestTemplate(questid);
 
                 if (!linkedQuest)
                 {
@@ -1276,8 +1274,8 @@ bool ChatHandler::isValidChatMessage(const char* message)
                     if (linkedSpell->Attributes & SPELL_ATTR_TRADESPELL)
                     {
                         // lookup skillid
-                        SkillLineAbilityMap::const_iterator lower = spellmgr.GetBeginSkillLineAbilityMap(linkedSpell->Id);
-                        SkillLineAbilityMap::const_iterator upper = spellmgr.GetEndSkillLineAbilityMap(linkedSpell->Id);
+                        SkillLineAbilityMap::const_iterator lower = sSpellMgr.GetBeginSkillLineAbilityMap(linkedSpell->Id);
+                        SkillLineAbilityMap::const_iterator upper = sSpellMgr.GetEndSkillLineAbilityMap(linkedSpell->Id);
 
                         if (lower == upper)
                             return false;
@@ -1319,7 +1317,7 @@ bool ChatHandler::isValidChatMessage(const char* message)
                 {
                     if (linkedQuest->GetTitle() != buffer)
                     {
-                        QuestLocale const* ql = objmgr.GetQuestLocale(linkedQuest->GetQuestId());
+                        QuestLocale const* ql = sObjectMgr.GetQuestLocale(linkedQuest->GetQuestId());
 
                         if (!ql)
                         {
@@ -1351,7 +1349,7 @@ bool ChatHandler::isValidChatMessage(const char* message)
                 {
                     if (strcmp(linkedItem->Name1, buffer) != 0)
                     {
-                        ItemLocale const* il = objmgr.GetItemLocale(linkedItem->ItemId);
+                        ItemLocale const* il = sObjectMgr.GetItemLocale(linkedItem->ItemId);
 
                         if (!il)
                         {
@@ -1579,7 +1577,7 @@ void ChatHandler::FillMessageData(WorldPacket* data, WorldSession* session, uint
         *data << uint8(0);
 }
 
-Player*  ChatHandler::getSelectedPlayer()
+Player* ChatHandler::getSelectedPlayer()
 {
     if (!m_session)
         return NULL;
@@ -1589,7 +1587,7 @@ Player*  ChatHandler::getSelectedPlayer()
     if (guid == 0)
         return m_session->GetPlayer();
 
-    return objmgr.GetPlayer(guid);
+    return sObjectMgr.GetPlayer(guid);
 }
 
 Unit* ChatHandler::getSelectedUnit()
@@ -1753,7 +1751,7 @@ GameObject* ChatHandler::GetObjectGlobalyWithGuidOrNearWithDbGuid(uint32 lowguid
 
     GameObject* obj = pl->GetMap()->GetGameObject(MAKE_NEW_GUID(lowguid, entry, HIGHGUID_GAMEOBJECT));
 
-    if (!obj && objmgr.GetGOData(lowguid))                   // guid is DB guid of object
+    if (!obj && sObjectMgr.GetGOData(lowguid))                   // guid is DB guid of object
     {
         // search near player then
         CellPair p(Oregon::ComputeCellPair(pl->GetPositionX(), pl->GetPositionY()));
@@ -1818,9 +1816,9 @@ GameTele const* ChatHandler::extractGameTeleFromLink(char* text)
     // id case (explicit or from shift link)
     if (cId[0] >= '0' || cId[0] >= '9')
         if (uint32 id = atoi(cId))
-            return objmgr.GetGameTele(id);
+            return sObjectMgr.GetGameTele(id);
 
-    return objmgr.GetGameTele(cId);
+    return sObjectMgr.GetGameTele(cId);
 }
 
 char* ChatHandler::extractQuotedArg(char* args)
@@ -1852,7 +1850,7 @@ bool ChatHandler::needReportToTarget(Player* chr) const
 
 const char* CliHandler::GetOregonString(int32 entry) const
 {
-    return objmgr.GetOregonStringForDBCLocale(entry);
+    return sObjectMgr.GetOregonStringForDBCLocale(entry);
 }
 
 bool CliHandler::isAvailable(ChatCommand const& cmd) const
@@ -1894,9 +1892,9 @@ bool ChatHandler::GetPlayerGroupAndGUIDByName(const char* cname, Player*& plr, G
                 return false;
             }
 
-            plr = objmgr.GetPlayer(name.c_str());
+            plr = sObjectMgr.GetPlayer(name.c_str());
             if (offline)
-                guid = objmgr.GetPlayerGUIDByName(name.c_str());
+                guid = sObjectMgr.GetPlayerGUIDByName(name.c_str());
         }
     }
 

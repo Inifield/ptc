@@ -394,12 +394,12 @@ enum BaseModType
 
 enum DeathState
 {
-    ALIVE       = 0,
-    JUST_DIED   = 1,
-    CORPSE      = 2,
-    DEAD        = 3,
-    JUST_ALIVED = 4,
-    DEAD_FALLING = 5
+    ALIVE           = 0,
+    JUST_DIED       = 1,
+    CORPSE          = 2,
+    DEAD            = 3,
+    JUST_RESPAWNED  = 4,
+    DEAD_FALLING    = 5
 };
 
 enum UnitState
@@ -959,7 +959,7 @@ class Unit : public WorldObject
         {
             m_attackers.erase(pAttacker);
         }
-        Unit* getAttackerForHelper()                        // If someone wants to help, who to give them
+        Unit* getAttackerForHelper()                       // If someone wants to help, who to give them
         {
             if (getVictim() != NULL)
                 return getVictim();
@@ -1063,16 +1063,21 @@ class Unit : public WorldObject
             SetStatInt32Value(UNIT_FIELD_RESISTANCES + school, val);
         }
 
-        uint32 GetHealth()    const
-        {
-            return GetUInt32Value(UNIT_FIELD_HEALTH);
-        }
-        uint32 GetMaxHealth() const
-        {
-            return GetUInt32Value(UNIT_FIELD_MAXHEALTH);
-        }
+        uint32 GetHealth()    const { return GetUInt32Value(UNIT_FIELD_HEALTH); }
+        uint32 GetMaxHealth() const { return GetUInt32Value(UNIT_FIELD_MAXHEALTH); }
+
+        bool IsFullHealth() const { return GetHealth() == GetMaxHealth(); }
+        bool HealthBelowPct(int32 pct) const { return GetHealth() < CountPctFromMaxHealth(pct); }
+        bool HealthBelowPctDamaged(int32 pct, uint32 damage) const { return int64(GetHealth()) - int64(damage) < int64(CountPctFromMaxHealth(pct)); }
+        bool HealthAbovePct(int32 pct) const { return GetHealth() > CountPctFromMaxHealth(pct); }
+        bool HealthAbovePctHealed(int32 pct, uint32 heal) const { return uint64(GetHealth()) + uint64(heal) > CountPctFromMaxHealth(pct); }
+        float GetHealthPct() const { return GetMaxHealth() ? 100.f * GetHealth() / GetMaxHealth() : 0.0f; }
+        uint32 CountPctFromMaxHealth(int32 pct) const { return CalculatePct(GetMaxHealth(), pct); }
+        uint32 CountPctFromCurHealth(int32 pct) const { return CalculatePct(GetHealth(), pct); }
+
         void SetHealth(  uint32 val);
         void SetMaxHealth(uint32 val);
+        inline void SetFullHealth() { SetHealth(GetMaxHealth()); }
         int32 ModifyHealth(int32 val);
 
         Powers getPowerType() const
@@ -1181,7 +1186,7 @@ class Unit : public WorldObject
             return GetUInt32Value(UNIT_FIELD_MOUNTDISPLAYID);
         }
         void Mount(uint32 mount);
-        void Unmount();
+        void Dismount();
         bool HasShapeshiftChangingModel() const;
 
         uint16 GetMaxSkillValueForLevel(Unit const* target = NULL) const
@@ -1216,6 +1221,7 @@ class Unit : public WorldObject
         float GetUnitBlockChance()    const;
         float GetUnitCriticalChance(WeaponAttackType attackType, const Unit* pVictim) const;
         int32 GetMechanicResistChance(const SpellEntry* spell);
+        bool CanUseAttackType(uint8 attacktype) const;
 
         virtual uint32 GetShieldBlockValue() const = 0;
         uint32 GetUnitMeleeSkill(Unit const* target = NULL) const
@@ -1321,7 +1327,7 @@ class Unit : public WorldObject
         {
             return m_initiatingCombat;
         }
-        bool isInCombat()  const
+        bool IsInCombat()  const
         {
             return HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IN_COMBAT);
         }
@@ -1391,8 +1397,6 @@ class Unit : public WorldObject
         void CastSpell(GameObject* go, uint32 spellId, bool triggered, Item* castItem = NULL, Aura* triggeredByAura = NULL, uint64 originalCaster = 0);
         void AddAura(uint32 spellId, Unit* target);
 
-        bool IsDamageToThreatSpell(SpellEntry const* spellInfo) const;
-
         void DeMorph();
 
         void SendAttackStateUpdate(CalcDamageInfo* damageInfo);
@@ -1408,7 +1412,7 @@ class Unit : public WorldObject
         }
 
         void NearTeleportTo(float x, float y, float z, float orientation, bool casting = false);
-
+        void SendTeleportPacket(Position& pos);
         void SendMonsterStop();
         void SendMonsterMove(float NewPosX, float NewPosY, float NewPosZ, uint32 Time, Player* player = NULL);
         void SendMonsterMove(float NewPosX, float NewPosY, float NewPosZ, uint32 MoveFlags, uint32 time, float speedZ, Player* player = NULL);
@@ -1421,9 +1425,10 @@ class Unit : public WorldObject
 
         void SendMonsterMoveWithSpeed(float x, float y, float z, uint32 transitTime = 0, Player* player = NULL);
         void SendMonsterMoveWithSpeedToCurrentDestination(Player* player = NULL);
-        void SendMovementFlagUpdate();
+        void SendMovementFlagUpdate(bool self = false);
 
         void BuildHeartBeatMsg(WorldPacket* data) const;
+        void BuildMovementPacket(ByteBuffer *data) const;
 
         virtual void MoveOutOfRange(Player&) {  };
 
@@ -1431,7 +1436,7 @@ class Unit : public WorldObject
         {
             return (m_movementInfo.GetMovementFlags() & (MOVEFLAG_MOVING | MOVEFLAG_ROOT)) == MOVEFLAG_MOVING;
         }
-        bool isAlive() const
+        bool IsAlive() const
         {
             return (m_deathState == ALIVE);
         };
@@ -1696,6 +1701,9 @@ class Unit : public WorldObject
         // delayed+channeled spells are always interrupted
         void InterruptNonMeleeSpells(bool withDelayed, uint32 spellid = 0, bool withInstant = true);
 
+        uint64 GetTarget() const { return GetUInt64Value(UNIT_FIELD_TARGET); }
+        void SetTarget(uint64 guid = 0) { SetUInt64Value(UNIT_FIELD_TARGET, guid); };
+
         Spell* GetCurrentSpell(CurrentSpellTypes spellType) const
         {
             return m_currentSpells[spellType];
@@ -1735,6 +1743,8 @@ class Unit : public WorldObject
 
         float m_threatModifier[MAX_SPELL_SCHOOL];
         float m_modAttackSpeedPct[3];
+
+        uint32 _oldFactionId;
 
         // Event handler
         EventProcessor m_Events;
@@ -2001,27 +2011,11 @@ class Unit : public WorldObject
         }
         void StopMoving();
 
-        void AddUnitMovementFlag(uint32 f)
-        {
-            m_unit_movement_flags |= f;
-        }
-        void RemoveUnitMovementFlag(uint32 f)
-        {
-            uint32 oldval = m_unit_movement_flags;
-            m_unit_movement_flags = oldval & ~f;
-        }
-        uint32 HasUnitMovementFlag(uint32 f) const
-        {
-            return m_unit_movement_flags & f;
-        }
-        uint32 GetUnitMovementFlags() const
-        {
-            return m_unit_movement_flags;
-        }
-        void SetUnitMovementFlags(uint32 f)
-        {
-            m_unit_movement_flags = f;
-        }
+        void AddUnitMovementFlag(uint32 f) { m_movementInfo.moveFlags |= f; }
+        void RemoveUnitMovementFlag(uint32 f) { m_movementInfo.moveFlags &= ~f; }
+        bool HasUnitMovementFlag(uint32 f) const { return (m_movementInfo.moveFlags & f) == f; }
+        uint32 GetUnitMovementFlags() const { return m_movementInfo.moveFlags; }
+        void SetUnitMovementFlags(uint32 f) { m_movementInfo.moveFlags = f; }
 
         void SetControlled(bool apply, UnitState state);
         void SetFeared(bool apply/*, uint64 casterGUID = 0, uint32 spellID = 0*/);
@@ -2156,7 +2150,6 @@ class Unit : public WorldObject
         virtual SpellSchoolMask GetMeleeDamageSchoolMask() const;
 
         MotionMaster i_motionMaster;
-        uint32 m_unit_movement_flags;
 
         uint32 m_reactiveTimer[MAX_REACTIVE];
 

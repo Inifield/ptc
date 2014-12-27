@@ -99,7 +99,7 @@ struct npc_manaforge_control_consoleAI : public ScriptedAI
         return;
     }
 
-    /*void SpellHit(Unit *caster, const SpellEntry *spell)
+    /*void SpellHit(Unit* caster, const SpellEntry *spell)
     {
         //we have no way of telling the creature was hit by spell -> got aura applied after 10-12 seconds
         //then no way for the mobs to actually stop the shutdown as intended.
@@ -669,7 +669,7 @@ bool AreaTrigger_at_commander_dawnforge(Player* player, const AreaTriggerEntry* 
     if (!player->HasAura(SPELL_SUNFURY_DISGUISE, 0))
         return false;
 
-    if (player->isAlive() && player->GetQuestStatus(QUEST_INFO_GATHERING) == QUEST_STATUS_INCOMPLETE)
+    if (player->IsAlive() && player->GetQuestStatus(QUEST_INFO_GATHERING) == QUEST_STATUS_INCOMPLETE)
     {
         Creature* Dawnforge = SearchDawnforge(player, CreatureEntry[1][0], 30.0f);
 

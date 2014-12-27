@@ -227,9 +227,6 @@ class ChatHandler
         bool HandleNpcUnFollowCommand(const char* args);
         bool HandleNpcWhisperCommand(const char* args);
         bool HandleNpcYellCommand(const char* args);
-        bool HandleNpcSetDeathStateCommand(const char* args);
-        bool HandleNpcAddFormationCommand(const char* args);
-        bool HandleNpcAddGroupCommand(const char* args);
         bool HandleNpcSetLinkCommand(const char* args);
 
         //----------------------------------------------------------
@@ -540,6 +537,7 @@ class ChatHandler
         bool HandleSetInstanceDataCommand(const char* args);
         bool HandleGetInstanceDataCommand(const char* args);
         bool HandleDebugRAFError(const char* args);
+        bool HandleSpellCrashTestCommand(const char* args);
 
         Player*   getSelectedPlayer();
         Creature* getSelectedCreature();

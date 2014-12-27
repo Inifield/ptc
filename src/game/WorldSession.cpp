@@ -42,8 +42,8 @@ WorldSession::WorldSession(uint32 id, WorldSocket* sock, uint32 sec, uint8 expan
     LookingForGroup_auto_join(false), LookingForGroup_auto_add(false), m_muteTime(mute_time), m_timeOutTime(0),
     _player(NULL), m_Socket(sock), _security(sec), _accountId(id), m_expansion(expansion), m_Warden(NULL),
     m_inQueue(false), m_playerLoading(false), m_playerLogout(false), m_playerRecentlyLogout(false), m_playerSave(false),
-    m_sessionDbcLocale(sWorld.GetAvailableDbcLocale(locale)), m_sessionDbLocaleIndex(objmgr.GetIndexForLocale(locale)),
-    _logoutTime(0), m_latency(0), m_clientTimeDelay(0)
+    m_sessionDbcLocale(sWorld.GetAvailableDbcLocale(locale)), m_sessionDbLocaleIndex(sObjectMgr.GetIndexForLocale(locale)),
+    _logoutTime(0), m_latency(0), m_clientTimeDelay(0), expireTime(60000), forceExit(false)
 {
     if (sock)
     {
@@ -269,8 +269,12 @@ bool WorldSession::Update(uint32 diff)
     // Cleanup socket pointer if need
     if (m_Socket && m_Socket->IsClosed())
     {
-        m_Socket->RemoveReference();
-        m_Socket = NULL;
+        expireTime -= expireTime > diff ? diff : expireTime;
+        if (expireTime < diff || forceExit)
+        {
+            m_Socket->RemoveReference();
+            m_Socket = NULL;
+        }
     }
 
     if (!m_Socket)
@@ -299,7 +303,6 @@ void WorldSession::LogoutPlayer(bool Save)
             DoLootRelease(lguid);
 
         // If the player just died before logging out, make him appear as a ghost
-        // FIXME: logout must be delayed in case lost connection with client in time of combat
         if (_player->GetDeathTimer())
         {
             _player->getHostileRefManager().deleteReferences();
@@ -379,7 +382,7 @@ void WorldSession::LogoutPlayer(bool Save)
         }
 
         // If the player is in a guild, update the guild roster and broadcast a logout message to other guild members
-        if (Guild* guild = objmgr.GetGuildById(_player->GetGuildId()))
+        if (Guild* guild = sObjectMgr.GetGuildById(_player->GetGuildId()))
         {
             guild->LoadPlayerStatsByGuid(_player->GetGUID());
             guild->UpdateLogoutTime(_player->GetGUID());
@@ -430,7 +433,7 @@ void WorldSession::LogoutPlayer(bool Save)
         // calls to GetMap in this case may cause crashes
         _player->CleanupsBeforeDelete();
         Map* _map = _player->GetMap();
-        _map->Remove(_player, true);
+        _map->RemoveFromMap(_player, true);
         _player = NULL;                                     // deleted in Remove call
 
         // Send the 'logout complete' packet to the client
@@ -457,7 +460,10 @@ void WorldSession::LogoutPlayer(bool Save)
 void WorldSession::KickPlayer()
 {
     if (m_Socket)
+    {
         m_Socket->CloseSocket();
+        forceExit = true;
+    }
 }
 
 // Cancel channeling handler
@@ -516,7 +522,7 @@ void WorldSession::SendNotification(int32 string_id, ...)
 
 const char* WorldSession::GetOregonString(int32 entry) const
 {
-    return objmgr.GetOregonString(entry, GetSessionDbLocaleIndex());
+    return sObjectMgr.GetOregonString(entry, GetSessionDbLocaleIndex());
 }
 
 void WorldSession::Handle_NULL(WorldPacket& recvPacket)

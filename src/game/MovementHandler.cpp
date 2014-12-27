@@ -43,7 +43,7 @@ void WorldSession::HandleMoveWorldportAckOpcode()
         return;
 
     // get the teleport destination
-    WorldLocation& loc = GetPlayer()->GetTeleportDest();
+    WorldLocation const& loc = GetPlayer()->GetTeleportDest();
 
     // possible errors in the coordinate validity check
     if (!MapManager::IsValidMapCoord(loc))
@@ -59,7 +59,7 @@ void WorldSession::HandleMoveWorldportAckOpcode()
 
     // get the destination map entry, not the current one, this will fix homebind and reset greeting
     MapEntry const* mEntry = sMapStore.LookupEntry(loc.GetMapId());
-    InstanceTemplate const* mInstance = objmgr.GetInstanceTemplate(loc.GetMapId());
+    InstanceTemplate const* mInstance = sObjectMgr.GetInstanceTemplate(loc.GetMapId());
 
     // reset instance validity, except if going to an instance inside an instance
     if (GetPlayer()->m_InstanceValid == false && !mInstance)
@@ -72,7 +72,7 @@ void WorldSession::HandleMoveWorldportAckOpcode()
     if (GetPlayer()->IsInWorld())
     {
         sLog.outCrash("Player is still in world when teleported from map %u! to new map %u", oldMap->GetId(), loc.GetMapId());
-        oldMap->Remove(GetPlayer(), false);
+        oldMap->RemoveFromMap(GetPlayer(), false);
     }
 
     // relocate the player to the teleport destination
@@ -91,11 +91,11 @@ void WorldSession::HandleMoveWorldportAckOpcode()
     GetPlayer()->ResetMap();
     GetPlayer()->SetMap(newMap);
 
-    // check this before Map::Add(player), because that will create the instance save!
+    // check this before Map::AddToMap(player), because that will create the instance save!
     bool reset_notify = (GetPlayer()->GetBoundInstance(GetPlayer()->GetMapId(), GetPlayer()->GetDifficulty()) == NULL);
 
     GetPlayer()->SendInitialPacketsBeforeAddToMap();
-    if (!GetPlayer()->GetMap()->Add(GetPlayer()))
+    if (!GetPlayer()->GetMap()->AddToMap(GetPlayer()))
     {
         sLog.outError("WORLD: failed to teleport player %s (%d) to map %d because of unknown reason!", GetPlayer()->GetName(), GetPlayer()->GetGUIDLow(), loc.GetMapId());
         GetPlayer()->ResetMap();
@@ -158,7 +158,7 @@ void WorldSession::HandleMoveWorldportAckOpcode()
     {
         if (reset_notify)
         {
-            if (uint32 timeReset = sInstanceSaveManager.GetResetTimeFor(mEntry->MapID))
+            if (uint32 timeReset = sInstanceSaveMgr.GetResetTimeFor(mEntry->MapID))
             {
                 uint32 timeleft = timeReset - time(NULL);
                 GetPlayer()->SendInstanceResetWarning(mEntry->MapID, timeleft); // greeting at the entrance of the resort raid instance
@@ -344,7 +344,7 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recv_data)
         mover->SendMessageToSet(&data, false);
 
     mover->m_movementInfo = movementInfo;
-    mover->SetPosition(movementInfo.GetPos()->GetPositionX(), movementInfo.GetPos()->GetPositionY(), movementInfo.GetPos()->GetPositionZ(), movementInfo.GetPos()->GetOrientation());
+    mover->SetPosition(movementInfo.pos);
 
     if (plMover)                                            // nothing is charmed, or player charmed
     {
@@ -487,14 +487,40 @@ void WorldSession::HandleMoveKnockBackAck(WorldPacket& recv_data)
     uint64 guid;
 
     recv_data >> guid;                                      // guid
-    recv_data >> Unused<uint32>();                          // unk
+    recv_data >> Unused<uint32>();                          // Always set to 0
     recv_data >> movementInfo;
 
     if (GetPlayer()->GetGUID() != guid)
         return;
 
+    _player->m_movementInfo = movementInfo;
+
+    // Calculate timestamp
+    uint32 move_time, mstime;
+    mstime = getMSTime();
+    if(m_clientTimeDelay == 0)
+        m_clientTimeDelay = mstime - movementInfo.time;
+    move_time = (movementInfo.time - (mstime - m_clientTimeDelay)) + mstime + 500;
+    movementInfo.time = move_time;
+
     // Save movement flags
     GetPlayer()->SetUnitMovementFlags(movementInfo.GetMovementFlags());
+
+    // Send packet
+    WorldPacket data(MSG_MOVE_KNOCK_BACK, uint16(recv_data.size() + 4));
+    data.appendPackGUID(guid);
+
+    /* Includes data shown below (but in different order) */
+    movementInfo.Write(data);
+
+    /* This is sent in addition to the rest of the movement data (yes, angle+velocity are sent twice) */
+    data << movementInfo.j_sinAngle;
+    data << movementInfo.j_cosAngle;
+    data << movementInfo.j_xyspeed;
+    data << movementInfo.j_velocity;
+
+    /* Do we really need to send the data to everyone? Seemed to work better */
+    _player->SendMessageToSet(&data, false); 
 }
 
 void WorldSession::HandleMoveFlyModeChangeAckOpcode(WorldPacket& recv_data)
@@ -539,7 +565,7 @@ void WorldSession::HandleMoveWaterWalkAck(WorldPacket& recv_data)
 
 void WorldSession::HandleSummonResponseOpcode(WorldPacket& recv_data)
 {
-    if (!GetPlayer()->isAlive() || GetPlayer()->isInCombat())
+    if (!GetPlayer()->IsAlive() || GetPlayer()->IsInCombat())
         return;
 
     uint64 summoner_guid;

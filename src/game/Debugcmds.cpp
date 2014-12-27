@@ -401,7 +401,7 @@ bool ChatHandler::HandleGetItemState(const char* args)
 
     if (list_queue)
     {
-        std::vector<Item*>& updateQueue = player->GetItemUpdateQueue();
+        std::vector<Item* >& updateQueue = player->GetItemUpdateQueue();
         for (size_t i = 0; i < updateQueue.size(); i++)
         {
             Item* item = updateQueue[i];
@@ -436,7 +436,7 @@ bool ChatHandler::HandleGetItemState(const char* args)
     if (check_all)
     {
         bool error = false;
-        std::vector<Item*>& updateQueue = player->GetItemUpdateQueue();
+        std::vector<Item* >& updateQueue = player->GetItemUpdateQueue();
         for (uint8 i = PLAYER_SLOT_START; i < PLAYER_SLOT_END; i++)
         {
             if (i >= BUYBACK_SLOT_START && i < BUYBACK_SLOT_END)
@@ -716,3 +716,24 @@ bool ChatHandler::HandleGetInstanceDataCommand(const char* args)
     return true;
 }
 
+bool ChatHandler::HandleSpellCrashTestCommand(const char* /*args*/)
+{
+    /* Casts ALL spells. Useful for testing/founding out if/what spell causes server to crash */
+
+    Unit* player = m_session->GetPlayer();
+
+    for (uint32 i = 31000; i <= 53085; ++i)
+    {
+        if (SpellEntry const* spellInfo = sSpellStore.LookupEntry(i))
+        {
+            sLog.outDebugInLine("Testing spell %u ... ", i);
+            Creature* trigger = player->SummonTrigger(player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), player->GetOrientation(), 600, NULL);
+            trigger->CastSpell(trigger, spellInfo, true);
+            trigger->DisappearAndDie();
+            sLog.outDebug("OK!");
+        }
+    }
+
+    PSendSysMessage("ALL OK!");
+    return true;
+}

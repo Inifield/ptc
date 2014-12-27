@@ -60,8 +60,6 @@ void CWardenDataStorage::LoadWardenDataResult(bool reload)
 
     if (!result)
     {
-
-        sLog.outString();
         sLog.outString(">> Loaded %u warden data and results", count);
         return;
     }
@@ -130,7 +128,6 @@ void CWardenDataStorage::LoadWardenDataResult(bool reload)
     }
     while (result->NextRow());
 
-    sLog.outString();
     sLog.outString(">> Loaded %u warden data and results", count);
 }
 

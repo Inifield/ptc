@@ -124,7 +124,7 @@ struct boss_hakkarAI : public ScriptedAI
         //CauseInsanity_Timer
         /*if (CauseInsanity_Timer <= diff)
         {
-        if (Unit *pTarget = SelectUnit(SELECT_TARGET_RANDOM,0))
+        if (Unit* pTarget = SelectUnit(SELECT_TARGET_RANDOM,0))
         DoCast(pTarget, SPELL_CAUSEINSANITY);
 
         CauseInsanity_Timer = 35000 + rand()%8000;

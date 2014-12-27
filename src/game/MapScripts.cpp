@@ -389,7 +389,7 @@ void Map::ScriptsProcess()
                 {
                     uint64 targetGUID = target ? target->GetGUID() : 0;
                     uint32 loc_idx = pSource->GetSession()->GetSessionDbLocaleIndex();
-                    std::string text(objmgr.GetOregonString(step.script->Talk.TextID, loc_idx));
+                    std::string text(sObjectMgr.GetOregonString(step.script->Talk.TextID, loc_idx));
 
                     switch (step.script->Talk.ChatType)
                     {
@@ -587,7 +587,7 @@ void Map::ScriptsProcess()
                 }
 
                 // quest id and flags checked at script loading
-                if ((worldObject->GetTypeId() != TYPEID_UNIT || ((Unit*)worldObject)->isAlive()) &&
+                if ((worldObject->GetTypeId() != TYPEID_UNIT || ((Unit*)worldObject)->IsAlive()) &&
                     (step.script->QuestExplored.Distance == 0 || worldObject->IsWithinDistInMap(pTarget, float(step.script->QuestExplored.Distance))))
                     pTarget->AreaExploredOrEventHappens(step.script->QuestExplored.QuestID);
                 else
@@ -641,7 +641,7 @@ void Map::ScriptsProcess()
                     pGO->SetLootState(GO_READY);
                     pGO->SetRespawnTime(nTimeToDespawn);
 
-                    pGO->GetMap()->Add(pGO);
+                    pGO->GetMap()->AddToMap(pGO);
                 }
             }
             break;
@@ -845,7 +845,7 @@ void Map::ScriptsProcess()
                 }
                 else //check hashmap holders
                 {
-                    if (CreatureData const* data = objmgr.GetCreatureData(step.script->CallScript.CreatureEntry))
+                    if (CreatureData const* data = sObjectMgr.GetCreatureData(step.script->CallScript.CreatureEntry))
                         cTarget = ObjectAccessor::GetObjectInWorld<Creature>(data->mapid, data->posX, data->posY, MAKE_NEW_GUID(step.script->CallScript.CreatureEntry, data->id, HIGHGUID_UNIT), cTarget);
                 }
 

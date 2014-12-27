@@ -35,7 +35,7 @@ class CreatureAI;
 class Quest;
 class Player;
 class WorldSession;
-class CreatureFormation;
+class CreatureGroup;
 
 enum Gossip_Guard
 {
@@ -108,7 +108,7 @@ enum CreatureFlagsExtra
     CREATURE_FLAG_EXTRA_TRIGGER         = 0x00000080,       // trigger creature
     CREATURE_FLAG_EXTRA_NO_TAUNT        = 0x00000100,       // cannot be taunted
     CREATURE_FLAG_EXTRA_WORLDEVENT      = 0x00004000,       // custom flag for world event creatures (left room for merging)
-    //CREATURE_FLAG_EXTRA_CHARM_AI        = 0x00008000,       // use ai when charmed
+    CREATURE_FLAG_EXTRA_CHARM_AI        = 0x00008000,       // use ai when charmed
     CREATURE_FLAG_EXTRA_NO_CRIT         = 0x00020000,       // creature can't do critical strikes
 };
 
@@ -143,9 +143,9 @@ struct CreatureInfo
     uint32  Modelid_A2;
     uint32  Modelid_H1;
     uint32  Modelid_H2;
-    char*   Name;
-    char*   SubName;
-    char*   IconName;
+    char*  Name;
+    char*  SubName;
+    char*  IconName;
     uint32  GossipMenuId;
     uint32  minlevel;
     uint32  maxlevel;
@@ -264,7 +264,6 @@ struct CreatureData
     uint32 currentwaypoint;
     uint32 curhealth;
     uint32 curmana;
-    bool  is_dead;
     uint8 movementType;
     uint8 spawnMask;
     bool dbData;
@@ -460,7 +459,7 @@ class Creature : public Unit, public GridObject<Creature>
         }
         char const* GetSubName() const
         {
-            return GetCreatureInfo()->SubName;
+            return GetCreatureTemplate()->SubName;
         }
 
         void Update(uint32 time);                         // overwrited Unit::Update
@@ -515,27 +514,27 @@ class Creature : public Unit, public GridObject<Creature>
         }
         bool isRacialLeader() const
         {
-            return GetCreatureInfo()->RacialLeader;
+            return GetCreatureTemplate()->RacialLeader;
         }
         bool isCivilian() const
         {
-            return GetCreatureInfo()->flags_extra & CREATURE_FLAG_EXTRA_CIVILIAN;
+            return GetCreatureTemplate()->flags_extra & CREATURE_FLAG_EXTRA_CIVILIAN;
         }
         bool isTrigger() const
         {
-            return GetCreatureInfo()->flags_extra & CREATURE_FLAG_EXTRA_TRIGGER;
+            return GetCreatureTemplate()->flags_extra & CREATURE_FLAG_EXTRA_TRIGGER;
         }
         bool canWalk() const
         {
-            return GetCreatureInfo()->InhabitType & INHABIT_GROUND;
+            return GetCreatureTemplate()->InhabitType & INHABIT_GROUND;
         }
         virtual bool canSwim() const
         {
-            return GetCreatureInfo()->InhabitType & INHABIT_WATER;
+            return GetCreatureTemplate()->InhabitType & INHABIT_WATER;
         }
         bool canFly()  const
         {
-            return (GetCreatureInfo()->InhabitType & INHABIT_AIR) || HasAuraType(SPELL_AURA_FLY);
+            return (GetCreatureTemplate()->InhabitType & INHABIT_AIR) || HasAuraType(SPELL_AURA_FLY);
         }
         void SetReactState(ReactStates st)
         {
@@ -562,7 +561,7 @@ class Creature : public Unit, public GridObject<Creature>
             if (isPet())
                 return false;
 
-            uint32 rank = GetCreatureInfo()->rank;
+            uint32 rank = GetCreatureTemplate()->rank;
             return rank != CREATURE_ELITE_NORMAL && rank != CREATURE_ELITE_RARE;
         }
 
@@ -571,7 +570,7 @@ class Creature : public Unit, public GridObject<Creature>
             if (isPet())
                 return false;
 
-            return GetCreatureInfo()->rank == CREATURE_ELITE_WORLDBOSS;
+            return GetCreatureTemplate()->rank == CREATURE_ELITE_WORLDBOSS;
         }
 
         uint32 getLevelForTarget(Unit const* target) const; // overwrite Unit::getLevelForTarget for boss level support
@@ -580,7 +579,6 @@ class Creature : public Unit, public GridObject<Creature>
 
         bool AIM_Initialize(CreatureAI* ai = NULL);
 
-        void AI_SendMoveToPacket(float x, float y, float z, uint32 time, uint32 MovementFlags, uint8 type);
         CreatureAI* AI() const
         {
             return (CreatureAI*)i_AI;
@@ -629,7 +627,7 @@ class Creature : public Unit, public GridObject<Creature>
 
         TrainerSpellData const* GetTrainerSpells() const;
 
-        CreatureInfo const* GetCreatureInfo() const
+        CreatureInfo const* GetCreatureTemplate() const
         {
             return m_creatureInfo;
         }
@@ -837,11 +835,6 @@ class Creature : public Unit, public GridObject<Creature>
             return m_GlobalCooldown;
         }
 
-        void SetDeadByDefault (bool death_state)
-        {
-            m_isDeadByDefault = death_state;
-        }
-
         uint32 GetWaypointPath()
         {
             return m_path_id;
@@ -861,23 +854,13 @@ class Creature : public Unit, public GridObject<Creature>
         }
 
         void SearchFormation();
-        CreatureFormation* GetFormation()
+        CreatureGroup* GetFormation()
         {
             return m_formation;
         }
-        void SetFormation(CreatureFormation* formation)
+        void SetFormation(CreatureGroup* formation)
         {
             m_formation = formation;
-        }
-
-        void SearchGroup();
-        CreatureGroup* GetGroup()
-        {
-            return m_group;
-        }
-        void SetGroup(CreatureGroup* group)
-        {
-            m_group = group;
         }
 
         Unit* SelectVictim();
@@ -943,7 +926,6 @@ class Creature : public Unit, public GridObject<Creature>
         bool m_AlreadySearchedAssistance;
         bool m_regenHealth;
         bool m_AI_locked;
-        bool m_isDeadByDefault;
 
         SpellSchoolMask m_meleeDamageSchoolMask;
         uint32 m_originalEntry;
@@ -960,11 +942,9 @@ class Creature : public Unit, public GridObject<Creature>
         uint32 m_path_id;
 
         //Formation var
-        CreatureFormation* m_formation;
-        //Group var
-        CreatureGroup* m_group;
+        CreatureGroup* m_formation;
 
-        CreatureInfo const* m_creatureInfo;                 // in heroic mode can different from ObjMgr::GetCreatureTemplate(GetEntry())
+        CreatureInfo const* m_creatureInfo;                 // in heroic mode can different from sObjectMgr::GetCreatureTemplate(GetEntry())
 };
 
 class AssistDelayEvent : public BasicEvent

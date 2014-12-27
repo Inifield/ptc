@@ -124,7 +124,7 @@ struct npc_chicken_cluckAI : public ScriptedAI
 
     void ReceiveEmote(Player* pPlayer, uint32 emote)
     {
-        if (emote == TEXTEMOTE_CHICKEN)
+        if (emote == TEXT_EMOTE_CHICKEN)
         {
             if (pPlayer->GetTeam() == ALLIANCE)
             {
@@ -141,7 +141,7 @@ struct npc_chicken_cluckAI : public ScriptedAI
             else
                 DoScriptText(EMOTE_H_HELLO, me);
         }
-        else if ((emote == TEXTEMOTE_CHEER && pPlayer->GetTeam() == ALLIANCE) &&
+        else if ((emote == TEXT_EMOTE_CHEER && pPlayer->GetTeam() == ALLIANCE) &&
                  (pPlayer->GetQuestStatus(QUEST_CLUCK) == QUEST_STATUS_COMPLETE))
         {
             me->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER);
@@ -231,19 +231,19 @@ struct npc_dancing_flamesAI : public ScriptedAI
             me->SendMessageToSet(&data, true);
             switch (emote)
             {
-            case TEXTEMOTE_KISS:
+            case TEXT_EMOTE_KISS:
                 me->HandleEmoteCommand(EMOTE_ONESHOT_SHY);
                 break;
-            case TEXTEMOTE_WAVE:
+            case TEXT_EMOTE_WAVE:
                 me->HandleEmoteCommand(EMOTE_ONESHOT_WAVE);
                 break;
-            case TEXTEMOTE_BOW:
+            case TEXT_EMOTE_BOW:
                 me->HandleEmoteCommand(EMOTE_ONESHOT_BOW);
                 break;
-            case TEXTEMOTE_JOKE:
+            case TEXT_EMOTE_JOKE:
                 me->HandleEmoteCommand(EMOTE_ONESHOT_LAUGH);
                 break;
-            case TEXTEMOTE_DANCE:
+            case TEXT_EMOTE_DANCE:
                 {
                     if (!pPlayer->HasAura(SPELL_SEDUCTION, 0))
                         DoCast(pPlayer, SPELL_SEDUCTION, true);
@@ -419,7 +419,7 @@ struct npc_injured_patientAI : public ScriptedAI
 
     void SpellHit(Unit* caster, const SpellEntry* spell)
     {
-        if (caster->GetTypeId() == TYPEID_PLAYER && me->isAlive() && spell->Id == 20804)
+        if (caster->GetTypeId() == TYPEID_PLAYER && me->IsAlive() && spell->Id == 20804)
         {
             if ((CAST_PLR(caster)->GetQuestStatus(6624) == QUEST_STATUS_INCOMPLETE) || (CAST_PLR(caster)->GetQuestStatus(6622) == QUEST_STATUS_INCOMPLETE))
                 if (Doctorguid)
@@ -459,10 +459,10 @@ struct npc_injured_patientAI : public ScriptedAI
     void UpdateAI(const uint32 /*diff*/)
     {
         //lower HP on every world tick makes it a useful counter, not officlone though
-        if (me->isAlive() && me->GetHealth() > 6)
+        if (me->IsAlive() && me->GetHealth() > 6)
             me->SetHealth(uint32(me->GetHealth() - 5));
 
-        if (me->isAlive() && me->GetHealth() <= 6)
+        if (me->IsAlive() && me->GetHealth() <= 6)
         {
             me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IN_COMBAT);
             me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
@@ -710,7 +710,7 @@ struct npc_garments_of_questsAI : public npc_escortAI
         if (Spell->Id == SPELL_LESSER_HEAL_R2 || Spell->Id == SPELL_FORTITUDE_R1)
         {
             //not while in combat
-            if (me->isInCombat())
+            if (me->IsInCombat())
                 return;
 
             //nothing to be done now
@@ -821,7 +821,7 @@ struct npc_garments_of_questsAI : public npc_escortAI
 
     void UpdateAI(const uint32 diff)
     {
-        if (bCanRun && !me->isInCombat())
+        if (bCanRun && !me->IsInCombat())
         {
             if (RunAwayTimer <= diff)
             {
@@ -1268,7 +1268,7 @@ struct npc_brewfest_revelerAI : public ScriptedAI
     npc_brewfest_revelerAI(Creature* c) : ScriptedAI(c) {}
     void ReceiveEmote(Player* pPlayer, uint32 emote)
     {
-        if (emote == TEXTEMOTE_DANCE)
+        if (emote == TEXT_EMOTE_DANCE)
             me->CastSpell(pPlayer, 41586, false);
     }
 };
@@ -1291,7 +1291,7 @@ struct npc_winter_revelerAI : public ScriptedAI
         if (pPlayer->HasAura(26218, 1))
             return;
 
-        if (emote == TEXTEMOTE_KISS)
+        if (emote == TEXT_EMOTE_KISS)
         {
             me->CastSpell(me, 26218, false);
             pPlayer->CastSpell(pPlayer, 26218, false);
@@ -1395,7 +1395,7 @@ struct npc_snake_trap_serpentsAI : public ScriptedAI
         if (!Owner)
             return;
 
-        CreatureInfo const* Info = me->GetCreatureInfo();
+        CreatureInfo const* Info = me->GetCreatureTemplate();
 
         if (Info->Entry == C_VIPER)
             IsViper = true;
@@ -1509,7 +1509,7 @@ struct mob_mojoAI : public ScriptedAI
         Unit* own = me->GetOwner();
         if (!own || own->GetTypeId() != TYPEID_PLAYER || CAST_PLR(own)->GetTeam() != pPlayer->GetTeam())
             return;
-        if (emote == TEXTEMOTE_KISS)
+        if (emote == TEXT_EMOTE_KISS)
         {
             std::string whisp = "";
             switch (rand() % 8)

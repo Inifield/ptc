@@ -76,8 +76,6 @@ void ScriptMgr::ScriptsInit()
     //Load database (must be called after SD2Config.SetSource).
     LoadDatabase();
 
-    outstring_log("OSCR: Loading C++ scripts\n");
-
     for (uint16 i = 0; i < MAX_SCRIPTS; ++i)
         m_scripts[i] = NULL;
 

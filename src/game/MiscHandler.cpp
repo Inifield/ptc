@@ -51,7 +51,7 @@ void WorldSession::HandleRepopRequestOpcode(WorldPacket& recv_data)
 
     recv_data.read_skip<uint8>();
 
-    if (GetPlayer()->isAlive() || GetPlayer()->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST))
+    if (GetPlayer()->IsAlive() || GetPlayer()->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST))
         return;
 
     // the world update order is sessions, players, creatures
@@ -281,7 +281,7 @@ void WorldSession::HandleWhoOpcode(WorldPacket& recv_data)
         if (!(wplayer_name.empty() || wpname.find(wplayer_name) != std::wstring::npos))
             continue;
 
-        std::string gname = objmgr.GetGuildNameById(itr->second->GetGuildId());
+        std::string gname = sObjectMgr.GetGuildNameById(itr->second->GetGuildId());
         std::wstring wgname;
         if (!Utf8toWStr(gname, wgname))
             continue;
@@ -343,7 +343,7 @@ void WorldSession::HandleLogoutRequestOpcode(WorldPacket& /*recv_data*/)
         DoLootRelease(lguid);
 
     //Can not logout if...
-    if (GetPlayer()->isInCombat() ||                        //...is in combat
+    if (GetPlayer()->IsInCombat() ||                        //...is in combat
         GetPlayer()->duel         ||                        //...is in Duel
         GetPlayer()->HasAura(9454, 0)         ||            //...is frozen by GM via freeze command
         //...is jumping ...is falling
@@ -702,7 +702,7 @@ void WorldSession::HandleCorpseReclaimOpcode(WorldPacket& recv_data)
     uint64 guid;
     recv_data >> guid;
 
-    if (GetPlayer()->isAlive())
+    if (GetPlayer()->IsAlive())
         return;
 
     // do not allow corpse reclaim in arena
@@ -741,7 +741,7 @@ void WorldSession::HandleResurrectResponseOpcode(WorldPacket& recv_data)
     recv_data >> guid;
     recv_data >> status;
 
-    if (GetPlayer()->isAlive())
+    if (GetPlayer()->IsAlive())
         return;
 
     if (status == 0)
@@ -825,10 +825,10 @@ void WorldSession::HandleAreaTriggerOpcode(WorldPacket& recv_data)
     if (sScriptMgr.AreaTrigger(GetPlayer(), atEntry))
         return;
 
-    uint32 quest_id = objmgr.GetQuestForAreaTrigger(Trigger_ID);
-    if (quest_id && GetPlayer()->isAlive() && GetPlayer()->IsActiveQuest(quest_id))
+    uint32 quest_id = sObjectMgr.GetQuestForAreaTrigger(Trigger_ID);
+    if (quest_id && GetPlayer()->IsAlive() && GetPlayer()->IsActiveQuest(quest_id))
     {
-        Quest const* pQuest = objmgr.GetQuestTemplate(quest_id);
+        Quest const* pQuest = sObjectMgr.GetQuestTemplate(quest_id);
         if (pQuest)
         {
             if (GetPlayer()->GetQuestStatus(quest_id) == QUEST_STATUS_INCOMPLETE)
@@ -836,7 +836,7 @@ void WorldSession::HandleAreaTriggerOpcode(WorldPacket& recv_data)
         }
     }
 
-    if (objmgr.IsTavernAreaTrigger(Trigger_ID))
+    if (sObjectMgr.IsTavernAreaTrigger(Trigger_ID))
     {
         // set resting flag we are in the inn
         GetPlayer()->SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_RESTING);
@@ -866,11 +866,11 @@ void WorldSession::HandleAreaTriggerOpcode(WorldPacket& recv_data)
     }
 
     // NULL if all values default (non teleport trigger)
-    AreaTrigger const* at = objmgr.GetAreaTrigger(Trigger_ID);
+    AreaTrigger const* at = sObjectMgr.GetAreaTrigger(Trigger_ID);
     if (!at)
         return;
 
-    if (!GetPlayer()->Satisfy(objmgr.GetAccessRequirement(at->access_id), at->target_mapId, true))
+    if (!GetPlayer()->Satisfy(sObjectMgr.GetAccessRequirement(at->access_id), at->target_mapId, true))
         return;
 
     GetPlayer()->TeleportTo(at->target_mapId, at->target_X, at->target_Y, at->target_Z, at->target_Orientation, TELE_TO_NOT_LEAVE_TRANSPORT);
@@ -936,7 +936,7 @@ void WorldSession::HandleNextCinematicCamera(WorldPacket& /*recv_data*/)
 
 void WorldSession::HandleMoveTimeSkippedOpcode(WorldPacket& recv_data)
 {
-    /*  WorldSession::Update(getMSTime());*/
+    /* WorldSession::Update(getMSTime());*/
     DEBUG_LOG("WORLD: Time Lag/Synchronization Resent/Update");
 
     recv_data.read_skip<uint64>();
@@ -1031,7 +1031,7 @@ void WorldSession::HandleInspectOpcode(WorldPacket& recv_data)
 
     _player->SetSelection(guid);
 
-    Player* plr = objmgr.GetPlayer(guid);
+    Player* plr = sObjectMgr.GetPlayer(guid);
     if (!plr)                                                // wrong player
         return;
 
@@ -1115,7 +1115,7 @@ void WorldSession::HandleInspectHonorStatsOpcode(WorldPacket& recv_data)
     uint64 guid;
     recv_data >> guid;
 
-    Player* player = objmgr.GetPlayer(guid);
+    Player* player = sObjectMgr.GetPlayer(guid);
 
     if (!player)
     {
@@ -1189,7 +1189,7 @@ void WorldSession::HandleWhoisOpcode(WorldPacket& recv_data)
         return;
     }
 
-    Player* plr = objmgr.GetPlayer(charname.c_str());
+    Player* plr = sObjectMgr.GetPlayer(charname.c_str());
 
     if (!plr)
     {
@@ -1434,7 +1434,7 @@ void WorldSession::HandleDismountOpcode(WorldPacket& /*recv_data*/)
         return;
     }
 
-    _player->Unmount();
+    _player->Dismount();
     _player->RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
 }
 
@@ -1466,13 +1466,13 @@ void WorldSession::HandleGrantLevel(WorldPacket& recv_data)
 
     uint64 guid = recv_data.readPackGUID();
 
-    Player* buddy = objmgr.GetPlayer(guid);
+    Player* buddy = sObjectMgr.GetPlayer(guid);
     if (!buddy || !buddy->IsInWorld())
     {
         GetPlayer()->SendReferFriendError(RAF_ERR_NOT_RIGHT_NOW);
         return;
     }
-    else if (objmgr.GetRAFLinkStatus(GetPlayer(), buddy) != RAF_LINK_REFERRED)
+    else if (sObjectMgr.GetRAFLinkStatus(GetPlayer(), buddy) != RAF_LINK_REFERRED)
     {
         GetPlayer()->SendReferFriendError(RAF_ERR_BAD_REFERRER);
         return;
@@ -1518,13 +1518,13 @@ void WorldSession::HandleAcceptGrantLevel(WorldPacket& recv_data)
 
     uint64 guid = recv_data.readPackGUID();
 
-    Player* buddy = objmgr.GetPlayer(guid);
+    Player* buddy = sObjectMgr.GetPlayer(guid);
     if (!buddy || !buddy->IsInWorld())
     {
         GetPlayer()->SendReferFriendError(RAF_ERR_NOT_RIGHT_NOW);
         return;
     }
-    else if (objmgr.GetRAFLinkStatus(GetPlayer(), buddy) != RAF_LINK_REFERRER)
+    else if (sObjectMgr.GetRAFLinkStatus(GetPlayer(), buddy) != RAF_LINK_REFERRER)
         return;
     else if (GetPlayer()->getLevel() >= sWorld.getConfig(CONFIG_RAF_LEVEL_LIMIT))
         return;

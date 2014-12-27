@@ -86,7 +86,7 @@ class CreatureAI : public UnitAI
 
         // == Reactions At =================================
 
-        // Called if IsVisible(Unit *who) is true at each *who move, reaction at visibility zone enter
+        // Called if IsVisible(Unit* who) is true at each *who move, reaction at visibility zone enter
         void MoveInLineOfSight_Safe(Unit* who);
 
         // Called for reaction at stopping attack at no attackers or targets
@@ -150,7 +150,7 @@ class CreatureAI : public UnitAI
 
         // Called when creature attack expected (if creature can and no have current victim)
         // Note: for reaction at hostile action must be called AttackedBy function.
-        //virtual void AttackStart(Unit *) {}
+        //virtual void AttackStart(Unit* ) {}
 
         // Called at World update tick
         //virtual void UpdateAI(const uint32 /*diff*/) {}
@@ -158,7 +158,7 @@ class CreatureAI : public UnitAI
         // == State checks =================================
 
         // Is unit visible for MoveInLineOfSight
-        //virtual bool IsVisible(Unit *) const { return false; }
+        //virtual bool IsVisible(Unit* ) const { return false; }
 
         // Called when victim entered water and creature can not enter water
         //virtual bool canReachByRangeAttack(Unit*) { return false; }

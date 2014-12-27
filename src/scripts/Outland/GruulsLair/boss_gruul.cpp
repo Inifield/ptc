@@ -211,7 +211,7 @@ struct boss_gruulAI : public ScriptedAI
                         //std::list<HostileReference*>& m_threatlist = me->getThreatManager().getThreatList();
                         //for (std::list<HostileReference*>::iterator itr = m_threatlist.begin(); itr != m_threatlist.end(); ++itr)
                         //{
-                        //    Unit *target = Unit::GetUnit(*me, (*itr)->getUnitGuid());
+                        //    Unit* target = Unit::GetUnit(*me, (*itr)->getUnitGuid());
                         //    if (target)
                         //    {
                         //        target->RemoveAurasDueToSpell(SPELL_STONED);

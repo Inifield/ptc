@@ -169,7 +169,7 @@ struct instance_uldaman : public ScriptedInstance
         for (std::vector<uint64>::const_iterator i = stoneKeeper.begin(); i != stoneKeeper.end(); ++i)
         {
             Creature* pTarget = instance->GetCreature(*i);
-            if (!pTarget || !pTarget->isAlive() || pTarget->getFaction() == 14)
+            if (!pTarget || !pTarget->IsAlive() || pTarget->getFaction() == 14)
                 continue;
             pTarget->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
             pTarget->setFaction(14);
@@ -190,7 +190,7 @@ struct instance_uldaman : public ScriptedInstance
         for (std::vector<uint64>::const_iterator i = archaedasWallMinions.begin(); i != archaedasWallMinions.end(); ++i)
         {
             Creature* pTarget = instance->GetCreature(*i);
-            if (!pTarget || !pTarget->isAlive() || pTarget->getFaction() == 14)
+            if (!pTarget || !pTarget->IsAlive() || pTarget->getFaction() == 14)
                 continue;
             archaedas->CastSpell(pTarget, SPELL_AWAKEN_VAULT_WALKER, true);
             pTarget->CastSpell(pTarget, SPELL_ARCHAEDAS_AWAKEN, true);
@@ -238,7 +238,7 @@ struct instance_uldaman : public ScriptedInstance
         if (!archaedas)
             return;
 
-        if (/*Unit *victim = */Unit::GetUnit(*archaedas, target))
+        if (/*Unit* victim = */Unit::GetUnit(*archaedas, target))
         {
             archaedas->CastSpell(archaedas, SPELL_ARCHAEDAS_AWAKEN, false);
             whoWokeArchaedasGUID = target;

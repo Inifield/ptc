@@ -74,7 +74,7 @@ bool ChatHandler::HandleStartCommand(const char* /*args*/)
         return false;
     }
 
-    if (chr->isInCombat())
+    if (chr->IsInCombat())
     {
         SendSysMessage(LANG_YOU_IN_COMBAT);
         SetSentErrorMessage(true);
@@ -130,7 +130,7 @@ bool ChatHandler::HandleDismountCommand(const char* /*args*/)
         return false;
     }
 
-    m_session->GetPlayer()->Unmount();
+    m_session->GetPlayer()->Dismount();
     m_session->GetPlayer()->RemoveSpellsCausingAura(SPELL_AURA_MOUNTED);
     return true;
 }
@@ -285,7 +285,7 @@ bool ChatHandler::HandleRAFGrantLevelCommand(const char*)
     if (!m_session || !m_session->GetPlayer() || !m_session->GetPlayer()->IsInWorld())
         return true;
 
-    Player* buddy = objmgr.GetRAFLinkedBuddyForPlayer(m_session->GetPlayer());
+    Player* buddy = sObjectMgr.GetRAFLinkedBuddyForPlayer(m_session->GetPlayer());
     if (!buddy || !buddy->IsInWorld())
     {
         PSendSysMessage("Couldn't find you friend");

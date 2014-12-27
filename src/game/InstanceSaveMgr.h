@@ -217,6 +217,6 @@ class InstanceSaveManager : public Oregon::Singleton<InstanceSaveManager, Oregon
         ResetTimeQueue m_resetTimeQueue;
 };
 
-#define sInstanceSaveManager Oregon::Singleton<InstanceSaveManager>::Instance()
+#define sInstanceSaveMgr Oregon::Singleton<InstanceSaveManager>::Instance()
 #endif
 

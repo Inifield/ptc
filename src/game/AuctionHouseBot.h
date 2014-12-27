@@ -1142,7 +1142,7 @@ class AHBConfig
 
             for (Tokens::const_iterator it = ids.begin(); it != ids.end(); it++)
                 if (uint32 id = atoi(it->c_str()))
-                    if (objmgr.GetItemPrototype(id))
+                    if (sObjectMgr.GetItemPrototype(id))
                         ignoreItemsIds.insert(id);
         }
         bool IsIgnoringItem(uint32 id) const

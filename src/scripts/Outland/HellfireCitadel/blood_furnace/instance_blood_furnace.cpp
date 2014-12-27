@@ -25,19 +25,6 @@ EndScriptData */
 #include "ScriptPCH.h"
 #include "blood_furnace.h"
 
-#define ENTRY_SEWER1                 181823
-#define ENTRY_SEWER2                 181766
-#define ENTRY_MAKER2                 181812
-#define ENTRY_MAKER1                 181811
-#define ENTRY_BROG1                  181822
-#define ENTRY_BROG2                  181819
-
-#define ENTRY_CELL_LEVER             181982
-#define ENTRY_CELL_DOOR1             181821
-#define ENTRY_CELL_DOOR2             181820
-#define ENTRY_CELL_DOOR3             181818
-#define ENTRY_CELL_DOOR4             181817
-
 #define  MAX_ORC_WAVES               4
 #define  MAX_BROGGOK_WAVES           5
 
@@ -123,37 +110,37 @@ struct instance_blood_furnace : public ScriptedInstance
     {
         switch (pGo->GetEntry())
         {
-        case ENTRY_SEWER1:
+        case GO_SUMMON_DOOR:
             Sewer1GUID = pGo->GetGUID();
             break;
-        case ENTRY_SEWER2:
+        case GO_PRISON_DOOR_01:
             Sewer2GUID = pGo->GetGUID();
             break;
-        case ENTRY_MAKER1:
+        case GO_PRISON_DOOR_02:
             Maker1GUID = pGo->GetGUID();
             break;
-        case ENTRY_MAKER2:
+        case GO_PRISON_DOOR_03:
             Maker2GUID = pGo->GetGUID();
             break;
-        case ENTRY_BROG1:
+        case GO_PRISON_DOOR_05:
             Brog1GUID = pGo->GetGUID();
             break;
-        case ENTRY_BROG2:
+        case GO_PRISON_DOOR_04:
             Brog2GUID = pGo->GetGUID();
             break;
-        case ENTRY_CELL_LEVER:
+        case GO_BROGGOK_LEVER:
             LeverGUID = pGo->GetGUID();
             break;
-        case ENTRY_CELL_DOOR1:
+        case GO_PRISON_CELL_DOOR_5:
             BroggokEvent[0].CellGuid = pGo->GetGUID();
             return;
-        case ENTRY_CELL_DOOR2:
+        case GO_PRISON_CELL_DOOR_7:
             BroggokEvent[1].CellGuid = pGo->GetGUID();
             return;
-        case ENTRY_CELL_DOOR3:
+        case GO_PRISON_CELL_DOOR_6:
             BroggokEvent[2].CellGuid = pGo->GetGUID();
             return;
-        case ENTRY_CELL_DOOR4:
+        case GO_PRISON_CELL_DOOR_8:
             BroggokEvent[3].CellGuid = pGo->GetGUID();
             return;
         }
@@ -219,7 +206,7 @@ struct instance_blood_furnace : public ScriptedInstance
                         {
                             if (Creature* pOrc = instance->GetCreature(*itr))
                             {
-                                if (!pOrc->isAlive())
+                                if (!pOrc->IsAlive())
                                 {
                                     pOrc->Respawn();
                                     BroggokEventPhase = 0;
@@ -333,8 +320,8 @@ struct instance_blood_furnace : public ScriptedInstance
 
             if (Creature* pBroggok = instance->GetCreature(BroggokGUID))
             {
-                pBroggok->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
                 pBroggok->GetMotionMaster()->MovePoint(0, dx, dy, pBroggok->GetPositionZ());
+
                 DoorTimer = 5000;
             }
         }
@@ -380,6 +367,13 @@ struct instance_blood_furnace : public ScriptedInstance
                 {
                     if (Brog2)
                         Brog2->ResetDoorOrButton();
+
+                }
+                if (Creature* pBroggok = instance->GetCreature(BroggokGUID))
+                {
+                    pBroggok->SetReactState(REACT_AGGRESSIVE);
+                    pBroggok->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_OOC_NOT_ATTACKABLE | UNIT_FLAG_PASSIVE);
+                    pBroggok->SetInCombatWithZone();
                 }
             }
             else DoorTimer -= diff;
@@ -424,7 +418,7 @@ struct instance_blood_furnace : public ScriptedInstance
                         if (pOrc->IsWithinDistInMap(pDoor, 8.0f))
                         {
                             BroggokEvent[i].SortedOrcGuids.insert(pOrc->GetGUID());
-                            if (!pOrc->isAlive())
+                            if (!pOrc->IsAlive())
                             {
                                 pOrc->ForcedDespawn();
                                 pOrc->Respawn();
@@ -475,13 +469,9 @@ InstanceData* GetInstanceData_instance_blood_furnace(Map* map)
 
 bool GOHello_go_prison_cell_lever(Player* /*pPlayer*/, GameObject* pGo)
 {
-    ScriptedInstance* pInstance = (ScriptedInstance*)pGo->GetInstanceData();
-
-    if (!pInstance)
-        return false;
-
-    if (pInstance->GetData(DATA_BROGGOKEVENT) != DONE && pInstance->GetData(DATA_BROGGOKEVENT) != IN_PROGRESS)
-        pInstance->SetData(DATA_BROGGOKEVENT, IN_PROGRESS);
+    if (ScriptedInstance* instance = (ScriptedInstance*)pGo->GetInstanceData())
+        if (instance->GetData(DATA_BROGGOKEVENT) != DONE && instance->GetData(DATA_BROGGOKEVENT) != IN_PROGRESS)
+            instance->SetData(DATA_BROGGOKEVENT, IN_PROGRESS);
 
     return false;
 }

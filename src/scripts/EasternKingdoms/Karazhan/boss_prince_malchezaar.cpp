@@ -252,7 +252,7 @@ struct boss_malchezaarAI : public ScriptedAI
         //Infernal Cleanup
         for (std::vector<uint64>::const_iterator itr = infernals.begin(); itr != infernals.end(); ++itr)
             if (Unit* pInfernal = Unit::GetUnit(*me, *itr))
-                if (pInfernal->isAlive())
+                if (pInfernal->IsAlive())
                 {
                     pInfernal->SetVisibility(VISIBILITY_OFF);
                     pInfernal->setDeathState(JUST_DIED);
@@ -266,7 +266,7 @@ struct boss_malchezaarAI : public ScriptedAI
         for (uint8 i = 0; i < 2; ++i)
         {
             Unit* axe = Unit::GetUnit(*me, axes[i]);
-            if (axe && axe->isAlive())
+            if (axe && axe->IsAlive())
                 axe->Kill(axe);
             axes[i] = 0;
         }
@@ -281,7 +281,7 @@ struct boss_malchezaarAI : public ScriptedAI
         me->SetUInt32Value(UNIT_VIRTUAL_ITEM_INFO + 2, 0);
 
         //damage
-        const CreatureInfo* cinfo = me->GetCreatureInfo();
+        const CreatureInfo* cinfo = me->GetCreatureTemplate();
         me->SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, cinfo->mindmg);
         me->SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, cinfo->maxdmg);
         me->UpdateDamagePhysical(BASE_ATTACK);
@@ -294,7 +294,7 @@ struct boss_malchezaarAI : public ScriptedAI
             return;
 
         std::list<HostileReference*> t_list = me->getThreatManager().getThreatList();
-        std::vector<Unit*> targets;
+        std::vector<Unit* > targets;
 
         if (!t_list.size())
             return;
@@ -304,7 +304,7 @@ struct boss_malchezaarAI : public ScriptedAI
         std::advance(itr, 1);
         for (; itr != t_list.end(); ++itr) //store the threat list in a different container
             if (Unit* pTarget = Unit::GetUnit(*me, (*itr)->getUnitGuid()))
-                if (pTarget->isAlive() && pTarget->GetTypeId() == TYPEID_PLAYER && pTarget != me->getVictim())
+                if (pTarget->IsAlive() && pTarget->GetTypeId() == TYPEID_PLAYER && pTarget != me->getVictim())
                     targets.push_back(pTarget);
 
         //cut down to size if we have more than 5 targets
@@ -312,7 +312,7 @@ struct boss_malchezaarAI : public ScriptedAI
             targets.erase(targets.begin() + rand() % targets.size());
 
         uint32 i = 0;
-        for (std::vector<Unit*>::const_iterator iter = targets.begin(); iter != targets.end(); ++iter, ++i)
+        for (std::vector<Unit* >::const_iterator iter = targets.begin(); iter != targets.end(); ++iter, ++i)
             if (Unit* pTarget = *iter)
             {
                 enfeeble_targets[i] = pTarget->GetGUID();
@@ -328,7 +328,7 @@ struct boss_malchezaarAI : public ScriptedAI
         for (uint8 i = 0; i < 5; ++i)
         {
             Unit* pTarget = Unit::GetUnit(*me, enfeeble_targets[i]);
-            if (pTarget && pTarget->isAlive())
+            if (pTarget && pTarget->IsAlive())
                 pTarget->SetHealth(enfeeble_health[i]);
             enfeeble_targets[i] = 0;
             enfeeble_health[i] = 0;
@@ -409,7 +409,7 @@ struct boss_malchezaarAI : public ScriptedAI
                 me->SetUInt32Value(UNIT_VIRTUAL_ITEM_INFO + 2, AXE_EQUIP_INFO);
 
                 //damage
-                const CreatureInfo* cinfo = me->GetCreatureInfo();
+                const CreatureInfo* cinfo = me->GetCreatureTemplate();
                 me->SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, 2 * cinfo->mindmg);
                 me->SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, 2 * cinfo->maxdmg);
                 me->UpdateDamagePhysical(BASE_ATTACK);
@@ -602,7 +602,7 @@ void netherspite_infernalAI::Cleanup()
 {
     Unit* pMalchezaar = Unit::GetUnit(*me, malchezaar);
 
-    if (pMalchezaar && pMalchezaar->isAlive())
+    if (pMalchezaar && pMalchezaar->IsAlive())
         CAST_AI(boss_malchezaarAI, CAST_CRE(pMalchezaar)->AI())->Cleanup(me, point);
 }
 

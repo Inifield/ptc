@@ -49,7 +49,7 @@ void MapManager::LoadTransports()
         std::string name = fields[1].GetCppString();
         t->m_period = fields[2].GetUInt32();
 
-        const GameObjectInfo* goinfo = objmgr.GetGameObjectInfo(entry);
+        const GameObjectInfo* goinfo = sObjectMgr.GetGameObjectInfo(entry);
 
         if (!goinfo)
         {
@@ -100,13 +100,12 @@ void MapManager::LoadTransports()
         //If we someday decide to use the grid to track transports, here:
         t->SetMap(MapManager::Instance().CreateMap(mapid, t, 0));
 
-        //t->GetMap()->Add<GameObject>((GameObject *)t);
+        //t->GetMap()->Add<GameObject>((GameObject* )t);
 
         ++count;
     }
     while (result->NextRow());
 
-    sLog.outString();
     sLog.outString(">> Loaded %u transports", count);
 
     // check transport data DB integrity
@@ -129,7 +128,7 @@ void MapManager::LoadTransports()
 Transport::Transport() : GameObject()
 {
     // 2.3.2 - 0x5A
-    m_updateFlag = (UPDATEFLAG_TRANSPORT | UPDATEFLAG_LOWGUID | UPDATEFLAG_HIGHGUID | UPDATEFLAG_HAS_POSITION);
+    m_updateFlag = (UPDATEFLAG_TRANSPORT | UPDATEFLAG_LOWGUID | UPDATEFLAG_HIGHGUID | UPDATEFLAG_STATIONARY_POSITION);
 }
 
 bool Transport::Create(uint32 guidlow, uint32 mapid, float x, float y, float z, float ang, uint32 animprogress, uint32 dynflags)
@@ -145,7 +144,7 @@ bool Transport::Create(uint32 guidlow, uint32 mapid, float x, float y, float z, 
 
     Object::_Create(guidlow, 0, HIGHGUID_MO_TRANSPORT);
 
-    GameObjectInfo const* goinfo = objmgr.GetGameObjectInfo(guidlow);
+    GameObjectInfo const* goinfo = sObjectMgr.GetGameObjectInfo(guidlow);
 
     if (!goinfo)
     {
@@ -478,8 +477,8 @@ bool Transport::RemovePassenger(Player* passenger)
 void Transport::CheckForEvent(uint32 entry, uint32 wp_id)
 {
     uint32 key = entry * 100 + wp_id;
-    if (objmgr.TransportEventMap.find(key) != objmgr.TransportEventMap.end())
-        GetMap()->ScriptsStart(sEventScripts, objmgr.TransportEventMap[key], this, NULL);
+    if (sObjectMgr.TransportEventMap.find(key) != sObjectMgr.TransportEventMap.end())
+        GetMap()->ScriptsStart(sEventScripts, sObjectMgr.TransportEventMap[key], this, NULL);
 }
 
 void Transport::Update(uint32 /*p_time*/)

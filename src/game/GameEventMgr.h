@@ -175,7 +175,7 @@ class GameEventMgr
         bool isSystemInit;
 };
 
-#define gameeventmgr Oregon::Singleton<GameEventMgr>::Instance()
+#define sGameEventMgr Oregon::Singleton<GameEventMgr>::Instance()
 #endif
 
 bool isGameEventActive(uint16 event_id);

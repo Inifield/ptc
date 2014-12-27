@@ -20,7 +20,7 @@
 #include "Database/SQLStorage.h"
 #include "Database/SQLStorageImpl.h"
 #include "Policies/SingletonImp.h"
-#include "PoolHandler.h"
+#include "PoolMgr.h"
 #include "Log.h"
 #include "MapManager.h"
 #include "ObjectMgr.h"
@@ -358,7 +358,7 @@ Group* ObjectMgr::GetGroupByLeader(const uint64& guid) const
     return NULL;
 }
 
-Guild* ObjectMgr::GetGuildById(const uint32 GuildId) const
+Guild*  ObjectMgr::GetGuildById(const uint32 GuildId) const
 {
     GuildMap::const_iterator itr = mGuildMap.find(GuildId);
     if (itr != mGuildMap.end())
@@ -367,7 +367,7 @@ Guild* ObjectMgr::GetGuildById(const uint32 GuildId) const
     return NULL;
 }
 
-Guild* ObjectMgr::GetGuildByName(const std::string& guildname) const
+Guild*  ObjectMgr::GetGuildByName(const std::string& guildname) const
 {
     for (GuildMap::const_iterator itr = mGuildMap.begin(); itr != mGuildMap.end(); ++itr)
         if (itr->second->GetName() == guildname)
@@ -569,7 +569,7 @@ struct SQLCreatureLoader : public SQLStorageLoaderBase<SQLCreatureLoader>
     template<class D>
     void convert_from_str(uint32 field_pos, char* src, D& dst)
     {
-        dst = D(objmgr.GetScriptId(src));
+        dst = D(sObjectMgr.GetScriptId(src));
     }
 };
 
@@ -1082,10 +1082,10 @@ void ObjectMgr::LoadCreatures()
     uint32 count = 0;
     //                                                       0              1   2    3
     QueryResult_AutoPtr result = WorldDatabase.Query("SELECT creature.guid, id, map, modelid,"
-                                 //   4             5           6           7           8            9              10         11
+                                 //4             5           6           7           8            9              10         11
                                  "equipment_id, position_x, position_y, position_z, orientation, spawntimesecs, spawndist, currentwaypoint,"
-                                 //   12         13       14          15            16         17     18
-                                 "curhealth, curmana, DeathState, MovementType, spawnMask, event, pool_entry "
+                                 //12        13       14            15         16     17
+                                 "curhealth, curmana, MovementType, spawnMask, event, pool_entry "
                                  "FROM creature LEFT OUTER JOIN game_event_creature ON creature.guid = game_event_creature.guid "
                                  "LEFT OUTER JOIN pool_creature ON creature.guid = pool_creature.guid");
 
@@ -1134,11 +1134,10 @@ void ObjectMgr::LoadCreatures()
         data.currentwaypoint = fields[11].GetUInt32();
         data.curhealth      = fields[12].GetUInt32();
         data.curmana        = fields[13].GetUInt32();
-        data.is_dead        = fields[14].GetBool();
-        data.movementType   = fields[15].GetUInt8();
-        data.spawnMask      = fields[16].GetUInt8();
-        int16 gameEvent     = fields[17].GetInt16();
-        int32 PoolId        = fields[18].GetInt32();
+        data.movementType   = fields[14].GetUInt8();
+        data.spawnMask      = fields[15].GetUInt8();
+        int16 gameEvent     = fields[16].GetInt16();
+        int32 PoolId        = fields[17].GetInt32();
 
         if (heroicCreatures.find(data.id) != heroicCreatures.end())
         {
@@ -1274,7 +1273,7 @@ uint32 ObjectMgr::AddGOData(uint32 entry, uint32 artKit, uint32 mapId, float x, 
             delete go;
             return 0;
         }
-        map->Add(go);
+        map->AddToMap(go);
     }
 
     return guid;
@@ -1301,7 +1300,6 @@ uint32 ObjectMgr::AddCreData(uint32 entry, uint32 /*team*/, uint32 mapId, float 
     data.currentwaypoint = 0;
     data.curhealth = cInfo->maxhealth;
     data.curmana = cInfo->maxmana;
-    data.is_dead = false;
     data.movementType = cInfo->MovementType;
     data.spawnMask = 1;
     data.dbData = false;
@@ -1321,7 +1319,7 @@ uint32 ObjectMgr::AddCreData(uint32 entry, uint32 /*team*/, uint32 mapId, float 
                 delete creature;
                 return 0;
             }
-            map->Add(creature);
+            map->AddToMap(creature);
         }
     }
 
@@ -1652,7 +1650,7 @@ struct SQLItemLoader : public SQLStorageLoaderBase<SQLItemLoader>
     template<class D>
     void convert_from_str(uint32 field_pos, char* src, D& dst)
     {
-        dst = D(objmgr.GetScriptId(src));
+        dst = D(sObjectMgr.GetScriptId(src));
     }
 };
 
@@ -2951,7 +2949,7 @@ void ObjectMgr::LoadGroups()
                 continue;
             }
 
-            InstanceSave* save = sInstanceSaveManager.AddInstanceSave(mapEntry->MapID, fields[2].GetUInt32(), (DungeonDifficulties)fields[4].GetUInt8(), (time_t)fields[5].GetUInt64(), (fields[6].GetUInt32() == 0), true);
+            InstanceSave* save = sInstanceSaveMgr.AddInstanceSave(mapEntry->MapID, fields[2].GetUInt32(), (DungeonDifficulties)fields[4].GetUInt8(), (time_t)fields[5].GetUInt64(), (fields[6].GetUInt32() == 0), true);
             group->BindToInstance(save, fields[3].GetBool(), true);
         }
         while (result->NextRow());
@@ -3815,8 +3813,6 @@ void ObjectMgr::LoadScripts(ScriptsType type)
     if (sWorld.IsScriptScheduled())                          // function don't must be called in time scripts use.
         return;
 
-    sLog.outString("%s :", tableName.c_str());
-
     scripts->clear();                                        // need for reload support
 
     QueryResult_AutoPtr result = WorldDatabase.PQuery("SELECT id,delay,command,datalong,datalong2,dataint, x, y, z, o FROM %s", tableName.c_str());
@@ -4401,7 +4397,7 @@ struct SQLInstanceLoader : public SQLStorageLoaderBase<SQLInstanceLoader>
     template<class D>
     void convert_from_str(uint32 field_pos, char* src, D& dst)
     {
-        dst = D(objmgr.GetScriptId(src));
+        dst = D(sObjectMgr.GetScriptId(src));
     }
 };
 
@@ -5638,7 +5634,7 @@ struct SQLGameObjectLoader : public SQLStorageLoaderBase<SQLGameObjectLoader>
     template<class D>
     void convert_from_str(uint32 /*field_pos*/, char* src, D& dst)
     {
-        dst = D(objmgr.GetScriptId(src));
+        dst = D(sObjectMgr.GetScriptId(src));
     }
 };
 
@@ -6175,7 +6171,7 @@ void ObjectMgr::LoadQuestRelationsHelper(QuestRelations& map, std::string table,
     }
 
 
-    PooledQuestRelation* poolRelationMap = go ? &poolhandler.mQuestGORelation : &poolhandler.mQuestCreatureRelation;
+    PooledQuestRelation* poolRelationMap = go ? &sPoolMgr.mQuestGORelation : &sPoolMgr.mQuestCreatureRelation;
     if (starter)
         poolRelationMap->clear();
 
@@ -6779,7 +6775,7 @@ bool PlayerCondition::Meets(Player const* player) const
     case CONDITION_NO_AURA:
         return !player->HasAura(value1, value2);
     case CONDITION_ACTIVE_EVENT:
-        return gameeventmgr.IsActiveEvent(value1);
+        return sGameEventMgr.IsActiveEvent(value1);
     case CONDITION_INSTANCE_DATA:
         {
             Map* map = player->GetMap();
@@ -6818,7 +6814,7 @@ bool PlayerCondition::IsValid(ConditionType condition, uint32 value1, uint32 val
         }
     case CONDITION_ITEM:
         {
-            ItemPrototype const* proto = objmgr.GetItemPrototype(value1);
+            ItemPrototype const* proto = sObjectMgr.GetItemPrototype(value1);
             if (!proto)
             {
                 sLog.outErrorDb("Item condition has invalid item (%u), skipped", value1);
@@ -6828,7 +6824,7 @@ bool PlayerCondition::IsValid(ConditionType condition, uint32 value1, uint32 val
         }
     case CONDITION_ITEM_EQUIPPED:
         {
-            ItemPrototype const* proto = objmgr.GetItemPrototype(value1);
+            ItemPrototype const* proto = sObjectMgr.GetItemPrototype(value1);
             if (!proto)
             {
                 sLog.outErrorDb("ItemEquipped condition has invalid item (%u), skipped", value1);
@@ -6888,7 +6884,7 @@ bool PlayerCondition::IsValid(ConditionType condition, uint32 value1, uint32 val
     case CONDITION_QUESTREWARDED:
     case CONDITION_QUESTTAKEN:
         {
-            Quest const* Quest = objmgr.GetQuestTemplate(value1);
+            Quest const* Quest = sObjectMgr.GetQuestTemplate(value1);
             if (!Quest)
             {
                 sLog.outErrorDb("Quest condition has invalid quest (%u), skipped", value1);
@@ -6922,7 +6918,7 @@ bool PlayerCondition::IsValid(ConditionType condition, uint32 value1, uint32 val
         }
     case CONDITION_ACTIVE_EVENT:
         {
-            GameEventMgr::GameEventDataMap const& events = gameeventmgr.GetEventMap();
+            GameEventMgr::GameEventDataMap const& events = sGameEventMgr.GetEventMap();
             if (value1 >= events.size() || !events[value1].isValid())
             {
                 sLog.outErrorDb("Active event condition requires valid event id (%u), skipped", value1);
@@ -7645,7 +7641,7 @@ void ObjectMgr::LoadDbScriptStrings()
 // Functions for scripting access
 uint32 GetAreaTriggerScriptId(uint32 trigger_id)
 {
-    return objmgr.GetAreaTriggerScriptId(trigger_id);
+    return sObjectMgr.GetAreaTriggerScriptId(trigger_id);
 }
 
 bool LoadOregonStrings(DatabaseType& db, char const* table, int32 start_value, int32 end_value)
@@ -7658,27 +7654,27 @@ bool LoadOregonStrings(DatabaseType& db, char const* table, int32 start_value, i
         return false;
     }
 
-    return objmgr.LoadOregonStrings(db, table, start_value, end_value);
+    return sObjectMgr.LoadOregonStrings(db, table, start_value, end_value);
 }
 
 uint32 GetScriptId(const char* name)
 {
-    return objmgr.GetScriptId(name);
+    return sObjectMgr.GetScriptId(name);
 }
 
 ObjectMgr::ScriptNameMap& GetScriptNames()
 {
-    return objmgr.GetScriptNames();
+    return sObjectMgr.GetScriptNames();
 }
 
 GameObjectInfo const* GetGameObjectInfo(uint32 id)
 {
-    return objmgr.GetGameObjectInfo(id);
+    return sObjectMgr.GetGameObjectInfo(id);
 }
 
-CreatureInfo const* GetCreatureInfo(uint32 id)
+CreatureInfo const* GetCreatureTemplate(uint32 id)
 {
-    return objmgr.GetCreatureTemplate(id);
+    return sObjectMgr.GetCreatureTemplate(id);
 }
 
 CreatureInfo const* GetCreatureTemplateStore(uint32 entry)
@@ -7688,7 +7684,7 @@ CreatureInfo const* GetCreatureTemplateStore(uint32 entry)
 
 Quest const* GetQuestTemplateStore(uint32 entry)
 {
-    return objmgr.GetQuestTemplate(entry);
+    return sObjectMgr.GetQuestTemplate(entry);
 }
 
 void ObjectMgr::LoadTransportEvents()

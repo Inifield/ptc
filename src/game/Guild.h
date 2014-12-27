@@ -425,9 +425,9 @@ class Guild
         void   DisplayGuildBankContentUpdate(uint8 TabId, GuildItemPosCountVec const& slots);
         void   DisplayGuildBankMoneyUpdate();
 
-        Item*  GetItem(uint8 TabId, uint8 SlotId);
+        Item* GetItem(uint8 TabId, uint8 SlotId);
         uint8  CanStoreItem(uint8 tab, uint8 slot, GuildItemPosCountVec& dest, uint32 count, Item* pItem, bool swap = false) const;
-        Item*  StoreItem(uint8 tab, GuildItemPosCountVec const& pos, Item* pItem);
+        Item* StoreItem(uint8 tab, GuildItemPosCountVec const& pos, Item* pItem);
         void   RemoveItem(uint8 tab, uint8 slot);
 
         // Tabs

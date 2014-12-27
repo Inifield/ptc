@@ -43,7 +43,6 @@ void DisableMgr::LoadDisables()
 
     if (!result)
     {
-        sLog.outString();
         sLog.outString(">> Loaded %u disables", total_count);
         return;
     }
@@ -156,7 +155,6 @@ void DisableMgr::LoadDisables()
     }
     while (result->NextRow());
 
-    sLog.outString();
     sLog.outString(">> Loaded %u disables.", total_count);
 }
 
@@ -164,17 +162,13 @@ void DisableMgr::CheckQuestDisables()
 {
     uint32 count = m_DisableMap[DISABLE_TYPE_QUEST].size();
     if (!count)
-    {
-        sLog.outString();
-        sLog.outString(">> Done.");
         return;
-    }
 
     // check only quests, rest already done at startup
     for (DisableTypeMap::iterator itr = m_DisableMap[DISABLE_TYPE_QUEST].begin(); itr != m_DisableMap[DISABLE_TYPE_QUEST].end();)
     {
         const uint32 entry = itr->first;
-        if (!objmgr.GetQuestTemplate(entry))
+        if (!sObjectMgr.GetQuestTemplate(entry))
         {
             sLog.outErrorDb("Quest entry %u from `disables` doesn't exist, skipped.", entry);
             m_DisableMap[DISABLE_TYPE_QUEST].erase(itr++);
@@ -184,9 +178,6 @@ void DisableMgr::CheckQuestDisables()
             sLog.outErrorDb("Disable flags specified for quest %u, useless data.", entry);
         ++itr;
     }
-
-    sLog.outString();
-    sLog.outString(">> Done.");
 }
 
 bool DisableMgr::IsDisabledFor(DisableType type, uint32 entry, Unit* pUnit, uint8 flags)

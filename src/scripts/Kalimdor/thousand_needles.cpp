@@ -299,7 +299,7 @@ struct npc_pluckyAI : public ScriptedAI
     {
         if (pPlayer->GetQuestStatus(QUEST_SCOOP) == QUEST_STATUS_INCOMPLETE)
         {
-            if (uiTextEmote == TEXTEMOTE_BECKON)
+            if (uiTextEmote == TEXT_EMOTE_BECKON)
             {
                 me->setFaction(FACTION_FRIENDLY);
                 me->SetFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
@@ -307,7 +307,7 @@ struct npc_pluckyAI : public ScriptedAI
             }
         }
 
-        if (uiTextEmote == TEXTEMOTE_CHICKEN)
+        if (uiTextEmote == TEXT_EMOTE_CHICKEN)
         {
             if (me->HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP))
                 return;

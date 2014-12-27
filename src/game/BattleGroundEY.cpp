@@ -148,7 +148,7 @@ void BattleGroundEY::CheckSomeoneJoinedPoint()
             uint8 j = 0;
             while (j < m_PlayersNearPoint[EY_POINTS_MAX].size())
             {
-                Player* plr = objmgr.GetPlayer(m_PlayersNearPoint[EY_POINTS_MAX][j]);
+                Player* plr = sObjectMgr.GetPlayer(m_PlayersNearPoint[EY_POINTS_MAX][j]);
                 if (plr && plr->CanCaptureTowerPoint() && plr->IsWithinDistInMap(obj, BG_EY_POINT_RADIUS))
                 {
                     //player joined point!
@@ -182,7 +182,7 @@ void BattleGroundEY::CheckSomeoneLeftPoint()
             uint8 j = 0;
             while (j < m_PlayersNearPoint[i].size())
             {
-                Player* plr = objmgr.GetPlayer(m_PlayersNearPoint[i][j]);
+                Player* plr = sObjectMgr.GetPlayer(m_PlayersNearPoint[i][j]);
                 if (!plr)
                 {
                     sLog.outError("BattleGroundEY: Player (GUID: %u) not found!", GUID_LOPART(m_PlayersNearPoint[i][j]));
@@ -237,7 +237,7 @@ void BattleGroundEY::UpdatePointStatuses()
 
         for (uint8 i = 0; i < m_PlayersNearPoint[point].size(); ++i)
         {
-            Player* plr = objmgr.GetPlayer(m_PlayersNearPoint[point][i]);
+            Player* plr = sObjectMgr.GetPlayer(m_PlayersNearPoint[point][i]);
             if (plr)
             {
                 this->UpdateWorldStateForPlayer(PROGRESS_BAR_STATUS, m_PointBarStatus[point], plr);
@@ -341,7 +341,7 @@ void BattleGroundEY::HandleAreaTrigger(Player* Source, uint32 Trigger)
     if (GetStatus() != STATUS_IN_PROGRESS)
         return;
 
-    if (!Source->isAlive())                                  //hack code, must be removed later
+    if (!Source->IsAlive())                                  //hack code, must be removed later
         return;
 
     switch (Trigger)

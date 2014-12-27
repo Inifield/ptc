@@ -199,7 +199,7 @@ void AuctionHouseBot::addNewAuctions(Player* AHBplayer, AHBConfig* config)
     uint32 purpleIcount = config->GetPercents(AHB_PURPLE_I);
     uint32 orangeIcount = config->GetPercents(AHB_ORANGE_I);
     uint32 yellowIcount = config->GetPercents(AHB_YELLOW_I);
-    /*    uint32 total = greyTGcount + whiteTGcount + greenTGcount + blueTGcount
+    /*   uint32 total = greyTGcount + whiteTGcount + greenTGcount + blueTGcount
             + purpleTGcount + orangeTGcount + yellowTGcount
             + whiteIcount + greenIcount + blueIcount + purpleIcount
             + orangeIcount + yellowIcount;
@@ -350,7 +350,7 @@ void AuctionHouseBot::addNewAuctions(Player* AHBplayer, AHBConfig* config)
             if (config->IsIgnoringItem(itemID))
                 continue;
 
-            ItemPrototype const* prototype = objmgr.GetItemPrototype(itemID);
+            ItemPrototype const* prototype = sObjectMgr.GetItemPrototype(itemID);
             if (prototype == NULL)
             {
                 if (debug_Out) sLog.outError("AHSeller: Huh?!?! prototype == NULL");
@@ -425,7 +425,7 @@ void AuctionHouseBot::addNewAuctions(Player* AHBplayer, AHBConfig* config)
             uint32 dep = sAuctionMgr->GetAuctionDeposit(ahEntry, etime, item);
 
             AuctionEntry* auctionEntry = new AuctionEntry;
-            auctionEntry->Id = objmgr.GenerateAuctionID();
+            auctionEntry->Id = sObjectMgr.GenerateAuctionID();
             auctionEntry->auctioneer = AuctioneerGUID;
             auctionEntry->item_guidlow = item->GetGUIDLow();
             auctionEntry->item_template = item->GetEntry();
@@ -553,7 +553,7 @@ void AuctionHouseBot::addNewAuctionBuyerBotBid(Player* AHBplayer, AHBConfig* con
         }
 
         // get item prototype
-        ItemPrototype const* prototype = objmgr.GetItemPrototype(auction->item_template);
+        ItemPrototype const* prototype = sObjectMgr.GetItemPrototype(auction->item_template);
 
         // check which price we have to use, startbid or if it is bidded already
         uint32 currentprice;
@@ -883,7 +883,7 @@ void AuctionHouseBot::Initialize()
 
         for (uint32 itemID = 0; itemID < sItemStorage.MaxEntry; itemID++)
         {
-            ItemPrototype const* prototype = objmgr.GetItemPrototype(itemID);
+            ItemPrototype const* prototype = sObjectMgr.GetItemPrototype(itemID);
 
             if (prototype == NULL)
                 continue;
@@ -1380,7 +1380,7 @@ void AuctionHouseBot::IncrementItemCounts(AuctionEntry* ah)
     }
 
     // get item prototype
-    ItemPrototype const* prototype = objmgr.GetItemPrototype(ah->item_template);
+    ItemPrototype const* prototype = sObjectMgr.GetItemPrototype(ah->item_template);
 
     AHBConfig* config;
 
@@ -1412,7 +1412,7 @@ void AuctionHouseBot::IncrementItemCounts(AuctionEntry* ah)
 void AuctionHouseBot::DecrementItemCounts(AuctionEntry* ah, uint32 item_template)
 {
     // get item prototype
-    ItemPrototype const* prototype = objmgr.GetItemPrototype(item_template);
+    ItemPrototype const* prototype = sObjectMgr.GetItemPrototype(item_template);
 
     AHBConfig* config;
 

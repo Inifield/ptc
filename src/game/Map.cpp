@@ -386,14 +386,14 @@ void Map::LoadGrid(float x, float y)
     EnsureGridLoaded(cell);
 }
 
-bool Map::Add(Player* player)
+bool Map::AddToMap(Player* player)
 {
     // Check if we are adding to correct map
     ASSERT (player->GetMap() == this);
     CellPair p = Oregon::ComputeCellPair(player->GetPositionX(), player->GetPositionY());
     if (p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP)
     {
-        sLog.outError("Map::Add: Player (GUID: %u) has invalid coordinates X:%f Y:%f grid cell [%u:%u]", player->GetGUIDLow(), player->GetPositionX(), player->GetPositionY(), p.x_coord, p.y_coord);
+        sLog.outError("Map::AddToMap: Player (GUID: %u) has invalid coordinates X:%f Y:%f grid cell [%u:%u]", player->GetGUIDLow(), player->GetPositionX(), player->GetPositionY(), p.x_coord, p.y_coord);
         return false;
     }
 
@@ -418,12 +418,12 @@ bool Map::Add(Player* player)
 
 template<class T>
 void
-Map::Add(T* obj)
+Map::AddToMap(T* obj)
 {
     CellPair p = Oregon::ComputeCellPair(obj->GetPositionX(), obj->GetPositionY());
     if (p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP)
     {
-        sLog.outError("Map::Add: Object " UI64FMTD " has invalid coordinates X:%f Y:%f grid cell [%u:%u]", obj->GetGUID(), obj->GetPositionX(), obj->GetPositionY(), p.x_coord, p.y_coord);
+        sLog.outError("Map::AddToMap: Object " UI64FMTD " has invalid coordinates X:%f Y:%f grid cell [%u:%u]", obj->GetGUID(), obj->GetPositionX(), obj->GetPositionY(), p.x_coord, p.y_coord);
         return;
     }
 
@@ -455,7 +455,7 @@ Map::Add(T* obj)
 }
 
 /*
-void Map::MessageBroadcast(Player* player, WorldPacket *msg, bool to_self)
+void Map::MessageBroadcast(Player* player, WorldPacket* msg, bool to_self)
 {
     CellPair p = Oregon::ComputeCellPair(player->GetPositionX(), player->GetPositionY());
 
@@ -476,7 +476,7 @@ void Map::MessageBroadcast(Player* player, WorldPacket *msg, bool to_self)
     cell.Visit(p, message, *this, *player, GetVisibilityDistance());
 }
 
-void Map::MessageBroadcast(WorldObject *obj, WorldPacket *msg)
+void Map::MessageBroadcast(WorldObject *obj, WorldPacket* msg)
 {
     CellPair p = Oregon::ComputeCellPair(obj->GetPositionX(), obj->GetPositionY());
 
@@ -500,7 +500,7 @@ void Map::MessageBroadcast(WorldObject *obj, WorldPacket *msg)
     cell.Visit(p, message, *this, *obj, GetVisibilityDistance());
 }
 
-void Map::MessageDistBroadcast(Player* player, WorldPacket *msg, float dist, bool to_self, bool own_team_only)
+void Map::MessageDistBroadcast(Player* player, WorldPacket* msg, float dist, bool to_self, bool own_team_only)
 {
     CellPair p = Oregon::ComputeCellPair(player->GetPositionX(), player->GetPositionY());
 
@@ -521,7 +521,7 @@ void Map::MessageDistBroadcast(Player* player, WorldPacket *msg, float dist, boo
     cell.Visit(p, message, *this, *player, dist);
 }
 
-void Map::MessageDistBroadcast(WorldObject *obj, WorldPacket *msg, float dist)
+void Map::MessageDistBroadcast(WorldObject *obj, WorldPacket* msg, float dist)
 {
     CellPair p = Oregon::ComputeCellPair(obj->GetPositionX(), obj->GetPositionY());
 
@@ -569,7 +569,7 @@ void Map::Update(const uint32& t_diff)
     TypeContainerVisitor<Oregon::ObjectUpdater, WorldTypeMapContainer > world_object_update(updater);
 
     // the player iterator is stored in the map object
-    // to make sure calls to Map::Remove don't invalidate it
+    // to make sure calls to Map::RemoveFromMap don't invalidate it
     for (m_mapRefIter = m_mapRefManager.begin(); m_mapRefIter != m_mapRefManager.end(); ++m_mapRefIter)
     {
         Player* plr = m_mapRefIter->getSource();
@@ -619,7 +619,7 @@ void Map::Update(const uint32& t_diff)
             // skip not in world
             WorldObject* obj = *m_activeNonPlayersIter;
 
-            // step before processing, in this case if Map::Remove remove next object we correctly
+            // step before processing, in this case if Map::RemoveFromMap remove next object we correctly
             // step to next-next, and if we step to end() then newly added objects can wait next update.
             ++m_activeNonPlayersIter;
 
@@ -771,19 +771,19 @@ void Map::ProcessRelocationNotifies(const uint32& diff)
     }
 }
 
-void Map::Remove(Player* player, bool remove)
+void Map::RemoveFromMap(Player* player, bool remove)
 {
     player->RemoveFromWorld();
     SendRemoveTransports(player);
 
     CellPair p = Oregon::ComputeCellPair(player->GetPositionX(), player->GetPositionY());
     if (p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP)
-        sLog.outCrash("Map::Remove: Player is in invalid cell!");
+        sLog.outCrash("Map::RemoveFromMap: Player is in invalid cell!");
     else
     {
         Cell cell(p);
         if (!getNGrid(cell.data.Part.grid_x, cell.data.Part.grid_y))
-            sLog.outError("Map::Remove() i_grids was NULL x:%d, y:%d", cell.data.Part.grid_x, cell.data.Part.grid_y);
+            sLog.outError("Map::RemoveFromMap() i_grids was NULL x:%d, y:%d", cell.data.Part.grid_x, cell.data.Part.grid_y);
         else
         {
             DEBUG_LOG("Remove player %s from grid[%u,%u]", player->GetName(), cell.GridX(), cell.GridY());
@@ -801,7 +801,7 @@ void Map::Remove(Player* player, bool remove)
 
 template<class T>
 void
-Map::Remove(T* obj, bool remove)
+Map::RemoveFromMap(T* obj, bool remove)
 {
     obj->RemoveFromWorld();
     if (obj->isActiveObject())
@@ -809,7 +809,7 @@ Map::Remove(T* obj, bool remove)
 
     CellPair p = Oregon::ComputeCellPair(obj->GetPositionX(), obj->GetPositionY());
     if (p.x_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP || p.y_coord >= TOTAL_NUMBER_OF_CELLS_PER_MAP)
-        sLog.outError("Map::Remove: Object " I64FMT " has invalid coordinates X:%f Y:%f grid cell [%u:%u]", obj->GetGUID(), obj->GetPositionX(), obj->GetPositionY(), p.x_coord, p.y_coord);
+        sLog.outError("Map::RemoveFromMap: Object " I64FMT " has invalid coordinates X:%f Y:%f grid cell [%u:%u]", obj->GetGUID(), obj->GetPositionX(), obj->GetPositionY(), p.x_coord, p.y_coord);
     else
     {
         Cell cell(p);
@@ -852,10 +852,6 @@ Map::PlayerRelocation(Player* player, float x, float y, float z, float orientati
     {
         DEBUG_LOG("Player %s relocation grid[%u,%u]cell[%u,%u]->grid[%u,%u]cell[%u,%u]", player->GetName(), old_cell.GridX(), old_cell.GridY(), old_cell.CellX(), old_cell.CellY(), new_cell.GridX(), new_cell.GridY(), new_cell.CellX(), new_cell.CellY());
 
-        // update player position for group at taxi flight
-        if (player->GetGroup() && player->isInFlight())
-            player->SetGroupUpdateFlag(GROUP_UPDATE_FLAG_POSITION);
-
         NGridType* oldGrid = getNGrid(old_cell.GridX(), old_cell.GridY());
         RemoveFromGrid(player, oldGrid, old_cell);
 
@@ -875,7 +871,6 @@ Map::CreatureRelocation(Creature* creature, float x, float y, float z, float ang
     ASSERT(CheckGridIntegrity(creature, false));
 
     Cell old_cell = creature->GetCurrentCell();
-
     CellPair new_val = Oregon::ComputeCellPair(x, y);
     Cell new_cell(new_val);
 
@@ -2158,20 +2153,20 @@ void Map::RemoveAllObjectsInRemoveList()
                 if (!corpse)
                     sLog.outError("Tried to delete corpse/bones %u that is not in map.", obj->GetGUIDLow());
                 else
-                    Remove(corpse, true);
+                    RemoveFromMap(corpse, true);
                 break;
             }
         case TYPEID_DYNAMICOBJECT:
-            Remove((DynamicObject*)obj, true);
+            RemoveFromMap((DynamicObject*)obj, true);
             break;
         case TYPEID_GAMEOBJECT:
-            Remove((GameObject*)obj, true);
+            RemoveFromMap((GameObject*)obj, true);
             break;
         case TYPEID_UNIT:
             // in case triggered sequence some spell can continue casting after prev CleanupsBeforeDelete call
             // make sure that like sources auras/etc removed before destructor start
             obj->ToCreature()->CleanupsBeforeDelete();
-            Remove(obj->ToCreature(), true);
+            RemoveFromMap(obj->ToCreature(), true);
             break;
         default:
             sLog.outError("Non-grid object (TypeId: %u) is in grid object remove list, ignored.", obj->GetTypeId());
@@ -2281,15 +2276,15 @@ void Map::RemoveFromActive(Creature* c)
     }
 }
 
-template void Map::Add(Corpse*);
-template void Map::Add(Creature*);
-template void Map::Add(GameObject*);
-template void Map::Add(DynamicObject*);
+template void Map::AddToMap(Corpse*);
+template void Map::AddToMap(Creature*);
+template void Map::AddToMap(GameObject*);
+template void Map::AddToMap(DynamicObject*);
 
-template void Map::Remove(Corpse*, bool);
-template void Map::Remove(Creature*, bool);
-template void Map::Remove(GameObject*, bool);
-template void Map::Remove(DynamicObject*, bool);
+template void Map::RemoveFromMap(Corpse*, bool);
+template void Map::RemoveFromMap(Creature*, bool);
+template void Map::RemoveFromMap(GameObject*, bool);
+template void Map::RemoveFromMap(DynamicObject*, bool);
 
 /* ******* Dungeon Instance Maps ******* */
 
@@ -2336,7 +2331,7 @@ bool InstanceMap::CanEnter(Player* player)
         return Map::CanEnter(player);
 
     // cannot enter if the instance is full (player cap), GMs don't count
-    InstanceTemplate const* iTemplate = objmgr.GetInstanceTemplate(GetId());
+    InstanceTemplate const* iTemplate = sObjectMgr.GetInstanceTemplate(GetId());
     if (GetPlayersCountExceptGMs() >= iTemplate->maxPlayers)
     {
         sLog.outDetail("MAP: Instance '%u' of map '%s' cannot have more than '%u' players. Player '%s' rejected", GetInstanceId(), GetMapName(), iTemplate->maxPlayers, player->GetName());
@@ -2381,7 +2376,7 @@ bool InstanceMap::CanEnter(Player* player)
 /*
     Do map specific checks and add the player to the map if successful.
 */
-bool InstanceMap::Add(Player* player)
+bool InstanceMap::AddToMap(Player* player)
 {
     // @todo Not sure about checking player level: already done in HandleAreaTriggerOpcode
     // GMs still can teleport player in instance.
@@ -2396,11 +2391,11 @@ bool InstanceMap::Add(Player* player)
         if (IsDungeon())
         {
             // get or create an instance save for the map
-            InstanceSave* mapSave = sInstanceSaveManager.GetInstanceSave(GetInstanceId());
+            InstanceSave* mapSave = sInstanceSaveMgr.GetInstanceSave(GetInstanceId());
             if (!mapSave)
             {
-                sLog.outDetail("InstanceMap::Add: creating instance save for map %d spawnmode %d with instance id %d", GetId(), GetSpawnMode(), GetInstanceId());
-                mapSave = sInstanceSaveManager.AddInstanceSave(GetId(), GetInstanceId(), GetSpawnMode(), 0, true);
+                sLog.outDetail("InstanceMap::AddToMap: creating instance save for map %d spawnmode %d with instance id %d", GetId(), GetSpawnMode(), GetInstanceId());
+                mapSave = sInstanceSaveMgr.AddInstanceSave(GetId(), GetInstanceId(), GetSpawnMode(), 0, true);
             }
 
             // check for existing instance binds
@@ -2410,7 +2405,7 @@ bool InstanceMap::Add(Player* player)
                 // cannot enter other instances if bound permanently
                 if (playerBind->save != mapSave)
                 {
-                    sLog.outError("InstanceMap::Add: player %s(%d) is permanently bound to instance %d,%d,%d,%d,%d,%d but he is being put into instance %d,%d,%d,%d,%d,%d", player->GetName(), player->GetGUIDLow(), playerBind->save->GetMapId(), playerBind->save->GetInstanceId(), playerBind->save->GetDifficulty(), playerBind->save->GetPlayerCount(), playerBind->save->GetGroupCount(), playerBind->save->CanReset(), mapSave->GetMapId(), mapSave->GetInstanceId(), mapSave->GetDifficulty(), mapSave->GetPlayerCount(), mapSave->GetGroupCount(), mapSave->CanReset());
+                    sLog.outError("InstanceMap::AddToMap: player %s(%d) is permanently bound to instance %d,%d,%d,%d,%d,%d but he is being put into instance %d,%d,%d,%d,%d,%d", player->GetName(), player->GetGUIDLow(), playerBind->save->GetMapId(), playerBind->save->GetInstanceId(), playerBind->save->GetDifficulty(), playerBind->save->GetPlayerCount(), playerBind->save->GetGroupCount(), playerBind->save->CanReset(), mapSave->GetMapId(), mapSave->GetInstanceId(), mapSave->GetDifficulty(), mapSave->GetPlayerCount(), mapSave->GetGroupCount(), mapSave->CanReset());
                     return false;
                 }
             }
@@ -2423,8 +2418,8 @@ bool InstanceMap::Add(Player* player)
                     InstanceGroupBind* groupBind = pGroup->GetBoundInstance(this);
                     if (playerBind)
                     {
-                        sLog.outError("InstanceMap::Add: player %s(%d) is being put into instance %d,%d,%d,%d,%d,%d but he is in group %d and is bound to instance %d,%d,%d,%d,%d,%d!", player->GetName(), player->GetGUIDLow(), mapSave->GetMapId(), mapSave->GetInstanceId(), mapSave->GetDifficulty(), mapSave->GetPlayerCount(), mapSave->GetGroupCount(), mapSave->CanReset(), GUID_LOPART(pGroup->GetLeaderGUID()), playerBind->save->GetMapId(), playerBind->save->GetInstanceId(), playerBind->save->GetDifficulty(), playerBind->save->GetPlayerCount(), playerBind->save->GetGroupCount(), playerBind->save->CanReset());
-                        if (groupBind) sLog.outError("InstanceMap::Add: the group is bound to the instance %d,%d,%d,%d,%d,%d", groupBind->save->GetMapId(), groupBind->save->GetInstanceId(), groupBind->save->GetDifficulty(), groupBind->save->GetPlayerCount(), groupBind->save->GetGroupCount(), groupBind->save->CanReset());
+                        sLog.outError("InstanceMap::AddToMap: player %s(%d) is being put into instance %d,%d,%d,%d,%d,%d but he is in group %d and is bound to instance %d,%d,%d,%d,%d,%d!", player->GetName(), player->GetGUIDLow(), mapSave->GetMapId(), mapSave->GetInstanceId(), mapSave->GetDifficulty(), mapSave->GetPlayerCount(), mapSave->GetGroupCount(), mapSave->CanReset(), GUID_LOPART(pGroup->GetLeaderGUID()), playerBind->save->GetMapId(), playerBind->save->GetInstanceId(), playerBind->save->GetDifficulty(), playerBind->save->GetPlayerCount(), playerBind->save->GetGroupCount(), playerBind->save->CanReset());
+                        if (groupBind) sLog.outError("InstanceMap::AddToMap: the group is bound to the instance %d,%d,%d,%d,%d,%d", groupBind->save->GetMapId(), groupBind->save->GetInstanceId(), groupBind->save->GetDifficulty(), groupBind->save->GetPlayerCount(), groupBind->save->GetGroupCount(), groupBind->save->CanReset());
                         //ASSERT(false);
                         return false;
                     }
@@ -2436,7 +2431,7 @@ bool InstanceMap::Add(Player* player)
                         // cannot jump to a different instance without resetting it
                         if (groupBind->save != mapSave)
                         {
-                            sLog.outError("InstanceMap::Add: player %s(%d) is being put into instance %d,%d,%d but he is in group %d which is bound to instance %d,%d,%d!", player->GetName(), player->GetGUIDLow(), mapSave->GetMapId(), mapSave->GetInstanceId(), mapSave->GetDifficulty(), GUID_LOPART(pGroup->GetLeaderGUID()), groupBind->save->GetMapId(), groupBind->save->GetInstanceId(), groupBind->save->GetDifficulty());
+                            sLog.outError("InstanceMap::AddToMap: player %s(%d) is being put into instance %d,%d,%d but he is in group %d which is bound to instance %d,%d,%d!", player->GetName(), player->GetGUIDLow(), mapSave->GetMapId(), mapSave->GetInstanceId(), mapSave->GetDifficulty(), GUID_LOPART(pGroup->GetLeaderGUID()), groupBind->save->GetMapId(), groupBind->save->GetInstanceId(), groupBind->save->GetDifficulty());
                             if (mapSave)
                                 sLog.outError("MapSave players: %d, group count: %d", mapSave->GetPlayerCount(), mapSave->GetGroupCount());
                             else
@@ -2484,7 +2479,7 @@ bool InstanceMap::Add(Player* player)
     }
 
     // this will acquire the same mutex so it cannot be in the previous block
-    Map::Add(player);
+    Map::AddToMap(player);
 
     if (i_data)
         i_data->OnPlayerEnter(player);
@@ -2500,13 +2495,13 @@ void InstanceMap::Update(const uint32& t_diff)
         i_data->Update(t_diff);
 }
 
-void InstanceMap::Remove(Player* player, bool remove)
+void InstanceMap::RemoveFromMap(Player* player, bool remove)
 {
     sLog.outDetail("MAP: Removing player '%s' from instance '%u' of map '%s' before relocating to another map", player->GetName(), GetInstanceId(), GetMapName());
     //if last player set unload timer
     if (!m_unloadTimer && m_mapRefManager.getSize() == 1)
         m_unloadTimer = m_unloadWhenEmpty ? MIN_UNLOAD_DELAY : std::max(sWorld.getConfig(CONFIG_INSTANCE_UNLOAD_DELAY), (uint32)MIN_UNLOAD_DELAY);
-    Map::Remove(player, remove);
+    Map::RemoveFromMap(player, remove);
     // for normal instances schedule the reset after all players have left
     SetResetSchedule(true);
 }
@@ -2516,7 +2511,7 @@ void InstanceMap::CreateInstanceData(bool load)
     if (i_data != NULL)
         return;
 
-    InstanceTemplate const* mInstance = objmgr.GetInstanceTemplate(GetId());
+    InstanceTemplate const* mInstance = sObjectMgr.GetInstanceTemplate(GetId());
     if (mInstance)
     {
         i_script_id = mInstance->script_id;
@@ -2538,7 +2533,7 @@ void InstanceMap::CreateInstanceData(bool load)
             const char* data = fields[0].GetString();
             if (data && *data)
             {
-                sLog.outDebug("Loading instance data for %s with id %u", objmgr.GetScriptName(i_script_id), i_InstanceId);
+                sLog.outDebug("Loading instance data for %s with id %u", sObjectMgr.GetScriptName(i_script_id), i_InstanceId);
                 i_data->Load(data);
             }
         }
@@ -2589,7 +2584,7 @@ void InstanceMap::PermBindAllPlayers(Player* player)
     if (!IsDungeon())
         return;
 
-    InstanceSave* save = sInstanceSaveManager.GetInstanceSave(GetInstanceId());
+    InstanceSave* save = sInstanceSaveMgr.GetInstanceSave(GetInstanceId());
     if (!save)
     {
         sLog.outError("Cannot bind players, no instance save available for map!");
@@ -2620,7 +2615,7 @@ void InstanceMap::PermBindAllPlayers(Player* player)
 
 time_t InstanceMap::GetResetTime()
 {
-    InstanceSave* save = sInstanceSaveManager.GetInstanceSave(GetInstanceId());
+    InstanceSave* save = sInstanceSaveMgr.GetInstanceSave(GetInstanceId());
     return time_t(save ? save->GetDifficulty() : DIFFICULTY_NORMAL);
 }
 
@@ -2629,7 +2624,7 @@ void InstanceMap::UnloadAll()
     ASSERT(!HavePlayers());
 
     if (m_resetAfterUnload == true)
-        objmgr.DeleteRespawnTimeForInstance(GetInstanceId());
+        sObjectMgr.DeleteRespawnTimeForInstance(GetInstanceId());
 
     Map::UnloadAll();
 }
@@ -2647,9 +2642,9 @@ void InstanceMap::SetResetSchedule(bool on)
     // it is assumed that the reset time will rarely (if ever) change while the reset is scheduled
     if (IsDungeon() && !HavePlayers() && !IsRaid() && !IsHeroic())
     {
-        InstanceSave* save = sInstanceSaveManager.GetInstanceSave(GetInstanceId());
+        InstanceSave* save = sInstanceSaveMgr.GetInstanceSave(GetInstanceId());
         if (!save) sLog.outError("InstanceMap::SetResetSchedule: cannot turn schedule %s, no save available for instance %d of %d", on ? "on" : "off", GetInstanceId(), GetId());
-        else sInstanceSaveManager.ScheduleReset(on, save->GetResetTime(), InstanceSaveManager::InstResetEvent(0, GetId(), GetInstanceId()));
+        else sInstanceSaveMgr.ScheduleReset(on, save->GetResetTime(), InstanceSaveManager::InstResetEvent(0, GetId(), GetInstanceId()));
     }
 }
 
@@ -2690,7 +2685,7 @@ bool BattleGroundMap::CanEnter(Player* player)
     return Map::CanEnter(player);
 }
 
-bool BattleGroundMap::Add(Player* player)
+bool BattleGroundMap::AddToMap(Player* player)
 {
     {
         Guard guard(*this);
@@ -2699,13 +2694,13 @@ bool BattleGroundMap::Add(Player* player)
         // reset instance validity, battleground maps do not homebind
         player->m_InstanceValid = true;
     }
-    return Map::Add(player);
+    return Map::AddToMap(player);
 }
 
-void BattleGroundMap::Remove(Player* player, bool remove)
+void BattleGroundMap::RemoveFromMap(Player* player, bool remove)
 {
     sLog.outDetail("MAP: Removing player '%s' from bg '%u' of map '%s' before relocating to other map", player->GetName(), GetInstanceId(), GetMapName());
-    Map::Remove(player, remove);
+    Map::RemoveFromMap(player, remove);
 }
 
 void BattleGroundMap::SetUnload()

@@ -349,7 +349,7 @@ class Spell
         void EffectStealBeneficialBuff(SpellEffIndex effIndex);
         void EffectUnlearnSpecialization(SpellEffIndex effIndex);
         void EffectHealPct(SpellEffIndex effIndex);
-        void EffectEnergisePct(SpellEffIndex effIndex);
+        void EffectEnergizePct(SpellEffIndex effIndex);
         void EffectTriggerSpellWithValue(SpellEffIndex effIndex);
         void EffectTriggerRitualOfSummoning(SpellEffIndex effIndex);
         void EffectKillCredit(SpellEffIndex effIndex);
@@ -727,7 +727,7 @@ struct SpellNotifierCreatureAndPlayer
 
         for (typename GridRefManager<T>::iterator itr = m.begin(); itr != m.end(); ++itr)
         {
-            if (!itr->getSource()->isAlive() || (itr->getSource()->GetTypeId() == TYPEID_PLAYER && ((Player*)itr->getSource())->isInFlight()))
+            if (!itr->getSource()->IsAlive() || (itr->getSource()->GetTypeId() == TYPEID_PLAYER && ((Player*)itr->getSource())->isInFlight()))
                 continue;
 
             switch (i_TargetType)

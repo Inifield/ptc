@@ -153,7 +153,7 @@ struct boss_gurtogg_bloodboilAI : public ScriptedAI
     // Note: This seems like a very complicated fix. The fix needs to be handled by the core, as implementation of limited-target AoE spells are still not limited.
     void CastBloodboil()
     {
-        std::list<Unit*> targets;
+        std::list<Unit* > targets;
         Map* map = me->GetMap();
         if (map->IsDungeon())
         {
@@ -162,7 +162,7 @@ struct boss_gurtogg_bloodboilAI : public ScriptedAI
             {
                 if (Player* i_pl = i->getSource())
                 {
-                    if (i_pl && i_pl->isAlive())
+                    if (i_pl && i_pl->IsAlive())
                         targets.push_back(i_pl);
                 }
             }
@@ -174,10 +174,10 @@ struct boss_gurtogg_bloodboilAI : public ScriptedAI
         targets.resize(5);
 
         //Aura each player in the targets list with Bloodboil.
-        for (std::list<Unit*>::iterator itr = targets.begin(); itr != targets.end(); ++itr)
+        for (std::list<Unit* >::iterator itr = targets.begin(); itr != targets.end(); ++itr)
         {
             Unit* pTarget = *itr;
-            if (pTarget && pTarget->isAlive())
+            if (pTarget && pTarget->IsAlive())
                 me->AddAura(SPELL_BLOODBOIL, pTarget);
         }
         targets.clear();
@@ -289,7 +289,7 @@ struct boss_gurtogg_bloodboilAI : public ScriptedAI
             if (Phase1)
             {
                 Unit* pTarget = SelectUnit(SELECT_TARGET_RANDOM, 0);
-                if (pTarget && pTarget->isAlive())
+                if (pTarget && pTarget->IsAlive())
                 {
                     Phase1 = false;
 

@@ -183,12 +183,12 @@ struct npc_general_marcus_jonathanAI : public ScriptedAI
     {
         if (pPlayer->GetTeam() == ALLIANCE)
         {
-            if (emote == TEXTEMOTE_SALUTE)
+            if (emote == TEXT_EMOTE_SALUTE)
             {
                 me->SetOrientation(me->GetAngle(pPlayer));
                 me->HandleEmoteCommand(EMOTE_ONESHOT_SALUTE);
             }
-            if (emote == TEXTEMOTE_WAVE)
+            if (emote == TEXT_EMOTE_WAVE)
                 me->MonsterSay("Greetings citizen", LANG_COMMON, 0);
         }
     }
@@ -425,7 +425,7 @@ struct npc_lord_gregor_lescovarAI : public npc_escortAI
 
         if (Creature* pMarzon = Unit::GetCreature(*me, MarzonGUID))
         {
-            if (pMarzon->isAlive())
+            if (pMarzon->IsAlive())
                 pMarzon->DisappearAndDie();
         }
     }
@@ -463,7 +463,7 @@ struct npc_lord_gregor_lescovarAI : public npc_escortAI
     {
         if (Creature* pMarzon = Unit::GetCreature(*me, MarzonGUID))
         {
-            if (pMarzon->isAlive() && !pMarzon->isInCombat())
+            if (pMarzon->IsAlive() && !pMarzon->IsInCombat())
                 pMarzon->AI()->AttackStart(pWho);
         }
     }
