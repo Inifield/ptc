@@ -239,7 +239,7 @@ Unit::Unit()
     m_objectType |= TYPEMASK_UNIT;
     m_objectTypeId = TYPEID_UNIT;
 
-    m_updateFlag = (UPDATEFLAG_HIGHGUID | UPDATEFLAG_LIVING | UPDATEFLAG_STATIONARY_POSITION);
+    m_updateFlag = (UPDATEFLAG_HIGHGUID | UPDATEFLAG_LIVING | UPDATEFLAG_HAS_POSITION);
 
     m_attackTimer[BASE_ATTACK] = 0;
     m_attackTimer[OFF_ATTACK] = 0;
@@ -851,7 +851,6 @@ uint32 Unit::DealDamage(Unit* pVictim, uint32 damage, CleanDamage const* cleanDa
             if (damage >= pVictim->GetHealth())
             {
                 pVictim->setDeathState(JUST_DIED);
-                pVictim->SetHealth(0);
 
                 CreatureInfo const* cInfo = pVictim->ToCreature()->GetCreatureTemplate();
                 if (cInfo && cInfo->lootid)
@@ -7809,6 +7808,11 @@ uint32 Unit::SpellDamageBonus(Unit* pVictim, SpellEntry const* spellProto, uint3
                 if (pVictim->HasAuraState(AURA_STATE_HEALTHLESS_20_PERCENT))
                     TakenTotalMod *= (100.0f + (*i)->GetModifier()->m_amount) / 100.0f;
                 break;
+            // Increased Lightning Damage
+            case 6008:
+                if (spellProto->SpellFamilyName == SPELLFAMILY_SHAMAN && spellProto->SpellFamilyFlags & 0x03)
+                    pdamage += (*i)->GetSpellProto()->EffectBasePoints[(*i)->GetEffIndex()] + 1;
+                break;
         }
     }
 
@@ -9595,21 +9599,6 @@ void Unit::setDeathState(DeathState s)
     // Death state needs to be updated before RemoveAllAurasOnDeath() is called, to prevent entering combat
     m_deathState = s;
 
-    if (s != ALIVE && s != JUST_RESPAWNED)
-    {
-        CombatStop();
-        DeleteThreatList();
-        getHostileRefManager().deleteReferences();
-        ClearComboPointHolders();                           // any combo points pointed to unit lost at it death
-
-        if (IsNonMeleeSpellCast(false))
-            InterruptNonMeleeSpells(false);
-
-        UnsummonAllTotems();
-        RemoveAllControlled();
-        RemoveAllAurasOnDeath();
-    }
-
     if (s == JUST_DIED)
     {
         ModifyAuraState(AURA_STATE_HEALTHLESS_20_PERCENT, false);
@@ -9637,6 +9626,21 @@ void Unit::setDeathState(DeathState s)
     }
     else if (s == JUST_RESPAWNED)
         RemoveFlag (UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE); // clear skinnable for creature and player (at battleground)
+
+    if (s != ALIVE && s != JUST_RESPAWNED)
+    {
+        CombatStop();
+        DeleteThreatList();
+        getHostileRefManager().deleteReferences();
+        ClearComboPointHolders();                           // any combo points pointed to unit lost at it death
+
+        if (IsNonMeleeSpellCast(false))
+            InterruptNonMeleeSpells(false);
+
+        UnsummonAllTotems();
+        RemoveAllControlled();
+        RemoveAllAurasOnDeath();
+    }
 }
 
 /*########################################
@@ -12599,7 +12603,7 @@ void Unit::RemoveCharmedBy(Unit* charmer)
         switch (type)
         {
             case CHARM_TYPE_POSSESS:
-                charmer->ToPlayer()->SetClientControl(charmer, false);
+                charmer->ToPlayer()->SetClientControl(charmer, true);
                 charmer->ToPlayer()->SetViewpoint(this, false);
                 charmer->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
                 RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PLAYER_CONTROLLED);
@@ -12628,6 +12632,10 @@ void Unit::RemoveCharmedBy(Unit* charmer)
                 break;
         }
     }
+
+    // if charmed target was player, give him controls back
+    if (ToPlayer())
+        ToPlayer()->SetClientControl(this, true);
 
     //a guardian should always have charminfo
     if (charmer->GetTypeId() == TYPEID_PLAYER && this != charmer->GetFirstControlled())
