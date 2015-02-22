@@ -605,8 +605,8 @@ void Spell::prepareDataForTriggerSystem()
         case SPELLFAMILY_HUNTER:  // Hunter Explosive Trap Effect/Immolation Trap Effect/Frost Trap Aura/Snake Trap Effect
             if (m_spellInfo->SpellFamilyFlags & 0x0000200000000014LL) m_canTrigger = true;
             break;
-        case SPELLFAMILY_PALADIN: // For Holy Shock triggers need do it
-            if (m_spellInfo->SpellFamilyFlags & 0x0001000000200000LL) m_canTrigger = true;
+        case SPELLFAMILY_PALADIN: // For Holy Shock, SoC and SoB triggers need to do it
+            if (m_spellInfo->SpellFamilyFlags & 0x0001040002200000LL) m_canTrigger = true;
             break;
         case SPELLFAMILY_ROGUE: // mutilate mainhand + offhand
             if (m_spellInfo->SpellFamilyFlags & 0x600000000LL) m_canTrigger = true;
@@ -3674,7 +3674,7 @@ SpellCastResult Spell::CheckCast(bool strict)
 
     // cancel autorepeat spells if cast start when moving
     // (not wand currently autorepeat cast delayed to moving stop anyway in spell update code)
-    if (m_caster->GetTypeId() == TYPEID_PLAYER && m_caster->ToPlayer()->isMoving())
+    if (m_caster->GetTypeId() == TYPEID_PLAYER && m_caster->isMoving())
     {
         // skip stuck spell to allow use it in falling case and apply spell limitations at movement
         if ((!m_caster->HasUnitMovementFlag(MOVEFLAG_FALLINGFAR) || m_spellInfo->Effect[0] != SPELL_EFFECT_STUCK) &&
