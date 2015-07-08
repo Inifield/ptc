@@ -2862,7 +2862,7 @@ void Aura::HandleAuraModShapeshift(bool apply, bool Real)
                         PlayerSpellMap const& sp_list = m_target->ToPlayer()->GetSpellMap();
                         for (PlayerSpellMap::const_iterator itr = sp_list.begin(); itr != sp_list.end(); ++itr)
                         {
-                            if (itr->second->state == PLAYERSPELL_REMOVED) continue;
+                            if (itr->second.state == PLAYERSPELL_REMOVED) continue;
                             SpellEntry const* spellInfo = sSpellStore.LookupEntry(itr->first);
                             if (spellInfo && spellInfo->SpellFamilyName == SPELLFAMILY_WARRIOR && spellInfo->SpellIconID == 139)
                                 Rage_val += m_target->CalculateSpellDamage(spellInfo, 0, spellInfo->EffectBasePoints[0], m_target) * 10;
@@ -5310,7 +5310,7 @@ void Aura::HandleModDamageDone(bool apply, bool Real)
     if (Real && m_target->GetTypeId() == TYPEID_PLAYER)
     {
         for (int i = 0; i < MAX_ATTACK; ++i)
-            if (Item* pItem = m_target->ToPlayer()->GetWeaponForAttack(WeaponAttackType(i)))
+            if (Item* pItem = m_target->ToPlayer()->GetWeaponForAttack(WeaponAttackType(i), true))
                 m_target->ToPlayer()->_ApplyWeaponDependentAuraDamageMod(pItem, WeaponAttackType(i), this, apply);
     }
 
@@ -5393,7 +5393,7 @@ void Aura::HandleModDamagePercentDone(bool apply, bool Real)
     if (Real && m_target->GetTypeId() == TYPEID_PLAYER)
     {
         for (int i = 0; i < MAX_ATTACK; ++i)
-            if (Item* pItem = m_target->ToPlayer()->GetWeaponForAttack(WeaponAttackType(i)))
+            if (Item* pItem = m_target->ToPlayer()->GetWeaponForAttack(WeaponAttackType(i), true))
                 m_target->ToPlayer()->_ApplyWeaponDependentAuraDamageMod(pItem, WeaponAttackType(i), this, apply);
     }
 
@@ -5567,7 +5567,7 @@ void Aura::HandleShapeshiftBoosts(bool apply)
             const PlayerSpellMap& sp_list = m_target->ToPlayer()->GetSpellMap();
             for (PlayerSpellMap::const_iterator itr = sp_list.begin(); itr != sp_list.end(); ++itr)
             {
-                if (itr->second->state == PLAYERSPELL_REMOVED) continue;
+                if (itr->second.state == PLAYERSPELL_REMOVED) continue;
                 if (itr->first == spellId || itr->first == spellId2) continue;
                 SpellEntry const* spellInfo = sSpellStore.LookupEntry(itr->first);
                 if (!spellInfo || !(spellInfo->Attributes & ((1 << 6) | (1 << 7))))

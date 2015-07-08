@@ -1563,7 +1563,7 @@ void Spell::EffectDummy(SpellEffIndex effIndex)
                 const PlayerSpellMap& sp_list = m_caster->ToPlayer()->GetSpellMap();
                 for (PlayerSpellMap::const_iterator itr = sp_list.begin(); itr != sp_list.end(); ++itr)
                 {
-                    if (itr->second->state == PLAYERSPELL_REMOVED)
+                    if (itr->second.state == PLAYERSPELL_REMOVED)
                         continue;
 
                     uint32 classspell = itr->first;
@@ -2262,7 +2262,7 @@ void Spell::EffectTriggerSpell(SpellEffIndex effIndex)
             for (PlayerSpellMap::const_iterator itr = sp_list.begin(); itr != sp_list.end(); ++itr)
             {
                 // only highest rank is shown in spell book, so simply check if shown in spell book
-                if (!itr->second->active || itr->second->disabled || itr->second->state == PLAYERSPELL_REMOVED)
+                if (!itr->second.active || itr->second.disabled || itr->second.state == PLAYERSPELL_REMOVED)
                     continue;
 
                 spellInfo = sSpellStore.LookupEntry(itr->first);
@@ -4251,7 +4251,7 @@ void Spell::EffectEnchantItemTmp(SpellEffIndex effIndex)
     // remove old enchanting before applying new if equipped
     item_owner->ApplyEnchantment(itemTarget, TEMP_ENCHANTMENT_SLOT, false);
 
-    itemTarget->SetEnchantment(TEMP_ENCHANTMENT_SLOT, enchant_id, duration * IN_MILLISECONDS, 0);
+    itemTarget->SetEnchantment(TEMP_ENCHANTMENT_SLOT, enchant_id, duration * IN_MILLISECONDS, m_caster->GetGUID());
 
     // add new enchanting if equipped
     item_owner->ApplyEnchantment(itemTarget, TEMP_ENCHANTMENT_SLOT, true);
@@ -4628,7 +4628,7 @@ void Spell::SpellDamageWeaponDmg(SpellEffIndex effIndex)
                         for (PlayerSpellMap::const_iterator itr = sp_list.begin(); itr != sp_list.end(); ++itr)
                         {
                             // only highest rank is shown in spell book, so simply check if shown in spell book
-                            if (!itr->second->active || itr->second->disabled || itr->second->state == PLAYERSPELL_REMOVED)
+                            if (!itr->second.active || itr->second.disabled || itr->second.state == PLAYERSPELL_REMOVED)
                                 continue;
 
                             SpellEntry const* spellInfo = sSpellStore.LookupEntry(itr->first);

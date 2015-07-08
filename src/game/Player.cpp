@@ -62,6 +62,8 @@
 #include "Mail.h"
 #include "GameEventMgr.h"
 #include "DisableMgr.h"
+#include "ConditionMgr.h"
+
 #include <cmath>
 
 #define ZONE_UPDATE_INTERVAL (1*IN_MILLISECONDS)
@@ -2706,10 +2708,10 @@ void Player::SendInitialSpells()
 
     for (PlayerSpellMap::const_iterator itr = m_spells.begin(); itr != m_spells.end(); ++itr)
     {
-        if (itr->second->state == PLAYERSPELL_REMOVED)
+        if (itr->second.state == PLAYERSPELL_REMOVED)
             continue;
 
-        if (!itr->second->active || itr->second->disabled)
+        if (!itr->second.active || itr->second.disabled)
             continue;
 
         data << uint16(itr->first);
@@ -2864,15 +2866,15 @@ bool Player::addSpell(uint32 spell_id, bool active, bool learning, bool loading,
     if (itr != m_spells.end())
     {
         // update active state for known spell
-        if (itr->second->active != active && itr->second->state != PLAYERSPELL_REMOVED && !itr->second->disabled)
+        if (itr->second.active != active && itr->second.state != PLAYERSPELL_REMOVED && !itr->second.disabled)
         {
-            itr->second->active = active;
+            itr->second.active = active;
 
             // loading && !learning == explicitly load from DB and then exist in it already and set correctly
             if (loading && !learning)
-                itr->second->state = PLAYERSPELL_UNCHANGED;
-            else if (itr->second->state != PLAYERSPELL_NEW)
-                itr->second->state = PLAYERSPELL_CHANGED;
+                itr->second.state = PLAYERSPELL_UNCHANGED;
+            else if (itr->second.state != PLAYERSPELL_NEW)
+                itr->second.state = PLAYERSPELL_CHANGED;
 
             if (!active)
             {
@@ -2883,24 +2885,23 @@ bool Player::addSpell(uint32 spell_id, bool active, bool learning, bool loading,
             return active;                                  // learn (show in spell book if active now)
         }
 
-        if (itr->second->disabled != disabled && itr->second->state != PLAYERSPELL_REMOVED)
+        if (itr->second.disabled != disabled && itr->second.state != PLAYERSPELL_REMOVED)
         {
-            if (itr->second->state != PLAYERSPELL_NEW)
-                itr->second->state = PLAYERSPELL_CHANGED;
-            itr->second->disabled = disabled;
+            if (itr->second.state != PLAYERSPELL_NEW)
+                itr->second.state = PLAYERSPELL_CHANGED;
+            itr->second.disabled = disabled;
 
             if (disabled)
                 return false;
 
             disabled_case = true;
         }
-        else switch (itr->second->state)
+        else switch (itr->second.state)
             {
                 case PLAYERSPELL_UNCHANGED:                     // known saved spell
                     return false;
                 case PLAYERSPELL_REMOVED:                       // re-learning removed not saved spell
                     {
-                        delete itr->second;
                         m_spells.erase(itr);
                         state = PLAYERSPELL_CHANGED;
                         break;                                      // need re-add
@@ -2909,7 +2910,7 @@ bool Player::addSpell(uint32 spell_id, bool active, bool learning, bool loading,
                     {
                         // can be in case spell loading but learned at some previous spell loading
                         if (loading && !learning)
-                            itr->second->state = PLAYERSPELL_UNCHANGED;
+                            itr->second.state = PLAYERSPELL_UNCHANGED;
 
                         return false;
                     }
@@ -2947,23 +2948,23 @@ bool Player::addSpell(uint32 spell_id, bool active, bool learning, bool loading,
                 learnSpell(prev_spell);
         }
 
-        PlayerSpell* newspell = new PlayerSpell;
-        newspell->active = active;
-        newspell->state = state;
-        newspell->disabled = disabled;
+        PlayerSpell newspell;
+        newspell.active = active;
+        newspell.state = state;
+        newspell.disabled = disabled;
 
         // replace spells in action bars and spellbook to bigger rank if only one spell rank must be accessible
-        if (newspell->active && !newspell->disabled && !SpellMgr::canStackSpellRanks(spellInfo) && sSpellMgr.GetSpellRank(spellInfo->Id) != 0)
+        if (newspell.active && !newspell.disabled && !SpellMgr::canStackSpellRanks(spellInfo) && sSpellMgr.GetSpellRank(spellInfo->Id) != 0)
         {
             for (PlayerSpellMap::iterator itr = m_spells.begin(); itr != m_spells.end(); ++itr)
             {
-                if (itr->second->state == PLAYERSPELL_REMOVED) continue;
+                if (itr->second.state == PLAYERSPELL_REMOVED) continue;
                 SpellEntry const* i_spellInfo = sSpellStore.LookupEntry(itr->first);
                 if (!i_spellInfo) continue;
 
                 if (sSpellMgr.IsRankSpellDueToSpell(spellInfo, itr->first))
                 {
-                    if (itr->second->active)
+                    if (itr->second.active)
                     {
                         if (sSpellMgr.IsHighRankOfSpell(spell_id, itr->first))
                         {
@@ -2976,8 +2977,8 @@ bool Player::addSpell(uint32 spell_id, bool active, bool learning, bool loading,
                             }
 
                             // mark old spell as disable (SMSG_SUPERCEDED_SPELL replace it in client by new)
-                            itr->second->active = false;
-                            itr->second->state = PLAYERSPELL_CHANGED;
+                            itr->second.active = false;
+                            itr->second.state = PLAYERSPELL_CHANGED;
                             superceded_old = true;          // new spell replace old in action bars and spell book.
                         }
                         else if (sSpellMgr.IsHighRankOfSpell(itr->first, spell_id))
@@ -2991,9 +2992,9 @@ bool Player::addSpell(uint32 spell_id, bool active, bool learning, bool loading,
                             }
 
                             // mark new spell as disable (not learned yet for client and will not learned)
-                            newspell->active = false;
-                            if (newspell->state != PLAYERSPELL_NEW)
-                                newspell->state = PLAYERSPELL_CHANGED;
+                            newspell.active = false;
+                            if (newspell.state != PLAYERSPELL_NEW)
+                                newspell.state = PLAYERSPELL_CHANGED;
                         }
                     }
                 }
@@ -3003,7 +3004,7 @@ bool Player::addSpell(uint32 spell_id, bool active, bool learning, bool loading,
         m_spells[spell_id] = newspell;
 
         // return false if spell disabled
-        if (newspell->disabled)
+        if (newspell.disabled)
             return false;
     }
 
@@ -3135,8 +3136,8 @@ void Player::learnSpell(uint32 spell_id)
 {
     PlayerSpellMap::iterator itr = m_spells.find(spell_id);
 
-    bool disabled = (itr != m_spells.end()) ? itr->second->disabled : false;
-    bool active = disabled ? itr->second->active : true;
+    bool disabled = (itr != m_spells.end()) ? itr->second.disabled : false;
+    bool active = disabled ? itr->second.active : true;
 
     bool learning = addSpell(spell_id, active);
 
@@ -3145,7 +3146,7 @@ void Player::learnSpell(uint32 spell_id)
     if (node)
     {
         PlayerSpellMap::iterator iter = m_spells.find(node->next);
-        if (disabled && iter != m_spells.end() && iter->second->disabled)
+        if (disabled && iter != m_spells.end() && iter->second.disabled)
             learnSpell(node->next);
     }
 
@@ -3164,7 +3165,7 @@ void Player::removeSpell(uint32 spell_id, bool disabled)
     if (itr == m_spells.end())
         return;
 
-    if (itr->second->state == PLAYERSPELL_REMOVED || (disabled && itr->second->disabled))
+    if (itr->second.state == PLAYERSPELL_REMOVED || (disabled && itr->second.disabled))
         return;
 
     // unlearn non talent higher ranks (recursive)
@@ -3187,19 +3188,16 @@ void Player::removeSpell(uint32 spell_id, bool disabled)
 
     if (disabled)
     {
-        itr->second->disabled = disabled;
-        if (itr->second->state != PLAYERSPELL_NEW)
-            itr->second->state = PLAYERSPELL_CHANGED;
+        itr->second.disabled = disabled;
+        if (itr->second.state != PLAYERSPELL_NEW)
+            itr->second.state = PLAYERSPELL_CHANGED;
     }
     else
     {
-        if (itr->second->state == PLAYERSPELL_NEW)
-        {
-            delete itr->second;
+        if (itr->second.state == PLAYERSPELL_NEW)
             m_spells.erase(itr);
-        }
         else
-            itr->second->state = PLAYERSPELL_REMOVED;
+            itr->second.state = PLAYERSPELL_REMOVED;
     }
 
     RemoveAurasDueToSpell(spell_id);
@@ -3510,7 +3508,7 @@ bool Player::resetTalents(bool no_cost)
         {
             for (PlayerSpellMap::iterator itr = GetSpellMap().begin(); itr != GetSpellMap().end();)
             {
-                if (itr->second->state == PLAYERSPELL_REMOVED || itr->second->disabled)
+                if (itr->second.state == PLAYERSPELL_REMOVED || itr->second.disabled)
                 {
                     ++itr;
                     continue;
@@ -3550,7 +3548,6 @@ bool Player::_removeSpell(uint16 spell_id)
     PlayerSpellMap::iterator itr = m_spells.find(spell_id);
     if (itr != m_spells.end())
     {
-        delete itr->second;
         m_spells.erase(itr);
         return true;
     }
@@ -3758,15 +3755,15 @@ void Player::DestroyForPlayer(Player* target, bool /*onDeath*/) const
 bool Player::HasSpell(uint32 spell) const
 {
     PlayerSpellMap::const_iterator itr = m_spells.find(spell);
-    return (itr != m_spells.end() && itr->second->state != PLAYERSPELL_REMOVED &&
-            !itr->second->disabled);
+    return (itr != m_spells.end() && itr->second.state != PLAYERSPELL_REMOVED &&
+            !itr->second.disabled);
 }
 
 bool Player::HasActiveSpell(uint32 spell) const
 {
     PlayerSpellMap::const_iterator itr = m_spells.find(spell);
-    return (itr != m_spells.end() && itr->second->state != PLAYERSPELL_REMOVED &&
-            itr->second->active && !itr->second->disabled);
+    return (itr != m_spells.end() && itr->second.state != PLAYERSPELL_REMOVED &&
+            itr->second.active && !itr->second.disabled);
 }
 
 TrainerSpellState Player::GetTrainerSpellState(TrainerSpell const* trainer_spell) const
@@ -5417,7 +5414,7 @@ void Player::SetSkill(uint32 id, uint16 currVal, uint16 maxVal)
             for (PlayerSpellMap::const_iterator itr = m_spells.begin(), next = m_spells.begin(); itr != m_spells.end(); itr = next)
             {
                 ++next;
-                if (itr->second->state == PLAYERSPELL_REMOVED)
+                if (itr->second.state == PLAYERSPELL_REMOVED)
                     continue;
 
                 SkillLineAbilityMap::const_iterator lower = sSpellMgr.GetBeginSkillLineAbilityMap(itr->first);
@@ -12220,258 +12217,261 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
     if (!ignore_condition && pEnchant->EnchantmentCondition && !EnchantmentFitsRequirements(pEnchant->EnchantmentCondition, -1))
         return;
 
-    for (int s = 0; s < 3; s++)
+    if (!item->IsBroken())
     {
-        uint32 enchant_display_type = pEnchant->type[s];
-        uint32 enchant_amount = pEnchant->amount[s];
-        uint32 enchant_spell_id = pEnchant->spellid[s];
-
-        switch (enchant_display_type)
+        for (int s = 0; s < 3; s++)
         {
-        case ITEM_ENCHANTMENT_TYPE_NONE:
-            break;
-        case ITEM_ENCHANTMENT_TYPE_COMBAT_SPELL:
-            // processed in Player::CastItemCombatSpell
-            break;
-        case ITEM_ENCHANTMENT_TYPE_DAMAGE:
-            if (item->GetSlot() == EQUIPMENT_SLOT_MAINHAND)
-                HandleStatModifier(UNIT_MOD_DAMAGE_MAINHAND, TOTAL_VALUE, float(enchant_amount), apply);
-            else if (item->GetSlot() == EQUIPMENT_SLOT_OFFHAND)
-                HandleStatModifier(UNIT_MOD_DAMAGE_OFFHAND, TOTAL_VALUE, float(enchant_amount), apply);
-            else if (item->GetSlot() == EQUIPMENT_SLOT_RANGED)
-                HandleStatModifier(UNIT_MOD_DAMAGE_RANGED, TOTAL_VALUE, float(enchant_amount), apply);
-            break;
-        case ITEM_ENCHANTMENT_TYPE_EQUIP_SPELL:
-            if (enchant_spell_id)
+            uint32 enchant_display_type = pEnchant->type[s];
+            uint32 enchant_amount = pEnchant->amount[s];
+            uint32 enchant_spell_id = pEnchant->spellid[s];
+
+            switch (enchant_display_type)
             {
-                if (apply)
+            case ITEM_ENCHANTMENT_TYPE_NONE:
+                break;
+            case ITEM_ENCHANTMENT_TYPE_COMBAT_SPELL:
+                // processed in Player::CastItemCombatSpell
+                break;
+            case ITEM_ENCHANTMENT_TYPE_DAMAGE:
+                if (item->GetSlot() == EQUIPMENT_SLOT_MAINHAND)
+                    HandleStatModifier(UNIT_MOD_DAMAGE_MAINHAND, TOTAL_VALUE, float(enchant_amount), apply);
+                else if (item->GetSlot() == EQUIPMENT_SLOT_OFFHAND)
+                    HandleStatModifier(UNIT_MOD_DAMAGE_OFFHAND, TOTAL_VALUE, float(enchant_amount), apply);
+                else if (item->GetSlot() == EQUIPMENT_SLOT_RANGED)
+                    HandleStatModifier(UNIT_MOD_DAMAGE_RANGED, TOTAL_VALUE, float(enchant_amount), apply);
+                break;
+            case ITEM_ENCHANTMENT_TYPE_EQUIP_SPELL:
+                if (enchant_spell_id)
                 {
-                    int32 basepoints = 0;
-                    // Random Property Exist - try found basepoints for spell (basepoints depends from item suffix factor)
-                    if (item->GetItemRandomPropertyId())
+                    if (apply)
                     {
-                        ItemRandomSuffixEntry const* item_rand = sItemRandomSuffixStore.LookupEntry(abs(item->GetItemRandomPropertyId()));
-                        if (item_rand)
+                        int32 basepoints = 0;
+                        // Random Property Exist - try found basepoints for spell (basepoints depends from item suffix factor)
+                        if (item->GetItemRandomPropertyId())
                         {
-                            // Search enchant_amount
-                            for (int k = 0; k < 3; k++)
+                            ItemRandomSuffixEntry const* item_rand = sItemRandomSuffixStore.LookupEntry(abs(item->GetItemRandomPropertyId()));
+                            if (item_rand)
                             {
-                                if (item_rand->enchant_id[k] == enchant_id)
+                                // Search enchant_amount
+                                for (int k = 0; k < 3; k++)
                                 {
-                                    basepoints = int32((item_rand->prefix[k] * item->GetItemSuffixFactor()) / 10000);
-                                    break;
+                                    if (item_rand->enchant_id[k] == enchant_id)
+                                    {
+                                        basepoints = int32((item_rand->prefix[k] * item->GetItemSuffixFactor()) / 10000);
+                                        break;
+                                    }
                                 }
                             }
                         }
+                        // Cast custom spell vs all equal basepoints getted from enchant_amount
+                        if (basepoints)
+                            CastCustomSpell(this, enchant_spell_id, &basepoints, &basepoints, &basepoints, true, item);
+                        else
+                            CastSpell(this, enchant_spell_id, true, item);
                     }
-                    // Cast custom spell vs all equal basepoints getted from enchant_amount
-                    if (basepoints)
-                        CastCustomSpell(this, enchant_spell_id, &basepoints, &basepoints, &basepoints, true, item);
                     else
-                        CastSpell(this, enchant_spell_id, true, item);
+                        RemoveAurasDueToItemSpell(item, enchant_spell_id);
                 }
-                else
-                    RemoveAurasDueToItemSpell(item, enchant_spell_id);
-            }
-            break;
-        case ITEM_ENCHANTMENT_TYPE_RESISTANCE:
-            if (!enchant_amount)
-            {
-                ItemRandomSuffixEntry const* item_rand = sItemRandomSuffixStore.LookupEntry(abs(item->GetItemRandomPropertyId()));
-                if (item_rand)
-                {
-                    for (int k = 0; k < 3; k++)
-                    {
-                        if (item_rand->enchant_id[k] == enchant_id)
-                        {
-                            enchant_amount = uint32((item_rand->prefix[k] * item->GetItemSuffixFactor()) / 10000);
-                            break;
-                        }
-                    }
-                }
-            }
-
-            HandleStatModifier(UnitMods(UNIT_MOD_RESISTANCE_START + enchant_spell_id), TOTAL_VALUE, float(enchant_amount), apply);
-            break;
-        case ITEM_ENCHANTMENT_TYPE_STAT:
-            {
+                break;
+            case ITEM_ENCHANTMENT_TYPE_RESISTANCE:
                 if (!enchant_amount)
                 {
-                    ItemRandomSuffixEntry const* item_rand_suffix = sItemRandomSuffixStore.LookupEntry(abs(item->GetItemRandomPropertyId()));
-                    if (item_rand_suffix)
+                    ItemRandomSuffixEntry const* item_rand = sItemRandomSuffixStore.LookupEntry(abs(item->GetItemRandomPropertyId()));
+                    if (item_rand)
                     {
                         for (int k = 0; k < 3; k++)
                         {
-                            if (item_rand_suffix->enchant_id[k] == enchant_id)
+                            if (item_rand->enchant_id[k] == enchant_id)
                             {
-                                enchant_amount = uint32((item_rand_suffix->prefix[k] * item->GetItemSuffixFactor()) / 10000);
+                                enchant_amount = uint32((item_rand->prefix[k] * item->GetItemSuffixFactor()) / 10000);
                                 break;
                             }
                         }
                     }
                 }
 
-                DEBUG_LOG("Adding %u to stat nb %u", enchant_amount, enchant_spell_id);
-                switch (enchant_spell_id)
+                HandleStatModifier(UnitMods(UNIT_MOD_RESISTANCE_START + enchant_spell_id), TOTAL_VALUE, float(enchant_amount), apply);
+                break;
+            case ITEM_ENCHANTMENT_TYPE_STAT:
                 {
-                case ITEM_MOD_AGILITY:
-                    DEBUG_LOG("+ %u AGILITY", enchant_amount);
-                    HandleStatModifier(UNIT_MOD_STAT_AGILITY, TOTAL_VALUE, float(enchant_amount), apply);
-                    ApplyStatBuffMod(STAT_AGILITY, enchant_amount, apply);
-                    break;
-                case ITEM_MOD_STRENGTH:
-                    DEBUG_LOG("+ %u STRENGTH", enchant_amount);
-                    HandleStatModifier(UNIT_MOD_STAT_STRENGTH, TOTAL_VALUE, float(enchant_amount), apply);
-                    ApplyStatBuffMod(STAT_STRENGTH, enchant_amount, apply);
-                    break;
-                case ITEM_MOD_INTELLECT:
-                    DEBUG_LOG("+ %u INTELLECT", enchant_amount);
-                    HandleStatModifier(UNIT_MOD_STAT_INTELLECT, TOTAL_VALUE, float(enchant_amount), apply);
-                    ApplyStatBuffMod(STAT_INTELLECT, enchant_amount, apply);
-                    break;
-                case ITEM_MOD_SPIRIT:
-                    DEBUG_LOG("+ %u SPIRIT", enchant_amount);
-                    HandleStatModifier(UNIT_MOD_STAT_SPIRIT, TOTAL_VALUE, float(enchant_amount), apply);
-                    ApplyStatBuffMod(STAT_SPIRIT, enchant_amount, apply);
-                    break;
-                case ITEM_MOD_STAMINA:
-                    DEBUG_LOG("+ %u STAMINA", enchant_amount);
-                    HandleStatModifier(UNIT_MOD_STAT_STAMINA, TOTAL_VALUE, float(enchant_amount), apply);
-                    ApplyStatBuffMod(STAT_STAMINA, enchant_amount, apply);
-                    break;
-                case ITEM_MOD_DEFENSE_SKILL_RATING:
-                    ApplyRatingMod(CR_DEFENSE_SKILL, enchant_amount, apply);
-                    DEBUG_LOG("+ %u DEFENCE", enchant_amount);
-                    break;
-                case  ITEM_MOD_DODGE_RATING:
-                    ApplyRatingMod(CR_DODGE, enchant_amount, apply);
-                    DEBUG_LOG("+ %u DODGE", enchant_amount);
-                    break;
-                case ITEM_MOD_PARRY_RATING:
-                    ApplyRatingMod(CR_PARRY, enchant_amount, apply);
-                    sLog.outDebug("+ %u PARRY", enchant_amount);
-                    break;
-                case ITEM_MOD_BLOCK_RATING:
-                    ApplyRatingMod(CR_BLOCK, enchant_amount, apply);
-                    DEBUG_LOG("+ %u SHIELD_BLOCK", enchant_amount);
-                    break;
-                case ITEM_MOD_HIT_MELEE_RATING:
-                    ApplyRatingMod(CR_HIT_MELEE, enchant_amount, apply);
-                    DEBUG_LOG("+ %u MELEE_HIT", enchant_amount);
-                    break;
-                case ITEM_MOD_HIT_RANGED_RATING:
-                    ApplyRatingMod(CR_HIT_RANGED, enchant_amount, apply);
-                    DEBUG_LOG("+ %u RANGED_HIT", enchant_amount);
-                    break;
-                case ITEM_MOD_HIT_SPELL_RATING:
-                    ApplyRatingMod(CR_HIT_SPELL, enchant_amount, apply);
-                    DEBUG_LOG("+ %u SPELL_HIT", enchant_amount);
-                    break;
-                case ITEM_MOD_CRIT_MELEE_RATING:
-                    ApplyRatingMod(CR_CRIT_MELEE, enchant_amount, apply);
-                    DEBUG_LOG("+ %u MELEE_CRIT", enchant_amount);
-                    break;
-                case ITEM_MOD_CRIT_RANGED_RATING:
-                    ApplyRatingMod(CR_CRIT_RANGED, enchant_amount, apply);
-                    DEBUG_LOG("+ %u RANGED_CRIT", enchant_amount);
-                    break;
-                case ITEM_MOD_CRIT_SPELL_RATING:
-                    ApplyRatingMod(CR_CRIT_SPELL, enchant_amount, apply);
-                    DEBUG_LOG("+ %u SPELL_CRIT", enchant_amount);
-                    break;
-                //                    Values from ITEM_STAT_MELEE_HA_RATING to ITEM_MOD_HASTE_RANGED_RATING are never used
-                //                    in Enchantments
-                //                    case ITEM_MOD_HIT_TAKEN_MELEE_RATING:
-                //                        ApplyRatingMod(CR_HIT_TAKEN_MELEE, enchant_amount, apply);
-                //                        break;
-                //                    case ITEM_MOD_HIT_TAKEN_RANGED_RATING:
-                //                        ApplyRatingMod(CR_HIT_TAKEN_RANGED, enchant_amount, apply);
-                //                        break;
-                //                    case ITEM_MOD_HIT_TAKEN_SPELL_RATING:
-                //                        ApplyRatingMod(CR_HIT_TAKEN_SPELL, enchant_amount, apply);
-                //                        break;
-                //                    case ITEM_MOD_CRIT_TAKEN_MELEE_RATING:
-                //                        ApplyRatingMod(CR_CRIT_TAKEN_MELEE, enchant_amount, apply);
-                //                        break;
-                //                    case ITEM_MOD_CRIT_TAKEN_RANGED_RATING:
-                //                        ApplyRatingMod(CR_CRIT_TAKEN_RANGED, enchant_amount, apply);
-                //                        break;
-                //                    case ITEM_MOD_CRIT_TAKEN_SPELL_RATING:
-                //                        ApplyRatingMod(CR_CRIT_TAKEN_SPELL, enchant_amount, apply);
-                //                        break;
-                //                    case ITEM_MOD_HASTE_MELEE_RATING:
-                //                        ApplyRatingMod(CR_HASTE_MELEE, enchant_amount, apply);
-                //                        break;
-                //                    case ITEM_MOD_HASTE_RANGED_RATING:
-                //                        ApplyRatingMod(CR_HASTE_RANGED, enchant_amount, apply);
-                //                        break;
-                case ITEM_MOD_HASTE_SPELL_RATING:
-                    ApplyRatingMod(CR_HASTE_SPELL, enchant_amount, apply);
-                    break;
-                case ITEM_MOD_HIT_RATING:
-                    ApplyRatingMod(CR_HIT_MELEE, enchant_amount, apply);
-                    ApplyRatingMod(CR_HIT_RANGED, enchant_amount, apply);
-                    DEBUG_LOG("+ %u HIT", enchant_amount);
-                    break;
-                case ITEM_MOD_CRIT_RATING:
-                    ApplyRatingMod(CR_CRIT_MELEE, enchant_amount, apply);
-                    ApplyRatingMod(CR_CRIT_RANGED, enchant_amount, apply);
-                    DEBUG_LOG("+ %u CRITICAL", enchant_amount);
-                    break;
-                //                    Values ITEM_MOD_HIT_TAKEN_RATING and ITEM_MOD_CRIT_TAKEN_RATING are never used in Enchantment
-                //                    case ITEM_MOD_HIT_TAKEN_RATING:
-                //                          ApplyRatingMod(CR_HIT_TAKEN_MELEE, enchant_amount, apply);
-                //                          ApplyRatingMod(CR_HIT_TAKEN_RANGED, enchant_amount, apply);
-                //                          ApplyRatingMod(CR_HIT_TAKEN_SPELL, enchant_amount, apply);
-                //                        break;
-                //                    case ITEM_MOD_CRIT_TAKEN_RATING:
-                //                          ApplyRatingMod(CR_CRIT_TAKEN_MELEE, enchant_amount, apply);
-                //                          ApplyRatingMod(CR_CRIT_TAKEN_RANGED, enchant_amount, apply);
-                //                          ApplyRatingMod(CR_CRIT_TAKEN_SPELL, enchant_amount, apply);
-                //                        break;
-                case ITEM_MOD_RESILIENCE_RATING:
-                    ApplyRatingMod(CR_CRIT_TAKEN_MELEE, enchant_amount, apply);
-                    ApplyRatingMod(CR_CRIT_TAKEN_RANGED, enchant_amount, apply);
-                    ApplyRatingMod(CR_CRIT_TAKEN_SPELL, enchant_amount, apply);
-                    DEBUG_LOG("+ %u RESILIENCE", enchant_amount);
-                    break;
-                case ITEM_MOD_HASTE_RATING:
-                    ApplyRatingMod(CR_HASTE_MELEE, enchant_amount, apply);
-                    ApplyRatingMod(CR_HASTE_RANGED, enchant_amount, apply);
-                    DEBUG_LOG("+ %u HASTE", enchant_amount);
-                    break;
-                case ITEM_MOD_EXPERTISE_RATING:
-                    ApplyRatingMod(CR_EXPERTISE, enchant_amount, apply);
-                    DEBUG_LOG("+ %u EXPERTISE", enchant_amount);
-                    break;
-                default:
+                    if (!enchant_amount)
+                    {
+                        ItemRandomSuffixEntry const* item_rand_suffix = sItemRandomSuffixStore.LookupEntry(abs(item->GetItemRandomPropertyId()));
+                        if (item_rand_suffix)
+                        {
+                            for (int k = 0; k < 3; k++)
+                            {
+                                if (item_rand_suffix->enchant_id[k] == enchant_id)
+                                {
+                                    enchant_amount = uint32((item_rand_suffix->prefix[k] * item->GetItemSuffixFactor()) / 10000);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    DEBUG_LOG("Adding %u to stat nb %u", enchant_amount, enchant_spell_id);
+                    switch (enchant_spell_id)
+                    {
+                    case ITEM_MOD_AGILITY:
+                        DEBUG_LOG("+ %u AGILITY", enchant_amount);
+                        HandleStatModifier(UNIT_MOD_STAT_AGILITY, TOTAL_VALUE, float(enchant_amount), apply);
+                        ApplyStatBuffMod(STAT_AGILITY, enchant_amount, apply);
+                        break;
+                    case ITEM_MOD_STRENGTH:
+                        DEBUG_LOG("+ %u STRENGTH", enchant_amount);
+                        HandleStatModifier(UNIT_MOD_STAT_STRENGTH, TOTAL_VALUE, float(enchant_amount), apply);
+                        ApplyStatBuffMod(STAT_STRENGTH, enchant_amount, apply);
+                        break;
+                    case ITEM_MOD_INTELLECT:
+                        DEBUG_LOG("+ %u INTELLECT", enchant_amount);
+                        HandleStatModifier(UNIT_MOD_STAT_INTELLECT, TOTAL_VALUE, float(enchant_amount), apply);
+                        ApplyStatBuffMod(STAT_INTELLECT, enchant_amount, apply);
+                        break;
+                    case ITEM_MOD_SPIRIT:
+                        DEBUG_LOG("+ %u SPIRIT", enchant_amount);
+                        HandleStatModifier(UNIT_MOD_STAT_SPIRIT, TOTAL_VALUE, float(enchant_amount), apply);
+                        ApplyStatBuffMod(STAT_SPIRIT, enchant_amount, apply);
+                        break;
+                    case ITEM_MOD_STAMINA:
+                        DEBUG_LOG("+ %u STAMINA", enchant_amount);
+                        HandleStatModifier(UNIT_MOD_STAT_STAMINA, TOTAL_VALUE, float(enchant_amount), apply);
+                        ApplyStatBuffMod(STAT_STAMINA, enchant_amount, apply);
+                        break;
+                    case ITEM_MOD_DEFENSE_SKILL_RATING:
+                        ApplyRatingMod(CR_DEFENSE_SKILL, enchant_amount, apply);
+                        DEBUG_LOG("+ %u DEFENCE", enchant_amount);
+                        break;
+                    case  ITEM_MOD_DODGE_RATING:
+                        ApplyRatingMod(CR_DODGE, enchant_amount, apply);
+                        DEBUG_LOG("+ %u DODGE", enchant_amount);
+                        break;
+                    case ITEM_MOD_PARRY_RATING:
+                        ApplyRatingMod(CR_PARRY, enchant_amount, apply);
+                        sLog.outDebug("+ %u PARRY", enchant_amount);
+                        break;
+                    case ITEM_MOD_BLOCK_RATING:
+                        ApplyRatingMod(CR_BLOCK, enchant_amount, apply);
+                        DEBUG_LOG("+ %u SHIELD_BLOCK", enchant_amount);
+                        break;
+                    case ITEM_MOD_HIT_MELEE_RATING:
+                        ApplyRatingMod(CR_HIT_MELEE, enchant_amount, apply);
+                        DEBUG_LOG("+ %u MELEE_HIT", enchant_amount);
+                        break;
+                    case ITEM_MOD_HIT_RANGED_RATING:
+                        ApplyRatingMod(CR_HIT_RANGED, enchant_amount, apply);
+                        DEBUG_LOG("+ %u RANGED_HIT", enchant_amount);
+                        break;
+                    case ITEM_MOD_HIT_SPELL_RATING:
+                        ApplyRatingMod(CR_HIT_SPELL, enchant_amount, apply);
+                        DEBUG_LOG("+ %u SPELL_HIT", enchant_amount);
+                        break;
+                    case ITEM_MOD_CRIT_MELEE_RATING:
+                        ApplyRatingMod(CR_CRIT_MELEE, enchant_amount, apply);
+                        DEBUG_LOG("+ %u MELEE_CRIT", enchant_amount);
+                        break;
+                    case ITEM_MOD_CRIT_RANGED_RATING:
+                        ApplyRatingMod(CR_CRIT_RANGED, enchant_amount, apply);
+                        DEBUG_LOG("+ %u RANGED_CRIT", enchant_amount);
+                        break;
+                    case ITEM_MOD_CRIT_SPELL_RATING:
+                        ApplyRatingMod(CR_CRIT_SPELL, enchant_amount, apply);
+                        DEBUG_LOG("+ %u SPELL_CRIT", enchant_amount);
+                        break;
+                    //                    Values from ITEM_STAT_MELEE_HA_RATING to ITEM_MOD_HASTE_RANGED_RATING are never used
+                    //                    in Enchantments
+                    //                    case ITEM_MOD_HIT_TAKEN_MELEE_RATING:
+                    //                        ApplyRatingMod(CR_HIT_TAKEN_MELEE, enchant_amount, apply);
+                    //                        break;
+                    //                    case ITEM_MOD_HIT_TAKEN_RANGED_RATING:
+                    //                        ApplyRatingMod(CR_HIT_TAKEN_RANGED, enchant_amount, apply);
+                    //                        break;
+                    //                    case ITEM_MOD_HIT_TAKEN_SPELL_RATING:
+                    //                        ApplyRatingMod(CR_HIT_TAKEN_SPELL, enchant_amount, apply);
+                    //                        break;
+                    //                    case ITEM_MOD_CRIT_TAKEN_MELEE_RATING:
+                    //                        ApplyRatingMod(CR_CRIT_TAKEN_MELEE, enchant_amount, apply);
+                    //                        break;
+                    //                    case ITEM_MOD_CRIT_TAKEN_RANGED_RATING:
+                    //                        ApplyRatingMod(CR_CRIT_TAKEN_RANGED, enchant_amount, apply);
+                    //                        break;
+                    //                    case ITEM_MOD_CRIT_TAKEN_SPELL_RATING:
+                    //                        ApplyRatingMod(CR_CRIT_TAKEN_SPELL, enchant_amount, apply);
+                    //                        break;
+                    //                    case ITEM_MOD_HASTE_MELEE_RATING:
+                    //                        ApplyRatingMod(CR_HASTE_MELEE, enchant_amount, apply);
+                    //                        break;
+                    //                    case ITEM_MOD_HASTE_RANGED_RATING:
+                    //                        ApplyRatingMod(CR_HASTE_RANGED, enchant_amount, apply);
+                    //                        break;
+                    case ITEM_MOD_HASTE_SPELL_RATING:
+                        ApplyRatingMod(CR_HASTE_SPELL, enchant_amount, apply);
+                        break;
+                    case ITEM_MOD_HIT_RATING:
+                        ApplyRatingMod(CR_HIT_MELEE, enchant_amount, apply);
+                        ApplyRatingMod(CR_HIT_RANGED, enchant_amount, apply);
+                        DEBUG_LOG("+ %u HIT", enchant_amount);
+                        break;
+                    case ITEM_MOD_CRIT_RATING:
+                        ApplyRatingMod(CR_CRIT_MELEE, enchant_amount, apply);
+                        ApplyRatingMod(CR_CRIT_RANGED, enchant_amount, apply);
+                        DEBUG_LOG("+ %u CRITICAL", enchant_amount);
+                        break;
+                    //                    Values ITEM_MOD_HIT_TAKEN_RATING and ITEM_MOD_CRIT_TAKEN_RATING are never used in Enchantment
+                    //                    case ITEM_MOD_HIT_TAKEN_RATING:
+                    //                          ApplyRatingMod(CR_HIT_TAKEN_MELEE, enchant_amount, apply);
+                    //                          ApplyRatingMod(CR_HIT_TAKEN_RANGED, enchant_amount, apply);
+                    //                          ApplyRatingMod(CR_HIT_TAKEN_SPELL, enchant_amount, apply);
+                    //                        break;
+                    //                    case ITEM_MOD_CRIT_TAKEN_RATING:
+                    //                          ApplyRatingMod(CR_CRIT_TAKEN_MELEE, enchant_amount, apply);
+                    //                          ApplyRatingMod(CR_CRIT_TAKEN_RANGED, enchant_amount, apply);
+                    //                          ApplyRatingMod(CR_CRIT_TAKEN_SPELL, enchant_amount, apply);
+                    //                        break;
+                    case ITEM_MOD_RESILIENCE_RATING:
+                        ApplyRatingMod(CR_CRIT_TAKEN_MELEE, enchant_amount, apply);
+                        ApplyRatingMod(CR_CRIT_TAKEN_RANGED, enchant_amount, apply);
+                        ApplyRatingMod(CR_CRIT_TAKEN_SPELL, enchant_amount, apply);
+                        DEBUG_LOG("+ %u RESILIENCE", enchant_amount);
+                        break;
+                    case ITEM_MOD_HASTE_RATING:
+                        ApplyRatingMod(CR_HASTE_MELEE, enchant_amount, apply);
+                        ApplyRatingMod(CR_HASTE_RANGED, enchant_amount, apply);
+                        DEBUG_LOG("+ %u HASTE", enchant_amount);
+                        break;
+                    case ITEM_MOD_EXPERTISE_RATING:
+                        ApplyRatingMod(CR_EXPERTISE, enchant_amount, apply);
+                        DEBUG_LOG("+ %u EXPERTISE", enchant_amount);
+                        break;
+                    default:
+                        break;
+                    }
                     break;
                 }
-                break;
-            }
-        case ITEM_ENCHANTMENT_TYPE_TOTEM:               // Shaman Rockbiter Weapon
-            {
-                if (getClass() == CLASS_SHAMAN)
+            case ITEM_ENCHANTMENT_TYPE_TOTEM:               // Shaman Rockbiter Weapon
                 {
-                    float addValue = 0.0f;
-                    if (item->GetSlot() == EQUIPMENT_SLOT_MAINHAND)
+                    if (getClass() == CLASS_SHAMAN)
                     {
-                        addValue = float(enchant_amount * item->GetProto()->Delay / 1000.0f);
-                        HandleStatModifier(UNIT_MOD_DAMAGE_MAINHAND, TOTAL_VALUE, addValue, apply);
+                        float addValue = 0.0f;
+                        if (item->GetSlot() == EQUIPMENT_SLOT_MAINHAND)
+                        {
+                            addValue = float(enchant_amount * item->GetProto()->Delay / 1000.0f);
+                            HandleStatModifier(UNIT_MOD_DAMAGE_MAINHAND, TOTAL_VALUE, addValue, apply);
+                        }
+                        else if (item->GetSlot() == EQUIPMENT_SLOT_OFFHAND)
+                        {
+                            addValue = float(enchant_amount * item->GetProto()->Delay / 1000.0f);
+                            HandleStatModifier(UNIT_MOD_DAMAGE_OFFHAND, TOTAL_VALUE, addValue, apply);
+                        }
                     }
-                    else if (item->GetSlot() == EQUIPMENT_SLOT_OFFHAND)
-                    {
-                        addValue = float(enchant_amount * item->GetProto()->Delay / 1000.0f);
-                        HandleStatModifier(UNIT_MOD_DAMAGE_OFFHAND, TOTAL_VALUE, addValue, apply);
-                    }
+                    break;
                 }
+            default:
+                sLog.outError("Unknown item enchantment display type: %d", enchant_display_type);
                 break;
-            }
-        default:
-            sLog.outError("Unknown item enchantment display type: %d", enchant_display_type);
-            break;
-        }                                                   /*switch(enchant_display_type)*/
-    }                                                       /*for*/
+            }                                                   /*switch(enchant_display_type)*/
+        }                                                       /*for*/
+    }                                                           /*isbroken*/
 
     // visualize enchantment at player and equipped items
     if (slot < MAX_INSPECTED_ENCHANTMENT_SLOT)
@@ -12561,21 +12561,7 @@ void Player::PrepareGossipMenu(WorldObject* pSource, uint32 menuId)
     {
         bool hasMenuItem = true;
 
-        if (itr->second.cond_1 && !sObjectMgr.IsPlayerMeetToCondition(this, itr->second.cond_1))
-        {
-            if (itr->second.option_id == GOSSIP_OPTION_QUESTGIVER)
-                canSeeQuests = false;
-            continue;
-        }
-
-        if (itr->second.cond_2 && !sObjectMgr.IsPlayerMeetToCondition(this, itr->second.cond_2))
-        {
-            if (itr->second.option_id == GOSSIP_OPTION_QUESTGIVER)
-                canSeeQuests = false;
-            continue;
-        }
-
-        if (itr->second.cond_3 && !sObjectMgr.IsPlayerMeetToCondition(this, itr->second.cond_3))
+        if (!sConditionMgr.IsObjectMeetToConditions(this, pSource, itr->second.conditions))
         {
             if (itr->second.option_id == GOSSIP_OPTION_QUESTGIVER)
                 canSeeQuests = false;
@@ -12741,7 +12727,7 @@ void Player::SendPreparedGossip(WorldObject* pSource)
     uint32 textId = GetGossipTextId(pSource);
 
     if (uint32 menuId = PlayerTalkClass->GetGossipMenu().GetMenuId())
-        textId = GetGossipTextId(menuId);
+        textId = GetGossipTextId(menuId, pSource);
 
     PlayerTalkClass->SendGossipMenu(textId, pSource->GetGUID());
 }
@@ -12886,7 +12872,7 @@ uint32 Player::GetGossipTextId(WorldObject* pSource)
     return DEFAULT_GOSSIP_MESSAGE;
 }
 
-uint32 Player::GetGossipTextId(uint32 menuId)
+uint32 Player::GetGossipTextId(uint32 menuId, WorldObject* source)
 {
     uint32 textId = DEFAULT_GOSSIP_MESSAGE;
 
@@ -12897,7 +12883,7 @@ uint32 Player::GetGossipTextId(uint32 menuId)
 
     for (GossipMenusMap::const_iterator itr = pMenuBounds.first; itr != pMenuBounds.second; ++itr)
     {
-        if (sObjectMgr.IsPlayerMeetToCondition(this, itr->second.cond_1) && sObjectMgr.IsPlayerMeetToCondition(this, itr->second.cond_2))
+        if (sConditionMgr.IsObjectMeetToConditions(this, source, itr->second.conditions))
             textId = itr->second.text_id;
     }
 
@@ -13128,7 +13114,8 @@ bool Player::CanTakeQuest(Quest const* pQuest, bool msg)
            && SatisfyQuestPreviousQuest(pQuest, msg) && SatisfyQuestTimed(pQuest, msg)
            && SatisfyQuestNextChain(pQuest, msg) && SatisfyQuestPrevChain(pQuest, msg)
            && SatisfyQuestDay(pQuest, msg)
-           && !sDisableMgr.IsDisabledFor(DISABLE_TYPE_QUEST, pQuest->GetQuestId(), this);
+           && !sDisableMgr.IsDisabledFor(DISABLE_TYPE_QUEST, pQuest->GetQuestId(), this)
+           && SatisfyQuestConditions(pQuest, msg);
 }
 
 bool Player::CanAddQuest(Quest const* pQuest, bool msg)
@@ -13790,6 +13777,19 @@ bool Player::SatisfyQuestStatus(Quest const* qInfo, bool msg)
     {
         if (msg)
             SendCanTakeQuestResponse(INVALIDREASON_QUEST_ALREADY_ON);
+        return false;
+    }
+    return true;
+}
+
+bool Player::SatisfyQuestConditions(Quest const* qInfo, bool msg)
+{
+    ConditionList conditions = sConditionMgr.GetConditionsForNotGroupedEntry(CONDITION_SOURCE_TYPE_QUEST_ACCEPT, qInfo->GetQuestId());
+    if (!sConditionMgr.IsObjectMeetToConditions(this, conditions))
+    {
+        if (msg)
+            SendCanTakeQuestResponse(INVALIDREASON_DONT_HAVE_REQ);
+        sLog.outDebug("Player::SatisfyQuestConditions: conditions not met for quest %u", qInfo->GetQuestId());
         return false;
     }
     return true;
@@ -14839,6 +14839,14 @@ bool Player::LoadFromDB(uint32 guid, SqlQueryHolder* holder)
     bytes0 |= fields[5].GetUInt8() << 8;                    // class
     bytes0 |= fields[6].GetUInt8() << 16;                   // gender
     SetUInt32Value(UNIT_FIELD_BYTES_0, bytes0);
+
+    // check if race/class combination is valid
+    PlayerInfo const* info = sObjectMgr.GetPlayerInfo(getRace(), getClass());
+    if (!info)
+    {
+        sLog.outError("Player (GUID: %u) has wrong race/class (%u/%u), can't be loaded.", guid, getRace(), getClass());
+        return false;
+    }
 
     SetUInt32Value(UNIT_FIELD_LEVEL, fields[7].GetUInt8());
     SetUInt32Value(PLAYER_XP, fields[8].GetUInt32());
@@ -16123,8 +16131,7 @@ void Player::_LoadSkills(QueryResult_AutoPtr result)
 
 void Player::_LoadSpells(QueryResult_AutoPtr result)
 {
-    for (PlayerSpellMap::iterator itr = m_spells.begin(); itr != m_spells.end(); ++itr)
-        delete itr->second;
+    m_spells.clear();
 
     //QueryResult_AutoPtr result = CharacterDatabase.PQuery("SELECT spell,active,disabled FROM character_spell WHERE guid = '%u'",GetGUIDLow());
 
@@ -17078,18 +17085,18 @@ void Player::_SaveReputation()
 
 void Player::_SaveSpells()
 {
-    for (PlayerSpellMap::const_iterator itr = m_spells.begin(), next = m_spells.begin(); itr != m_spells.end(); itr = next)
+    for (PlayerSpellMap::iterator itr = m_spells.begin(), next = m_spells.begin(); itr != m_spells.end(); itr = next)
     {
         ++next;
-        if (itr->second->state == PLAYERSPELL_REMOVED || itr->second->state == PLAYERSPELL_CHANGED)
+        if (itr->second.state == PLAYERSPELL_REMOVED || itr->second.state == PLAYERSPELL_CHANGED)
             CharacterDatabase.PExecute("DELETE FROM character_spell WHERE guid = '%u' and spell = '%u'", GetGUIDLow(), itr->first);
-        if (itr->second->state == PLAYERSPELL_NEW || itr->second->state == PLAYERSPELL_CHANGED)
-            CharacterDatabase.PExecute("INSERT INTO character_spell (guid,spell,active,disabled) VALUES ('%u', '%u', '%u', '%u')", GetGUIDLow(), itr->first, itr->second->active ? 1 : 0, itr->second->disabled ? 1 : 0);
+        if (itr->second.state == PLAYERSPELL_NEW || itr->second.state == PLAYERSPELL_CHANGED)
+            CharacterDatabase.PExecute("INSERT INTO character_spell (guid,spell,active,disabled) VALUES ('%u', '%u', '%u', '%u')", GetGUIDLow(), itr->first, itr->second.active ? 1 : 0, itr->second.disabled ? 1 : 0);
 
-        if (itr->second->state == PLAYERSPELL_REMOVED)
+        if (itr->second.state == PLAYERSPELL_REMOVED)
             _removeSpell(itr->first);
         else
-            itr->second->state = PLAYERSPELL_UNCHANGED;
+            itr->second.state = PLAYERSPELL_UNCHANGED;
     }
 }
 
@@ -18323,7 +18330,7 @@ void Player::ProhibitSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs)
     time_t curTime = time(NULL);
     for (PlayerSpellMap::const_iterator itr = m_spells.begin(); itr != m_spells.end(); ++itr)
     {
-        if (itr->second->state == PLAYERSPELL_REMOVED)
+        if (itr->second.state == PLAYERSPELL_REMOVED)
             continue;
         uint32 unSpellId = itr->first;
         SpellEntry const* spellInfo = sSpellStore.LookupEntry(unSpellId);
@@ -19427,6 +19434,20 @@ void Player::InitPrimaryProfessions()
     SetFreePrimaryProfessions(sWorld.getConfig(CONFIG_MAX_PRIMARY_TRADE_SKILL));
 }
 
+Unit * Player::GetSelectedUnit() const
+{
+    if (m_curSelection)
+        return ObjectAccessor::GetUnit(*this, m_curSelection);
+    return NULL;
+}
+
+Player * Player::GetSelectedPlayer() const
+{
+    if (m_curSelection)
+        return ObjectAccessor::GetPlayer(*this, m_curSelection);
+    return NULL;
+}
+
 void Player::SendComboPoints()
 {
     Unit* combotarget = ObjectAccessor::GetUnit(*this, m_comboTarget);
@@ -19763,7 +19784,7 @@ void Player::learnQuestRewardedSpells(Quest const* quest)
             // search other specialization for same prof
             for (PlayerSpellMap::const_iterator itr = m_spells.begin(); itr != m_spells.end(); ++itr)
             {
-                if (itr->second->state == PLAYERSPELL_REMOVED || itr->first == learned_0)
+                if (itr->second.state == PLAYERSPELL_REMOVED || itr->first == learned_0)
                     continue;
 
                 SpellEntry const* itrInfo = sSpellStore.LookupEntry(itr->first);
