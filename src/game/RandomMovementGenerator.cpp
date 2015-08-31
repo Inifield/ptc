@@ -30,9 +30,7 @@ void
 RandomMovementGenerator<Creature>::_setRandomLocation(Creature& creature)
 {
     float X, Y, Z, nx, ny, nz, ori, dist;
-
     creature.GetHomePosition(X, Y, Z, ori);
-
     Map const* map = creature.GetBaseMap();
 
     // For 2D/3D system selection
@@ -53,7 +51,7 @@ RandomMovementGenerator<Creature>::_setRandomLocation(Creature& creature)
     Oregon::NormalizeMapCoord(ny);
 
     dist = (nx - X) * (nx - X) + (ny - Y) * (ny - Y);
-
+    
     if (is_air_ok)                                          // 3D system above ground and above water (flying mode)
     {
         // Limit height change
@@ -91,6 +89,16 @@ RandomMovementGenerator<Creature>::_setRandomLocation(Creature& creature)
         }
     }
 
+    if (is_air_ok)
+        i_nextMoveTime.Reset(0);
+    else
+    {
+        if (roll_chance_i(MOVEMENT_RANDOM_MMGEN_CHANCE_NO_BREAK))
+            i_nextMoveTime.Reset(urand(5000, 10000));
+        else
+            i_nextMoveTime.Reset(urand(50, 400));
+    }
+
     creature.AddUnitState(UNIT_STATE_ROAMING);
 
     Movement::MoveSplineInit init(creature);
@@ -115,6 +123,7 @@ void RandomMovementGenerator<Creature>::Initialize(Creature& creature)
     if (!wander_distance)
         wander_distance = creature.GetRespawnRadius();
 
+    creature.AddUnitState(UNIT_STATE_ROAMING);
     _setRandomLocation(creature);
 }
 
@@ -143,10 +152,10 @@ bool RandomMovementGenerator<Creature>::Update(Creature& creature, const uint32&
 
     if (creature.movespline->Finalized())
     {
-    i_nextMoveTime.Update(diff);
+        i_nextMoveTime.Update(diff);
         if (i_nextMoveTime.Passed())
             _setRandomLocation(creature);
-        }
+    }
     return true;
 }
 

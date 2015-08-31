@@ -5937,6 +5937,11 @@ bool Unit::HandleProcTriggerSpell(Unit* pVictim, uint32 damage, Aura* triggeredB
     Unit* target = NULL;
     int32  basepoints0 = 0;
 
+    // Need to be able to adjust the default behaviour for if the proc makes it all the way through this method.
+    // This will most often be true, telling the server to remove a charge.
+    // However, cases exist where it needs to be false instead to preserve the charge.
+    bool removeCharge = true;
+
     if (triggeredByAura->GetModifier()->m_auraname == SPELL_AURA_PROC_TRIGGER_SPELL_WITH_VALUE)
         basepoints0 = triggerAmount;
 
@@ -5995,7 +6000,7 @@ bool Unit::HandleProcTriggerSpell(Unit* pVictim, uint32 damage, Aura* triggeredB
                     trigger_spell_id = 31643;
                     break;
                 default:
-                    sLog.outError("Unit::HandleProcTriggerSpell: Spell %u miss posibly Blazing Speed", auraSpellInfo->Id);
+                    sLog.outError("Unit::HandleProcTriggerSpell: Spell %u miss possibly Blazing Speed", auraSpellInfo->Id);
                     return false;
                 }
             }
@@ -6059,23 +6064,27 @@ bool Unit::HandleProcTriggerSpell(Unit* pVictim, uint32 damage, Aura* triggeredB
                 else if (auraSpellInfo->SpellFamilyFlags & 0x4000)
                 {
                     // Improved Drain Soul
-                    Unit::AuraList const& mAddFlatModifier = GetAurasByType(SPELL_AURA_DUMMY);
+                    Unit::AuraList const& mAddFlatModifier = GetAurasByType(SPELL_AURA_ADD_FLAT_MODIFIER);
                     for (Unit::AuraList::const_iterator i = mAddFlatModifier.begin(); i != mAddFlatModifier.end(); ++i)
                     {
-                        if ((*i)->GetModifier()->m_miscvalue == SPELLMOD_CHANCE_OF_SUCCESS && (*i)->GetSpellProto()->SpellIconID == 113)
-                        {
-                            int32 value2 = CalculateSpellDamage((*i)->GetSpellProto(), 2, (*i)->GetSpellProto()->EffectBasePoints[2], this);
-                            basepoints0 = int32(CalculatePct(GetMaxPower(POWER_MANA), value2));
-                            // Drain Soul
-                            CastCustomSpell(this, 18371, &basepoints0, NULL, NULL, true, castItem, triggeredByAura);
-                            break;
-                        }
+
+                        // If the current aura being examined is not a rank of Improved Drain Soul,
+                        //  skip the current aura and keep looking.
+                        if((*i)->GetSpellProto()->SpellIconID != 113)
+                            continue;
+
+                        int32 value2 = CalculateSpellDamage((*i)->GetSpellProto(), 2, (*i)->GetSpellProto()->EffectBasePoints[2], this);
+                        basepoints0 = int32(CalculatePct(GetMaxPower(POWER_MANA), value2));
+                        DEBUG_LOG("Granting %d mana from Improved Drain Soul",basepoints0);
+
+                        break;
+
                     }
                     trigger_spell_id = 18371;
 
                     // Not remove charge (aura removed on death in any cases)
                     // Need for correct work Drain Soul SPELL_AURA_CHANNEL_DEATH_ITEM aura
-                    return false;
+                    removeCharge = false;
                 }
                 break;
             }
@@ -6240,11 +6249,30 @@ bool Unit::HandleProcTriggerSpell(Unit* pVictim, uint32 damage, Aura* triggeredB
                             trigger_spell_id = 27165;
                             break;  // Rank 4
                         default:
-                            sLog.outError("Unit::HandleProcTriggerSpell: Spell %u miss posibly Judgement of Light/Wisdom", auraSpellInfo->Id);
+                            sLog.outError("Unit::HandleProcTriggerSpell: Spell %u miss possibly Judgement of Light/Wisdom", auraSpellInfo->Id);
                             return false;
                         }
-                        pVictim->CastSpell(pVictim, trigger_spell_id, true, castItem, triggeredByAura);
-                        return true;                       // no hidden cooldown
+
+                        SpellEntry const *triggerSpell = sSpellStore.LookupEntry(trigger_spell_id);
+                        int32 healAmount = triggerSpell->EffectBasePoints[0] + 1;
+
+                        if (Unit* auraCaster = triggeredByAura->GetCaster())
+                        {
+                            // Look through the caster's dummy auras for auras that affect Judgement of Light.
+                            Unit::AuraList const& casterDummyAuras = auraCaster->GetAurasByType(SPELL_AURA_DUMMY);
+                            for (Unit::AuraList::const_iterator i = casterDummyAuras.begin(); i != casterDummyAuras.end(); ++i)
+                            {
+                                // Justicar 2-piece bonus (Holy)
+                                if ((*i)->GetSpellProto()->Id == 37182)
+                                {
+                                    healAmount += (*i)->GetModifier()->m_amount;
+                                    break;
+                                }
+                            }
+                        }
+
+                        pVictim->CastCustomSpell(pVictim, trigger_spell_id, &healAmount, NULL, NULL, true, castItem, triggeredByAura);
+                        return false;
                     }
                     // Illumination
                     if (auraSpellInfo->SpellIconID == 241)
@@ -6578,7 +6606,7 @@ bool Unit::HandleProcTriggerSpell(Unit* pVictim, uint32 damage, Aura* triggeredB
     else
         CastSpell(target, trigger_spell_id, true, castItem, triggeredByAura);
 
-    return true;
+    return removeCharge;
 }
 
 bool Unit::HandleOverrideClassScriptAuraProc(Unit* pVictim, Aura* triggeredByAura, SpellEntry const* procSpell, uint32 cooldown)
@@ -10603,7 +10631,8 @@ void Unit::DeleteCharmInfo()
 
 CharmInfo::CharmInfo(Unit* unit)
     : m_unit(unit), m_CommandState(COMMAND_FOLLOW), m_petnumber(0), m_barInit(false),
-    m_isCommandAttack(false), m_isAtStay(false), m_isFollowing(false)
+    m_isCommandAttack(false), m_isAtStay(false), m_isFollowing(false), m_isReturning(false),
+    m_stayX(0.0f), m_stayY(0.0f), m_stayZ(0.0f)
 {
     for (int i = 0; i < MAX_SPELL_CHARM; ++i)
     {

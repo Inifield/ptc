@@ -435,6 +435,7 @@ void GameObject::Update(uint32 diff)
                         lootingGroupLeaderGUID = 0;
                     }
                 }
+                break;
             default:
                 break;
             }
@@ -710,24 +711,6 @@ void GameObject::DeleteFromDB()
 GameObject* GameObject::GetGameObject(WorldObject& object, uint64 guid)
 {
     return object.GetMap()->GetGameObject(guid);
-}
-
-uint32 GameObject::GetLootId(GameObjectInfo const* ginfo)
-{
-    if (!ginfo)
-        return 0;
-
-    switch (ginfo->type)
-    {
-    case GAMEOBJECT_TYPE_CHEST:
-        return ginfo->chest.lootId;
-    case GAMEOBJECT_TYPE_FISHINGHOLE:
-        return ginfo->fishinghole.lootId;
-    case GAMEOBJECT_TYPE_FISHINGNODE:
-        return ginfo->fishnode.lootId;
-    default:
-        return 0;
-    }
 }
 
 /*********************************************************/

@@ -1000,6 +1000,10 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
 
         caster->SendHealSpellLog(unitTarget, m_spellInfo->Id, addhealth, crit);
 
+        // Do triggers for unit (reflect triggers passed on hit phase for correct drop charge)
+        if (missInfo != SPELL_MISS_REFLECT)
+            caster->ProcDamageAndSpell(unitTarget, procAttacker, procVictim, procEx, addhealth, m_attackType, m_spellInfo, m_canTrigger);
+
         int32 gain = unitTarget->ModifyHealth(int32(addhealth));
         if (m_IsTriggeredSpell)
             /* @todo: Test me
@@ -1013,9 +1017,6 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
             if (BattleGround* bg = caster->ToPlayer()->GetBattleGround())
                 bg->UpdatePlayerScore(caster->ToPlayer(), SCORE_HEALING_DONE, gain);
 
-        // Do triggers for unit (reflect triggers passed on hit phase for correct drop charge)
-        if (missInfo != SPELL_MISS_REFLECT)
-            caster->ProcDamageAndSpell(unitTarget, procAttacker, procVictim, procEx, addhealth, m_attackType, m_spellInfo, m_canTrigger);
     }
     // Do damage and triggers
     else if (m_damage > 0)
@@ -4719,26 +4720,6 @@ SpellCastResult Spell::CheckCast(bool strict)
 
                 break;
             }
-        case SPELL_AURA_MOD_ROOT:
-
-            if (IsAreaOfEffectSpell(m_spellInfo)) // frost nova, etc.
-                break;
-
-            if (!m_targets.getUnitTarget())
-                return SPELL_FAILED_BAD_IMPLICIT_TARGETS;
-
-            if (!IsPositiveSpell(m_spellInfo->Id))
-            {
-                if (m_targets.getUnitTarget() == m_caster)
-                    return SPELL_FAILED_BAD_TARGETS;
-
-                if (m_caster->IsFriendlyTo(m_targets.getUnitTarget()))
-                    return SPELL_FAILED_TARGET_FRIENDLY;
-            }
-            else if (!m_caster->IsFriendlyTo(m_targets.getUnitTarget()))
-                return SPELL_FAILED_TARGET_ENEMY;
-
-            break;
         }
     }
 
