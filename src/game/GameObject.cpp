@@ -91,7 +91,7 @@ void GameObject::CleanupsBeforeDelete()
                     ownerType = "pet";
 
                 sLog.outError("Delete GameObject (GUID: %u Entry: %u SpellId %u LinkedGO %u) that lost references to owner (GUID %u Type '%s') GO list. Crash possible later.",
-                              GetGUIDLow(), GetGOInfo()->id, m_spellId, GetLinkedGameObjectEntry(), GUID_LOPART(owner_guid), ownerType);
+                              GetGUIDLow(), GetGOInfo()->id, m_spellId, GetGOInfo()->GetLinkedGameObjectEntry(), GUID_LOPART(owner_guid), ownerType);
             }
         }
     }
@@ -319,7 +319,7 @@ void GameObject::Update(uint32 diff)
                 if (goInfo->type == GAMEOBJECT_TYPE_TRAP)
                 {
                     if (m_cooldownTime >= time(NULL))
-                        return;
+                        break;
 
                     // traps
                     Unit* owner = GetOwner();
@@ -409,7 +409,7 @@ void GameObject::Update(uint32 diff)
             {
             case GAMEOBJECT_TYPE_DOOR:
             case GAMEOBJECT_TYPE_BUTTON:
-                if (GetAutoCloseTime() && (m_cooldownTime < time(NULL)))
+                if (GetGOInfo()->GetAutoCloseTime() && (m_cooldownTime < time(NULL)))
                     ResetDoorOrButton();
                 break;
             case GAMEOBJECT_TYPE_GOOBER:
@@ -668,7 +668,7 @@ bool GameObject::LoadFromDB(uint32 guid, Map* map)
     {
         m_spawnedByDefault = true;
 
-        if (!GetDespawnPossibility() && !GetGOInfo()->IsDespawnAtAction())
+        if (!GetGOInfo()->GetDespawnPossibility() && !GetGOInfo()->IsDespawnAtAction())
         {
             SetFlag(GAMEOBJECT_FLAGS, GO_FLAG_NODESPAWN);
             m_respawnDelayTime = 0;
@@ -854,7 +854,7 @@ bool GameObject::ActivateToQuest(Player* pTarget) const
         // scan GO chest with loot including quest items
         case GAMEOBJECT_TYPE_CHEST:
             {
-                if (LootTemplates_Gameobject.HaveQuestLootForPlayer(GetLootId(), pTarget))
+                if (LootTemplates_Gameobject.HaveQuestLootForPlayer(GetGOInfo()->GetLootId(), pTarget))
                 {
                     //@todo fix this hack
                     //look for battlegroundAV for some objects which are only activated after mine gots captured by own team
@@ -950,7 +950,7 @@ void GameObject::UseDoorOrButton(uint32 time_to_restore, bool alternative /* = f
         return;
 
     if (!time_to_restore)
-        time_to_restore = GetAutoCloseTime();
+        time_to_restore = GetGOInfo()->GetAutoCloseTime();
 
     SwitchDoorOrButton(true, alternative);
     SetLootState(GO_ACTIVATED);
@@ -1117,7 +1117,7 @@ void GameObject::Use(Unit* user)
             else
                 SetGoState(GO_STATE_ACTIVE);
 
-            m_cooldownTime = time(NULL) + GetAutoCloseTime();
+            m_cooldownTime = time(NULL) + GetGOInfo()->GetAutoCloseTime();
 
             // cast this spell later if provided
             spellId = info->goober.spellId;
