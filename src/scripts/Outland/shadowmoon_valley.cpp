@@ -1872,7 +1872,7 @@ struct npc_jovaanAI : public ScriptedAI
         case 1:
             pInfernal->SetRespawnTime(61);
             pInfernal->UpdateObjectVisibility();
-            break;
+            return 500;
         case 2:
             pInfernalTrap->SetRespawnTime(61);
             pInfernalTrap->UpdateObjectVisibility();
@@ -2120,6 +2120,16 @@ CreatureAI* GetAI_npc_sunfurywarlock(Creature* creature)
     return new npc_sunfurywarlockAI(creature);
 }
 
+/*######
+## GO_ARCANO_CONTROL
+######*/
+
+bool GOHello_go_arcanocontroller(Player* player, GameObject* go)
+{
+    player->CastSpell(player, 37895, true);
+    return true;
+}
+
 void AddSC_shadowmoon_valley()
 {
     Script* newscript;
@@ -2226,5 +2236,10 @@ void AddSC_shadowmoon_valley()
     newscript->Name = "npc_sunfurywarlock";
     newscript->GetAI = &GetAI_npc_sunfurywarlock;
     newscript->RegisterSelf();
+	
+	newscript = new Script;
+	newscript->Name = "go_arcanocontroller";
+	newscript->pGOHello = &GOHello_go_arcanocontroller;
+	newscript->RegisterSelf();
 }
 

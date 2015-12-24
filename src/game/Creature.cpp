@@ -467,8 +467,6 @@ void Creature::UpdateMovementFlags(bool packetOnly)
     if (IsControlledByPlayer() || GetCreatureTemplate()->flags_extra & CREATURE_FLAG_EXTRA_NO_DYNAMIC_MOVEMENT_FLAG)
         return;
 
-    CreatureInfo const* cInfo = GetCreatureTemplate();
-
     // Set the movement flags if the creature is in that mode. (Only fly if actually in air, only swim if in water, etc)
     float ground = GetMap()->GetHeight(GetPositionX(), GetPositionY(), GetPositionZ(), true, MAX_FALL_DISTANCE);
 
@@ -489,7 +487,7 @@ void Creature::UpdateMovementFlags(bool packetOnly)
     if (!isInAir)
         RemoveUnitMovementFlag(MOVEMENTFLAG_FALLING);
 
-    SetSwim(cInfo->InhabitType & INHABIT_WATER && IsInWater(), packetOnly);
+    SetSwim(GetCreatureTemplate()->InhabitType & INHABIT_WATER && IsInWater(), packetOnly);
 }
 
 void Creature::Update(uint32 diff)
@@ -1816,6 +1814,8 @@ void Creature::DoFleeToGetAssistance()
         cell.Visit(p, grid_creature_searcher, *GetMap(), *this, radius);
 
         SetNoSearchAssistance(true);
+        UpdateSpeed(MOVE_RUN, false);
+
         if (!pCreature)
             SetControlled(true, UNIT_STATE_FLEEING);
         else
