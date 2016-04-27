@@ -90,6 +90,7 @@ class CreatureAI : public UnitAI
 
         virtual ~CreatureAI() {}
 
+        void Talk(uint8 id, WorldObject* whisperTarget = NULL);
         // == Reactions At =================================
 
         // Called if IsVisible(Unit* who) is true at each *who move, reaction at visibility zone enter

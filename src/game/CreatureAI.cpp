@@ -22,6 +22,7 @@
 #include "SpellMgr.h"
 #include "MapRefManager.h"
 #include "Player.h"
+#include "CreatureTextMgr.h"
 
 //Disable CreatureAI when charmed
 void CreatureAI::OnCharmed(bool apply)
@@ -36,6 +37,11 @@ AISpellInfoType* UnitAI::AISpellInfo;
 AISpellInfoType* GetAISpellInfo(uint32 i)
 {
     return &CreatureAI::AISpellInfo[i];
+}
+
+void CreatureAI::Talk(uint8 id, WorldObject* whisperTarget /*= NULL*/)
+{
+    sCreatureTextMgr->SendChat(me, id, whisperTarget);
 }
 
 void CreatureAI::DoZoneInCombatWithPlayers(bool force)
