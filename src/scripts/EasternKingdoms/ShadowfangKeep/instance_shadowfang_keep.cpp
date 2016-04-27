@@ -30,30 +30,31 @@ EndScriptData */
 
 enum eEnums
 {
-    SAY_BOSS_DIE_AD         = -1033007,
-    SAY_BOSS_DIE_AS         = -1033008,
-    SAY_ARCHMAGE            = -1033009,
+    SAY_BOSS_DIE_AD             = -1033007,
+    SAY_BOSS_DIE_AS             = -1033008,
+    SAY_ARCHMAGE                = -1033009,
 
-    NPC_ASH                 = 3850,
-    NPC_ADA                 = 3849,
-    NPC_ARCHMAGE_ARUGAL     = 4275,
-    NPC_ARUGAL_VOIDWALKER   = 4627,
+    NPC_ASH                     = 3850,
+    NPC_ADA                     = 3849,
+    NPC_ARCHMAGE_ARUGAL         = 4275,
+    NPC_ARUGAL_VOIDWALKER       = 4627,
 
-    GO_COURTYARD_DOOR       = 18895,                        //door to open when talking to NPC's
-    GO_SORCERER_DOOR        = 18972,                        //door to open when Fenrus the Devourer
-    GO_ARUGAL_DOOR          = 18971,                        //door to open when Wolf Master Nandos
+    GO_COURTYARD_DOOR           = 18895,                        //door to open when talking to NPC's
+    GO_SORCERER_DOOR            = 18972,                        //door to open when Fenrus the Devourer
+    GO_ARUGAL_DOOR              = 18971,                        //door to open when Wolf Master Nandos
 
     SPELL_ASHCROMBE_TELEPORT    = 15742
 };
 
 const Position SpawnLocation[] =
 {
-    { -148.199, 2165.647, 128.448, 1.026},
-    { -153.110, 2168.620, 128.448, 1.026},
-    { -145.905, 2180.520, 128.448, 4.183},
-    { -140.794, 2178.037, 128.448, 4.090},
-    { -138.640, 2170.159, 136.577, 2.737}
+    { -148.199f, 2165.647f, 128.448f, 1.026f},
+    { -153.110f, 2168.620f, 128.448f, 1.026f},
+    { -145.905f, 2180.520f, 128.448f, 4.183f},
+    { -140.794f, 2178.037f, 128.448f, 4.090f},
+    { -138.640f, 2170.159f, 136.577f, 2.737f}
 };
+
 struct instance_shadowfang_keep : public ScriptedInstance
 {
     instance_shadowfang_keep(Map* pMap) : ScriptedInstance(pMap)
