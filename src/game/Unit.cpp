@@ -11415,6 +11415,21 @@ void Unit::StopMoving()
     init.Stop();
 }
 
+void Unit::StopMovingOnCurrentPos() // pussywizard
+{
+    ClearUnitState(UNIT_STATE_MOVING);
+
+    // not need send any packets if not in world
+    if (!IsInWorld())
+        return;
+
+    DisableSpline(); // pussywizard: required so Launch() won't recalculate position from previous spline
+    Movement::MoveSplineInit init(*this);
+    init.MoveTo(GetPositionX(), GetPositionY(), GetPositionZ());
+    init.SetFacing(GetOrientation());
+    init.Launch();
+}
+
 void Unit::SendMovementFlagUpdate(bool self /* = false */)
 {
     WorldPacket data;
