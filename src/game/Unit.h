@@ -2060,7 +2060,7 @@ class Unit : public WorldObject
             return PET_FOLLOW_ANGLE;
         }
 
-        bool IsFlying() const   { return m_movementInfo.HasMovementFlag((MovementFlags)(MOVEMENTFLAG_FLYING | MOVEMENTFLAG_LEVITATING)); }
+        bool IsFlying() const   { return m_movementInfo.HasMovementFlag((MovementFlags)(MOVEMENTFLAG_FLYING | MOVEMENTFLAG_DISABLE_GRAVITY)); }
         bool IsFalling() const;
         bool IsWalking() const { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_WALK_MODE); }
         bool IsRooted() const { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_ROOT); }
@@ -2069,13 +2069,14 @@ class Unit : public WorldObject
 
         virtual bool SetWalk(bool enable);
         virtual bool SetSwim(bool enable);
+        virtual bool SetDisableGravity(bool disable, bool packetOnly = false);
         virtual bool SetLevitate(bool apply, bool packetOnly = false);
         virtual bool SetCanFly(bool enable, bool packetOnly = false);
         virtual bool SetWaterWalking(bool enable, bool packetOnly = false);
         virtual bool SetFeatherFall(bool enable, bool packetOnly = false);
         virtual bool SetHover(bool enable, bool packetOnly = false);
 
-        bool IsLevitating() const { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_LEVITATING); }
+        bool IsLevitating() const { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY); }
 
         bool IsAIEnabled, NeedChangeAI;
         uint64 LastCharmerGUID;

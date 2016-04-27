@@ -69,7 +69,7 @@ enum MovementFlags
     MOVEMENTFLAG_PITCH_DOWN             = 0x00000080,
     MOVEMENTFLAG_WALK_MODE              = 0x00000100,                   // Walking
     MOVEMENTFLAG_ONTRANSPORT            = 0x00000200,                   // Used for flying on some creatures
-    MOVEMENTFLAG_LEVITATING             = 0x00000400,
+    MOVEMENTFLAG_DISABLE_GRAVITY        = 0x00000400,
     MOVEMENTFLAG_ROOT                   = 0x00000800,
     MOVEMENTFLAG_FALLING                = 0x00001000,
     MOVEMENTFLAG_FALLINGFAR             = 0x00004000,
@@ -702,6 +702,8 @@ struct MovementInfo
     {
         time = _time;
     }
+
+    void SetFallTime(uint32 time) { fallTime = time; }
 
     //private:
     // common

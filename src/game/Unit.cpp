@@ -13142,15 +13142,38 @@ bool Unit::SetWalk(bool enable)
     return true;
 }
 
+bool Unit::SetDisableGravity(bool disable, bool /*packetOnly = false*/)
+{
+    if (disable == IsLevitating())
+        return false;
+
+    if (disable)
+    {
+        AddUnitMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY);
+        RemoveUnitMovementFlag(MOVEMENTFLAG_FALLING);
+    }
+    else
+    {
+        RemoveUnitMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY);
+        if (!HasUnitMovementFlag(MOVEMENTFLAG_CAN_FLY))
+        {
+            m_movementInfo.SetFallTime(0);
+            //AddUnitMovementFlag(MOVEMENTFLAG_FALLING); // pussywizard: ZOMG!
+        }
+    }
+
+    return true;
+}
+
 bool Unit::SetLevitate(bool apply, bool /*packetOnly = false */)
 {
     if (apply == IsLevitating())
         return false;
 
     if (apply)
-        AddUnitMovementFlag(MOVEMENTFLAG_LEVITATING);
+        AddUnitMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY);
     else
-        RemoveUnitMovementFlag(MOVEMENTFLAG_LEVITATING);
+        RemoveUnitMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY);
 
     return true;
 }
