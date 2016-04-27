@@ -1,4 +1,4 @@
-# This file is part of the OregonCore Project. See AUTHORS file for Copyright information
+# Copyright (C) 
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -14,7 +14,6 @@ set(Recast_STAT_SRCS
     RecastArea.cpp 
     RecastContour.cpp 
     RecastFilter.cpp 
-    RecastLayers.cpp 
     RecastMesh.cpp 
     RecastMeshDetail.cpp 
     RecastRasterization.cpp 

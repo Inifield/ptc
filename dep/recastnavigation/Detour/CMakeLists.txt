@@ -1,4 +1,4 @@
-# This file is part of the OregonCore Project. See AUTHORS file for Copyright information
+# Copyright (C) 
 #
 # This file is free software; as a special exception the author gives
 # unlimited permission to copy and/or distribute it, with or without
@@ -9,12 +9,12 @@
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 set(Detour_STAT_SRCS
-    DetourAlloc.cpp
-    DetourCommon.cpp
-    DetourNavMesh.cpp
-    DetourNavMeshBuilder.cpp
-    DetourNavMeshQuery.cpp
-    DetourNode.cpp
+    DetourAlloc.cpp 
+    DetourCommon.cpp 
+    DetourNavMesh.cpp 
+    DetourNavMeshBuilder.cpp 
+    DetourNavMeshQuery.cpp 
+    DetourNode.cpp 
 )
 
 if(WIN32)
