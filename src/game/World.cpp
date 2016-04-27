@@ -58,7 +58,6 @@
 #include "Language.h"
 #include "CreatureGroups.h"
 #include "Transports.h"
-#include "CreatureEventAIMgr.h"
 #include "CreatureTextMgr.h"
 #include "ScriptMgr.h"
 #include "WardenDataStorage.h"
@@ -1526,15 +1525,6 @@ void World::SetInitialWorldSettings()
 
     sConsole.SetLoadingLabel("Loading Scripts text locales...");      // must be after Load*Scripts calls
     sObjectMgr.LoadDbScriptStrings();
-
-    sConsole.SetLoadingLabel("Loading CreatureEventAI Texts...");
-    CreatureEAI_Mgr.LoadCreatureEventAI_Texts(false);       // false, will checked in LoadCreatureEventAI_Scripts
-
-    sConsole.SetLoadingLabel("Loading CreatureEventAI Summons...");
-    CreatureEAI_Mgr.LoadCreatureEventAI_Summons(false);     // false, will checked in LoadCreatureEventAI_Scripts
-
-    sConsole.SetLoadingLabel("Loading CreatureEventAI Scripts...");
-    CreatureEAI_Mgr.LoadCreatureEventAI_Scripts();
 
     sConsole.SetLoadingLabel("Loading Creature Texts...");
     sCreatureTextMgr->LoadCreatureTexts();
