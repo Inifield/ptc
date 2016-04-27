@@ -191,21 +191,6 @@ static const EventLocations aOutroLocations[] =
     { 1734.877f, 649.574f, 30.00f },              // second shattered spell target
 };
 
-static const EventLocations aOutroLocations[] =
-{
-    { 1728.337f, 656.641f, 28.55f, 3.86f },       // portal summon loc
-    { 1703.159f, 654.043f, 28.05f, 1.06f },       // first shattered summon loc
-    { 1723.888f, 631.342f, 28.05f, 0.16f },       // second shattered summon loc
-    { 1716.969f, 646.407f, 28.05f, 3.91f },       // velen summon loc
-    { 1718.862f, 644.528f, 28.05f, 3.87f },       // liadrin summon loc
-    { 1709.719f, 639.359f, 27.28f },              // velen move forward
-    { 1711.537f, 637.600f, 27.34f },              // liadrin move forward
-    { 1716.962f, 661.839f, 28.05f },              // first shattered move
-    { 1735.141f, 643.680f, 28.23f },              // second shattered move
-    { 1723.220f, 663.026f, 30.00f },              // first shattered spell target
-    { 1734.877f, 649.574f, 30.00f },              // second shattered spell target
-};
-
 static const EventLocations SoldierLocations[] =
 {
     { 1722.709f, 640.308f, 28.05f, 3.774f }, // summon first
