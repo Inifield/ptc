@@ -13,7 +13,7 @@
 # Function:
 #   add_clang_pch(target dir header cpp)
 
-IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+IF("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xGNU")
 
     EXEC_PROGRAM(
       ${CMAKE_CXX_COMPILER}
@@ -31,7 +31,7 @@ IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 
     SET(_PCH_include_prefix "-I")
 
-ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+ELSEIF("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xClang")
     SET(PCHSupport_FOUND TRUE)
 ELSE()
     IF(WIN32)

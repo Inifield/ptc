@@ -10,7 +10,7 @@
 
 if( CMAKE_COMPILER_IS_GNUCXX )
   add_definitions(--no-warnings)
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+elseif ("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xClang")
   add_definitions(--no-warnings)
 elseif( MSVC )
   add_definitions(/W0)

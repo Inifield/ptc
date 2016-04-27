@@ -2539,14 +2539,14 @@ enum VieraQuests
 Position const ChasePath = { -742.759f, 4073.034f, 47.413f, 0.0f };
 
 // cat change it into MovePath if possible.
-Position const ChasePath1 = { -655.107, 4147.2, 64.1146, 0.0f };
-Position const ChasePath2 = { -664.461, 4147.91, 64.156, 0.0f };
-Position const ChasePath3 = { -681.972, 4146.48, 64.4093, 0.0f };
-Position const ChasePath4 = { -684.262, 4154.27, 62.1889, 0.0f };
-Position const ChasePath5 = { -693.5, 4185.7, 57.0529, 0.0f };
-Position const ChasePath6 = { -708.753, 4187.82, 55.1475, 0.0f };
-Position const ChasePath7 = { -721.51, 4189.59, 51.8167, 0.0f };
-Position const ChasePath8 = { -721.682, 4170.45, 50.7466, 0.0f };
+Position const ChasePath1 = { -655.107f, 4147.2f, 64.1146f, 0.0f };
+Position const ChasePath2 = { -664.461f, 4147.91f, 64.156f, 0.0f };
+Position const ChasePath3 = { -681.972f, 4146.48f, 64.4093f, 0.0f };
+Position const ChasePath4 = { -684.262f, 4154.27f, 62.1889f, 0.0f };
+Position const ChasePath5 = { -693.5f, 4185.7f, 57.0529f, 0.0f };
+Position const ChasePath6 = { -708.753f, 4187.82f, 55.1475f, 0.0f };
+Position const ChasePath7 = { -721.51f, 4189.59f, 51.8167f, 0.0f };
+Position const ChasePath8 = { -721.682f, 4170.45f, 50.7466f, 0.0f };
 
 struct npc_vieraAI : public npc_escortAI
 {
