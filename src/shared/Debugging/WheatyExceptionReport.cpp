@@ -1333,9 +1333,9 @@ size_t bufferSize)
             else
             {
                 #if _WIN64
-                pszCurrBuffer += sprintf(pszCurrBuffer, "0x%I64X", (DWORD64*)pAddress);
+                pszCurrBuffer += sprintf(pszCurrBuffer, "0x%I64X", *(DWORD64*)pAddress);
                 #else
-                pszCurrBuffer += sprintf(pszCurrBuffer, "0x%X", (PDWORD)pAddress);
+                pszCurrBuffer += sprintf(pszCurrBuffer, "0x%X", *(PDWORD)pAddress);
                 #endif
             }
             break;
@@ -1344,9 +1344,9 @@ size_t bufferSize)
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
         #if _WIN64
-        pszCurrBuffer += sprintf(pszCurrBuffer, "0x%I64X <Unable to read memory>", (DWORD64*)pAddress);
+        pszCurrBuffer += sprintf(pszCurrBuffer, "0x%I64X <Unable to read memory>", *(DWORD64*)pAddress);
         #else
-        pszCurrBuffer += sprintf(pszCurrBuffer, "0x%X <Unable to read memory>", (PDWORD)pAddress);
+        pszCurrBuffer += sprintf(pszCurrBuffer, "0x%X <Unable to read memory>", *(PDWORD)pAddress);
         #endif
     }
 }
