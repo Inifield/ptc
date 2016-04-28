@@ -2384,7 +2384,7 @@ void WorldObject::GetNearPoint(WorldObject const* searcher, float& x, float& y, 
          UpdateAllowedPositionZ(x, y, z);
 }
 
-bool WorldObject::GetClosePointSunwell(float &x, float &y, float &z, float size, float distance2d, float angle, const WorldObject* forWho, bool force) const
+bool WorldObject::GetClosePoint(float &x, float &y, float &z, float size, float distance2d, float angle, const WorldObject* forWho, bool force) const
 {
     // angle calculated from current orientation
     GetNearPoint(forWho, x, y, z, size, distance2d, GetOrientation() + angle);
@@ -2414,43 +2414,31 @@ bool WorldObject::GetClosePointSunwell(float &x, float &y, float &z, float size,
     return true;
 }
  
-// @todo: replace with WorldObject::UpdateAllowedPositionZ
-//   To use WorldObject::UpdateAllowedPositionZ at the moment causes a caster of
-//     a leap effect to fall through the ground much too easily.
-float WorldObject::GetPositionZTarget(Position& pos, float destx, float desty)
+void WorldObject::GetContactPoint(const WorldObject* obj, float &x, float &y, float &z, float distance2d) const
 {
+    // angle to face `obj` to `this` using distance includes size of `obj`
+    GetNearPoint(obj, x, y, z, obj->GetObjectSize(), distance2d, GetAngle(obj));
 
-    // Added in Bitbucket issue #1105 in order to solve the problem of
-    //   leap effects like Blink taking the caster to the bottom of a body of liquid.
-
-    float bottom, ground, floor;
-
-    ground = GetMap()->GetHeight(destx, desty, MAX_HEIGHT, true);
-    floor = GetMap()->GetHeight(destx, desty, pos.m_positionZ, true);
-    // If we were to ignore liquid, the WorldObject would be placed here.
-    bottom = fabs(ground - pos.m_positionZ) <= fabs(floor - pos.m_positionZ) ? ground : floor;
-
-    if(pos.m_positionZ > bottom)
+    if (fabs(this->GetPositionZ() - z) > 3.0f || !IsWithinLOS(x, y, z))
     {
-
-        // We are in the water or in the air.
-        // Must be at least above ground.
-
-        LiquidData dest_status;
-        GetMap()->getLiquidStatus(destx, desty, pos.m_positionZ, MAP_ALL_LIQUIDS, &dest_status);
-
-        // Source and destination are underwater.
-        if(dest_status.level > pos.m_positionZ)
-            return pos.m_positionZ;
-
-        // When in doubt, send the user to water/ground level.
-        return fabs(dest_status.level - pos.m_positionZ) <= fabs(bottom - pos.m_positionZ) ? dest_status.level : bottom;
-
+        x = this->GetPositionX();
+        y = this->GetPositionY();
+        z = this->GetPositionZ();
+        obj->UpdateAllowedPositionZ(x, y, z);
     }
-    else
+}
+
+void WorldObject::GetChargeContactPoint(const WorldObject* obj, float &x, float &y, float &z, float distance2d) const
+{
+    // angle to face `obj` to `this` using distance includes size of `obj`
+    GetNearPoint(obj, x, y, z, obj->GetObjectSize(), distance2d, GetAngle(obj));
+
+    if (fabs(this->GetPositionZ() - z) > 3.0f || !IsWithinLOS(x, y, z))
     {
-        // Destination is on or under the ground. Use ground Z.
-        return bottom;
+        x = this->GetPositionX();
+        y = this->GetPositionY();
+        z = this->GetPositionZ();
+        obj->UpdateGroundPositionZ(x, y, z);
     }
 }
 
@@ -2484,7 +2472,7 @@ void WorldObject::MovePosition(Position& pos, float dist, float angle)
     for (uint8 j = 0; j < 10; ++j)
     {
         // do not allow too big z changes
-        if (fabs(pos.m_positionZ - destz) > 6)
+        if (fabs(pos.m_positionZ - destz) > 6.0f)
         {
             destx -= step * cos(angle);
             desty -= step * sin(angle);
@@ -2494,12 +2482,10 @@ void WorldObject::MovePosition(Position& pos, float dist, float angle)
         }
         // we have correct destz now
         else
-        {
-            pos.Relocate(destx, desty, destz);
             break;
-        }
     }
 
+    pos.Relocate(destx, desty, destz);
     Oregon::NormalizeMapCoord(pos.m_positionX);
     Oregon::NormalizeMapCoord(pos.m_positionY);
     UpdateGroundPositionZ(pos.m_positionX, pos.m_positionY, pos.m_positionZ);
@@ -2512,6 +2498,10 @@ void WorldObject::MovePositionToFirstCollision(Position& pos, float dist, float 
     float destx, desty, destz;
     destx = pos.m_positionX + dist * cos(angle);
     desty = pos.m_positionY + dist * sin(angle);
+    destz = pos.m_positionZ;
+
+    if (isType(TYPEMASK_UNIT | TYPEMASK_PLAYER) && !ToUnit()->IsInWater())
+        destz += 2.0f;
 
     // Prevent invalid coordinates here, position is unchanged
     if (!Oregon::IsValidMapCoord(destx, desty))
@@ -2520,27 +2510,39 @@ void WorldObject::MovePositionToFirstCollision(Position& pos, float dist, float 
         return;
     }
 
-    destz = GetPositionZTarget(pos, destx, desty);
-    bool col = VMAP::VMapFactory::createOrGetVMapManager()->getObjectHitPos(GetMapId(), pos.m_positionX, pos.m_positionY, pos.m_positionZ + 0.5f, destx, desty, destz + 0.5f, destx, desty, destz, -0.5f);
+    float selfAddition = 1.5f;
+    float allowedDiff = 6.0f;
+    float newDist = dist;
+    UpdateAllowedPositionZ(destx, desty, destz);
+
+    bool col = VMAP::VMapFactory::createOrGetVMapManager()->getObjectHitPos(GetMapId(), pos.m_positionX, pos.m_positionY, pos.m_positionZ + selfAddition, destx, desty, destz + 0.5f, destx, desty, destz, -0.5f);
 
     // collision occured
     if (col)
     {
         // move back a bit
-        destx -= CONTACT_DISTANCE * cos(angle);
-        desty -= CONTACT_DISTANCE * sin(angle);
-        dist = sqrt((pos.m_positionX - destx) * (pos.m_positionX - destx) + (pos.m_positionY - desty) * (pos.m_positionY - desty));
+        if (pos.GetExactDist2d(destx, desty) > CONTACT_DISTANCE)
+        {
+            destx -= CONTACT_DISTANCE * cos(angle);
+            desty -= CONTACT_DISTANCE * sin(angle);
+        }
+
+        newDist = sqrt((pos.m_positionX - destx)*(pos.m_positionX - destx) + (pos.m_positionY - desty)*(pos.m_positionY - desty));
     }
 
     // check dynamic collision
-    col = GetMap()->getObjectHitPos(pos.m_positionX, pos.m_positionY, pos.m_positionZ + 0.5f, destx, desty, destz + 0.5f, destx, desty, destz, -0.5f);
+    col = GetMap()->getObjectHitPos(pos.m_positionX, pos.m_positionY, pos.m_positionZ + selfAddition, destx, desty, destz + 0.5f, destx, desty, destz, -0.5f);
     
     // Collided with a gameobject
     if (col)
     {
-        destx -= CONTACT_DISTANCE * cos(angle);
-        desty -= CONTACT_DISTANCE * sin(angle);
-        dist = sqrt((pos.m_positionX - destx) * (pos.m_positionX - destx) + (pos.m_positionY - desty) * (pos.m_positionY - desty));
+        // move back a bit
+        if (pos.GetExactDist2d(destx, desty) > CONTACT_DISTANCE)
+        {
+            destx -= CONTACT_DISTANCE * cos(angle);
+            desty -= CONTACT_DISTANCE * sin(angle);
+        }
+        newDist = sqrt((pos.m_positionX - destx)*(pos.m_positionX - destx) + (pos.m_positionY - desty)*(pos.m_positionY - desty));
     }
 
     float step = dist / 10.0f;
@@ -2548,23 +2550,28 @@ void WorldObject::MovePositionToFirstCollision(Position& pos, float dist, float 
     for (uint8 j = 0; j < 10; ++j)
     {
         // do not allow too big z changes
-        if (fabs(pos.m_positionZ - destz) > 6.0f)
+        if (fabs(pos.m_positionZ - destz) > allowedDiff)
         {
             destx -= step * cos(angle);
             desty -= step * sin(angle);
-            destz = GetPositionZTarget(pos, destx, desty);
+            UpdateAllowedPositionZ(destx, desty, destz);
         }
         // we have correct destz now
         else
-        {
-            pos.Relocate(destx, desty, destz);
             break;
-        }
     }
 
     Oregon::NormalizeMapCoord(pos.m_positionX);
     Oregon::NormalizeMapCoord(pos.m_positionY);
-    pos.m_positionZ = GetPositionZTarget(pos, destx, desty);
+    UpdateAllowedPositionZ(destx, desty, destz);
+
+    float ground = GetMap()->GetHeight(destx, desty, MAX_HEIGHT, true);
+    float floor = GetMap()->GetHeight(destx, desty, destz, true);
+    ground = fabs(ground - destz) <= fabs(floor - pos.m_positionZ) ? ground : floor;
+    if (destz < ground)
+        destz = ground;
+
+    pos.Relocate(destx, desty, destz);
     pos.m_orientation = m_orientation;
 }
 

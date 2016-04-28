@@ -58,7 +58,7 @@ void TargetedMovementGeneratorMedium<T, D>::_setTargetLocation(T& owner, bool in
         if ((!initial || (owner.movespline->Finalized() && this->GetMovementGeneratorType() == CHASE_MOTION_TYPE)) && i_target->IsWithinMeleeRange(&owner, allowedRange) && i_target->IsWithinLOS(owner.GetPositionX(), owner.GetPositionY(), owner.GetPositionZ()))
             return;
 
-        bool inRange = i_target->GetRandomContactPointSunwell(&owner, x, y, z, forcePoint);
+        bool inRange = i_target->GetRandomContactPoint(&owner, x, y, z, forcePoint);
         if (useMMaps && !inRange && (!isPlayerPet || i_target->GetPositionZ() - z > 50.0f))
         {
             //useMMaps = false;
@@ -96,7 +96,7 @@ void TargetedMovementGeneratorMedium<T, D>::_setTargetLocation(T& owner, bool in
         if (angle == 0.0f && owner.getVictim() && owner.getVictim()->GetGUID() == i_target->GetGUID())
             angle = MapManager::NormalizeOrientation(i_target->GetAngle(&owner) - i_target->GetOrientation());
         // to at i_offset distance from target and i_angle from target facing
-        bool inRange = i_target->GetClosePointSunwell(x, y, z, size, dist, angle, &owner, forcePoint);
+        bool inRange = i_target->GetClosePoint(x, y, z, size, dist, angle, &owner, forcePoint);
         if (!inRange && (forceDest || !useMMaps) && owner.HasUnitState(UNIT_STATE_FOLLOW) && fabs(i_target->GetPositionZ() - z) > 25.0f)
         {
             x = i_target->GetPositionX();

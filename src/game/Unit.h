@@ -967,8 +967,8 @@ class Unit : public WorldObject
         }
         bool IsWithinCombatRange(const Unit* obj, float dist2compare) const;
         bool IsWithinMeleeRange(Unit* obj, float dist = MELEE_RANGE) const;
-        void GetRandomContactPoint(const Unit* target, float& x, float& y, float& z, float distance2dMin, float distance2dMax) const;
-        bool GetRandomContactPointSunwell(const Unit* target, float &x, float &y, float &z, bool force = false) const;
+        bool GetRandomContactPoint(const Unit* target, float &x, float &y, float &z, bool force = false) const;
+
         uint32 m_extraAttacks;
         bool m_canDualWield;
 
