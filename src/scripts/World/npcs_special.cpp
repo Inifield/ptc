@@ -1843,78 +1843,78 @@ CreatureAI* GetAI_mob_inferno_infernal(Creature* _Creature)
 
 enum eBarmaid
 {
-	SAY_BARMAID1 = -1910260,
-	SAY_BARMAID2_MALE = -1910261,
-	SAY_BARMAID2_FEMALE = -1910262,
-	SAY_BARMAID3 = -1910263,
-	SAY_BARMAID4 = -1910264,
-	SAY_BARMAID5 = -1910265,
-	SAY_BARMAID6 = -1910266,
+    SAY_BARMAID1 = -1910260,
+    SAY_BARMAID2_MALE = -1910261,
+    SAY_BARMAID2_FEMALE = -1910262,
+    SAY_BARMAID3 = -1910263,
+    SAY_BARMAID4 = -1910264,
+    SAY_BARMAID5 = -1910265,
+    SAY_BARMAID6 = -1910266,
 
-	EMOTE_BARMAID_RUDE = -1910259,
+    EMOTE_BARMAID_RUDE = -1910259,
 };
 
 struct npc_barmaidAI : public ScriptedAI
 {
-	npc_barmaidAI(Creature* c) : ScriptedAI(c) {}
+    npc_barmaidAI(Creature* c) : ScriptedAI(c) {}
 
-	void ReceiveEmote(Player* pPlayer, uint32 emote)
-	{
-		switch (emote)
-		{
-		case TEXT_EMOTE_APPLAUD:
-		case TEXT_EMOTE_BOW:
-			me->HandleEmoteCommand(EMOTE_ONESHOT_BOW);
-			break;
-		case TEXT_EMOTE_DANCE:
-			me->HandleEmoteCommand(EMOTE_ONESHOT_DANCE);
-			break;
-		case TEXT_EMOTE_FLEX:
-			me->HandleEmoteCommand(EMOTE_ONESHOT_LAUGH);
-			break;
-		case TEXT_EMOTE_KISS:
-			me->HandleEmoteCommand(EMOTE_ONESHOT_SHY);
-			break;
-		case TEXT_EMOTE_RUDE:
-			me->HandleEmoteCommand(EMOTE_ONESHOT_RUDE);
-			DoScriptText(EMOTE_BARMAID_RUDE, me, pPlayer);
-			break;
-		case TEXT_EMOTE_SHY:
-			me->HandleEmoteCommand(EMOTE_ONESHOT_KISS);
-			break;
-		case TEXT_EMOTE_WAVE:
-			switch (urand(0, 5))
-			{
-				case 0:
-					DoScriptText(SAY_BARMAID1, me);
-					break;
-				case 1:
-					if (pPlayer->getGender() == 0)
-						DoScriptText(SAY_BARMAID2_MALE, me);
-					else
-						DoScriptText(SAY_BARMAID2_FEMALE, me);
-					break;
-				case 2:
-					DoScriptText(SAY_BARMAID3, me);
-					break;
-				case 3:
-					DoScriptText(SAY_BARMAID4, me, pPlayer);
-					break;
-				case 4:
-					DoScriptText(SAY_BARMAID5, me);
-					break;
-				case 5:
-					DoScriptText(SAY_BARMAID6, me, pPlayer);
-					break;
-			}
-			break;
-		}
-	}
+    void ReceiveEmote(Player* pPlayer, uint32 emote)
+    {
+        switch (emote)
+        {
+        case TEXT_EMOTE_APPLAUD:
+        case TEXT_EMOTE_BOW:
+            me->HandleEmoteCommand(EMOTE_ONESHOT_BOW);
+            break;
+        case TEXT_EMOTE_DANCE:
+            me->HandleEmoteCommand(EMOTE_ONESHOT_DANCE);
+            break;
+        case TEXT_EMOTE_FLEX:
+            me->HandleEmoteCommand(EMOTE_ONESHOT_LAUGH);
+            break;
+        case TEXT_EMOTE_KISS:
+            me->HandleEmoteCommand(EMOTE_ONESHOT_SHY);
+            break;
+        case TEXT_EMOTE_RUDE:
+            me->HandleEmoteCommand(EMOTE_ONESHOT_RUDE);
+            DoScriptText(EMOTE_BARMAID_RUDE, me, pPlayer);
+            break;
+        case TEXT_EMOTE_SHY:
+            me->HandleEmoteCommand(EMOTE_ONESHOT_KISS);
+            break;
+        case TEXT_EMOTE_WAVE:
+            switch (urand(0, 5))
+            {
+                case 0:
+                    DoScriptText(SAY_BARMAID1, me);
+                    break;
+                case 1:
+                    if (pPlayer->getGender() == 0)
+                        DoScriptText(SAY_BARMAID2_MALE, me);
+                    else
+                        DoScriptText(SAY_BARMAID2_FEMALE, me);
+                    break;
+                case 2:
+                    DoScriptText(SAY_BARMAID3, me);
+                    break;
+                case 3:
+                    DoScriptText(SAY_BARMAID4, me, pPlayer);
+                    break;
+                case 4:
+                    DoScriptText(SAY_BARMAID5, me);
+                    break;
+                case 5:
+                    DoScriptText(SAY_BARMAID6, me, pPlayer);
+                    break;
+            }
+            break;
+        }
+    }
 };
 
 CreatureAI* GetAI_npc_barmaid(Creature* pCreature)
 {
-	return new npc_barmaidAI(pCreature);
+    return new npc_barmaidAI(pCreature);
 }
 
 void AddSC_npcs_special()
@@ -2028,14 +2028,14 @@ void AddSC_npcs_special()
     newscript->pGOHello  = &GossipHello_go_containment_coffer;
     newscript->RegisterSelf();
 
-	newscript = new Script;
-	newscript->Name = "mob_inferno_infernal";
-	newscript->GetAI = &GetAI_mob_inferno_infernal;
-	newscript->RegisterSelf();
+    newscript = new Script;
+    newscript->Name = "mob_inferno_infernal";
+    newscript->GetAI = &GetAI_mob_inferno_infernal;
+    newscript->RegisterSelf();
 
-	newscript = new Script;
-	newscript->Name = "npc_barmaid";
-	newscript->GetAI = &GetAI_npc_barmaid;
-	newscript->RegisterSelf();
+    newscript = new Script;
+    newscript->Name = "npc_barmaid";
+    newscript->GetAI = &GetAI_npc_barmaid;
+    newscript->RegisterSelf();
 }
 

@@ -107,7 +107,7 @@ class Log : public Oregon::Singleton<Log, Oregon::ClassLevelLockable<Log, ACE_Th
 
         void outError(const char* fmt, ...)    ATTR_PRINTF(2, 3);
         void outErrorDb(const char* fmt, ...)  ATTR_PRINTF(2, 3);
-		void outSQL(const char* fmt, ...)      ATTR_PRINTF(2, 3);
+        void outSQL(const char* fmt, ...)      ATTR_PRINTF(2, 3);
 
         void outArena(const char* fmt, ...)    ATTR_PRINTF(2, 3);
         void outWarden(const char* fmt, ...)   ATTR_PRINTF(2, 3);

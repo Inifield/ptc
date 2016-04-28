@@ -354,12 +354,12 @@ struct master_kelerun_bloodmournAI : public ScriptedAI
     uint8  paladinPhase;
     uint32 timer;
 
-	uint64 PlayerGUID;
+    uint64 PlayerGUID;
     uint64 paladinGuid[4];
 
     void Reset()
     {
-		PlayerGUID = 0;
+        PlayerGUID = 0;
 
         questPhase = 0;
         timer = 60000;
@@ -390,7 +390,7 @@ struct master_kelerun_bloodmournAI : public ScriptedAI
                     CAST_AI(npc_secondTrialAI, paladinSpawn->AI())->Activate(me->GetGUID());
 
                     switch (paladinPhase)
-                    {					
+                    {                    
                         case 0:
                             DoScriptText(TEXT_SECOND_TRIAL_1, me);
                             if(Creature* creature = me->FindNearestCreature(CHAMPION_BLOODWRATH, 20.0f, true))
@@ -398,8 +398,8 @@ struct master_kelerun_bloodmournAI : public ScriptedAI
                             break;
                         case 1:
                             DoScriptText(TEXT_SECOND_TRIAL_2, me);
-							if (Creature* creature = me->FindNearestCreature(CHAMPION_LIGHTREND, 30.0f, true))
-								creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                            if (Creature* creature = me->FindNearestCreature(CHAMPION_LIGHTREND, 30.0f, true))
+                                creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
                             break;
                         case 2:
                             DoScriptText(TEXT_SECOND_TRIAL_3, me);
@@ -407,10 +407,10 @@ struct master_kelerun_bloodmournAI : public ScriptedAI
                                 creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
                             break;
                         case 3:
-							Player* player = Unit::GetPlayer(*me, PlayerGUID);
-							{
-								DoScriptText(TEXT_SECOND_TRIAL_4, me, player);
-							}
+                            Player* player = Unit::GetPlayer(*me, PlayerGUID);
+                            {
+                                DoScriptText(TEXT_SECOND_TRIAL_4, me, player);
+                            }
                             if(Creature* creature = me->FindNearestCreature(CHAMPION_SUNSTRIKER, 25.0f, true))
                                 creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
                             break;
@@ -472,11 +472,11 @@ bool GossipHello_master_kelerun_bloodmourn(Player* pPlayer, Creature* pCreature)
 bool QuestAccept_master_kelerun_bloodmourn(Player* pPlayer, Creature* pCreature, Quest const* quest)
 {
     // One Player exclusive quest, wait for user go activation
-	if (quest->GetQuestId() == QUEST_SECOND_TRIAL)
-	{
-		CAST_AI(master_kelerun_bloodmournAI, pCreature->AI())->questPhase = 1;
-		CAST_AI(master_kelerun_bloodmournAI, pCreature->AI())->PlayerGUID = pPlayer->GetGUID();
-	}
+    if (quest->GetQuestId() == QUEST_SECOND_TRIAL)
+    {
+        CAST_AI(master_kelerun_bloodmournAI, pCreature->AI())->questPhase = 1;
+        CAST_AI(master_kelerun_bloodmournAI, pCreature->AI())->PlayerGUID = pPlayer->GetGUID();
+    }
     return true;
 }
 

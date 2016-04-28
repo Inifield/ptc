@@ -584,108 +584,108 @@ CreatureAI* GetAI_boss_grubbis(Creature* pCreature)
 
 enum eKernobee
 {
-	SAY_KERNOBEE_START = -1910078,
-	SAY_KERNOBEE_END = -1910079,
+    SAY_KERNOBEE_START = -1910078,
+    SAY_KERNOBEE_END = -1910079,
 
-	QUEST_A_FINE_MESS = 2904,
-	NPC_SCOOTY = 7853,
-	FACTION_ESCORTEE = 113
+    QUEST_A_FINE_MESS = 2904,
+    NPC_SCOOTY = 7853,
+    FACTION_ESCORTEE = 113
 };
 
-#define NPC_KERNOBEE_END_TRIGGER	12995
+#define NPC_KERNOBEE_END_TRIGGER    12995
 
 struct npc_kernobeeAI : public FollowerAI
 {
-	npc_kernobeeAI(Creature* pCreature) : FollowerAI(pCreature) { }
+    npc_kernobeeAI(Creature* pCreature) : FollowerAI(pCreature) { }
 
-	uint32 m_uiEndEventProgress;
-	uint32 m_uiEndEventTimer;
+    uint32 m_uiEndEventProgress;
+    uint32 m_uiEndEventTimer;
 
-	uint64 KernobeeGUID;
+    uint64 KernobeeGUID;
 
-	void Reset()
-	{		
-		m_uiEndEventProgress = 0;
-		m_uiEndEventTimer = 1000;
-		KernobeeGUID = 0;
-	}
+    void Reset()
+    {        
+        m_uiEndEventProgress = 0;
+        m_uiEndEventTimer = 1000;
+        KernobeeGUID = 0;
+    }
 
-	void MoveInLineOfSight(Unit* pWho)
-	{
-		FollowerAI::MoveInLineOfSight(pWho);
+    void MoveInLineOfSight(Unit* pWho)
+    {
+        FollowerAI::MoveInLineOfSight(pWho);
 
-		if (!me->getVictim() && !HasFollowState(STATE_FOLLOW_COMPLETE) && pWho->GetEntry() == NPC_KERNOBEE_END_TRIGGER)
-		{
-			if (me->IsWithinDistInMap(pWho, INTERACTION_DISTANCE))
-			{
-				if (Player* pPlayer = GetLeaderForFollower())
-				{
-					if (pPlayer->GetQuestStatus(QUEST_A_FINE_MESS) == QUEST_STATUS_INCOMPLETE)
-						pPlayer->GroupEventHappens(QUEST_A_FINE_MESS, me);
-				}
+        if (!me->getVictim() && !HasFollowState(STATE_FOLLOW_COMPLETE) && pWho->GetEntry() == NPC_KERNOBEE_END_TRIGGER)
+        {
+            if (me->IsWithinDistInMap(pWho, INTERACTION_DISTANCE))
+            {
+                if (Player* pPlayer = GetLeaderForFollower())
+                {
+                    if (pPlayer->GetQuestStatus(QUEST_A_FINE_MESS) == QUEST_STATUS_INCOMPLETE)
+                        pPlayer->GroupEventHappens(QUEST_A_FINE_MESS, me);
+                }
 
-				KernobeeGUID = pWho->GetGUID();
-				SetFollowComplete(true);
-			}
-		}
-	}
+                KernobeeGUID = pWho->GetGUID();
+                SetFollowComplete(true);
+            }
+        }
+    }
 
-	void UpdateFollowerAI(const uint32 uiDiff)
-	{
-		if (!UpdateVictim())
-		{
-			if (HasFollowState(STATE_FOLLOW_POSTEVENT))
-			{
-				if (m_uiEndEventTimer <= uiDiff)
-				{
-					Unit* pKernobee = Unit::GetUnit(*me, KernobeeGUID);
-					if (!pKernobee || !pKernobee->IsAlive())
-					{
-						SetFollowComplete();
-						return;
-					}
+    void UpdateFollowerAI(const uint32 uiDiff)
+    {
+        if (!UpdateVictim())
+        {
+            if (HasFollowState(STATE_FOLLOW_POSTEVENT))
+            {
+                if (m_uiEndEventTimer <= uiDiff)
+                {
+                    Unit* pKernobee = Unit::GetUnit(*me, KernobeeGUID);
+                    if (!pKernobee || !pKernobee->IsAlive())
+                    {
+                        SetFollowComplete();
+                        return;
+                    }
 
-					switch (m_uiEndEventProgress)
-					{
-					case 1:
-						DoScriptText(SAY_KERNOBEE_END, me);
-						m_uiEndEventTimer = 3000;
-						break;					
-					case 2:
-						SetFollowComplete();
-						break;
-					}
+                    switch (m_uiEndEventProgress)
+                    {
+                    case 1:
+                        DoScriptText(SAY_KERNOBEE_END, me);
+                        m_uiEndEventTimer = 3000;
+                        break;                    
+                    case 2:
+                        SetFollowComplete();
+                        break;
+                    }
 
-					++m_uiEndEventProgress;
-				}
-				else
-					m_uiEndEventTimer -= uiDiff;
-			}	
-			return;
-		}
+                    ++m_uiEndEventProgress;
+                }
+                else
+                    m_uiEndEventTimer -= uiDiff;
+            }    
+            return;
+        }
 
-		DoMeleeAttackIfReady();
-	}
+        DoMeleeAttackIfReady();
+    }
 };
 
 CreatureAI* GetAI_npc_kernobee(Creature* pCreature)
 {
-	return new npc_kernobeeAI(pCreature);
+    return new npc_kernobeeAI(pCreature);
 }
 
 bool QuestAccept_npc_kernobee(Player* pPlayer, Creature* pCreature, const Quest* pQuest)
 {
-	if (pQuest->GetQuestId() == QUEST_A_FINE_MESS)
-	{
-		if (npc_kernobeeAI* pKernobeeAI = CAST_AI(npc_kernobeeAI, pCreature->AI()))
-		{
-			DoScriptText(SAY_KERNOBEE_START, pCreature);
-			pCreature->SetStandState(UNIT_STAND_STATE_STAND);
-			pKernobeeAI->StartFollow(pPlayer, FACTION_ESCORTEE, pQuest);
-		}
-	}
+    if (pQuest->GetQuestId() == QUEST_A_FINE_MESS)
+    {
+        if (npc_kernobeeAI* pKernobeeAI = CAST_AI(npc_kernobeeAI, pCreature->AI()))
+        {
+            DoScriptText(SAY_KERNOBEE_START, pCreature);
+            pCreature->SetStandState(UNIT_STAND_STATE_STAND);
+            pKernobeeAI->StartFollow(pPlayer, FACTION_ESCORTEE, pQuest);
+        }
+    }
 
-	return true;
+    return true;
 }
 
 void AddSC_gnomeregan()
@@ -704,9 +704,9 @@ void AddSC_gnomeregan()
     newscript->GetAI = &GetAI_boss_grubbis;
     newscript->RegisterSelf();
 
-	newscript = new Script;
-	newscript->Name = "npc_kernobee";
-	newscript->GetAI = &GetAI_npc_kernobee;
-	newscript->pQuestAccept = &QuestAccept_npc_kernobee;
-	newscript->RegisterSelf();
+    newscript = new Script;
+    newscript->Name = "npc_kernobee";
+    newscript->GetAI = &GetAI_npc_kernobee;
+    newscript->pQuestAccept = &QuestAccept_npc_kernobee;
+    newscript->RegisterSelf();
 }

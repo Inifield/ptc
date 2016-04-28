@@ -132,22 +132,22 @@ bool GossipSelect_npcs_ashyen_and_keleth(Player* player, Creature* pCreature, ui
 #define SPELL_LIGHTNING_BOLT    9532
 #define SPELL_LIGHTNING_SHIELD  12550
 
-#define SAY_COOSH				-1910148
+#define SAY_COOSH                -1910148
 
 struct npc_cooshcooshAI : public ScriptedAI
 {
     npc_cooshcooshAI(Creature* c) : ScriptedAI(c) {}
 
     uint32 LightningBolt_Timer;
-	uint32 LighningShield_Timer;
+    uint32 LighningShield_Timer;
 
     void Reset()
     {
         LightningBolt_Timer = 2000;
-		LighningShield_Timer = 25000;
+        LighningShield_Timer = 25000;
         me->setFaction(35);
 
-		DoCast(me, SPELL_LIGHTNING_SHIELD);
+        DoCast(me, SPELL_LIGHTNING_SHIELD);
     }
 
     void EnterCombat(Unit* /*who*/) {}
@@ -157,12 +157,12 @@ struct npc_cooshcooshAI : public ScriptedAI
         if (!UpdateVictim())
             return;
 
-		if (LighningShield_Timer <= diff)
-		{
-			DoCast(me, SPELL_LIGHTNING_SHIELD);
-			LighningShield_Timer = 25000;
-		}
-		else LighningShield_Timer -= diff;
+        if (LighningShield_Timer <= diff)
+        {
+            DoCast(me, SPELL_LIGHTNING_SHIELD);
+            LighningShield_Timer = 25000;
+        }
+        else LighningShield_Timer -= diff;
 
         if (LightningBolt_Timer <= diff)
         {
@@ -193,7 +193,7 @@ bool GossipSelect_npc_cooshcoosh(Player* player, Creature* pCreature, uint32 /*s
     if (action == GOSSIP_ACTION_INFO_DEF)
     {
         player->CLOSE_GOSSIP_MENU();
-		DoScriptText(SAY_COOSH, pCreature);
+        DoScriptText(SAY_COOSH, pCreature);
         pCreature->setFaction(45);
         ((npc_cooshcooshAI*)pCreature->AI())->AttackStart(player);
     }
@@ -206,9 +206,9 @@ bool GossipSelect_npc_cooshcoosh(Player* player, Creature* pCreature, uint32 /*s
 
 enum KurutiSpells
 {
-	SPELL_LIGHTNINGSHIELD = 12550,
-	SPELL_HEALINGWAVE = 11986,
-	SPELL_CHAINLIGHTNING = 12058
+    SPELL_LIGHTNINGSHIELD = 12550,
+    SPELL_HEALINGWAVE = 11986,
+    SPELL_CHAINLIGHTNING = 12058
 };
 
 #define GOSSIP_ITEM_KUR1 "Offer treat"
@@ -217,54 +217,54 @@ enum KurutiSpells
 
 struct npc_elder_kurutiAI : public ScriptedAI
 {
-	npc_elder_kurutiAI(Creature* pCreature) : ScriptedAI(pCreature) {}
+    npc_elder_kurutiAI(Creature* pCreature) : ScriptedAI(pCreature) {}
 
-	void Reset()
-	{
-		chainlight_timer = 8000;
-		healingwave_timer = 2000;
-		lightshield_timer = 1000;
-	}
+    void Reset()
+    {
+        chainlight_timer = 8000;
+        healingwave_timer = 2000;
+        lightshield_timer = 1000;
+    }
 
-	uint32 chainlight_timer;
-	uint32 healingwave_timer;
-	uint32 lightshield_timer;
+    uint32 chainlight_timer;
+    uint32 healingwave_timer;
+    uint32 lightshield_timer;
 
-	void EnterCombat(Unit* /*who*/) { }
+    void EnterCombat(Unit* /*who*/) { }
 
-	void UpdateAI(const uint32 uiDiff)
-	{
-		if (!UpdateVictim())
-			return;
+    void UpdateAI(const uint32 uiDiff)
+    {
+        if (!UpdateVictim())
+            return;
 
-		if (chainlight_timer <= uiDiff)
-		{
-			DoCastVictim(SPELL_CHAINLIGHTNING);
-			chainlight_timer = 8000;
-		}
-		else chainlight_timer -= uiDiff;
+        if (chainlight_timer <= uiDiff)
+        {
+            DoCastVictim(SPELL_CHAINLIGHTNING);
+            chainlight_timer = 8000;
+        }
+        else chainlight_timer -= uiDiff;
 
-		if (healingwave_timer <= uiDiff && HealthBelowPct(50))
-		{
-			DoCast(me, SPELL_HEALINGWAVE);
-			healingwave_timer = 12000;
-		}
-		else healingwave_timer -= uiDiff;
+        if (healingwave_timer <= uiDiff && HealthBelowPct(50))
+        {
+            DoCast(me, SPELL_HEALINGWAVE);
+            healingwave_timer = 12000;
+        }
+        else healingwave_timer -= uiDiff;
 
-		if (lightshield_timer <= uiDiff)
-		{
-			DoCast(me, SPELL_LIGHTNINGSHIELD);
-			lightshield_timer = 15000;
-		}
-		else lightshield_timer -= uiDiff;
+        if (lightshield_timer <= uiDiff)
+        {
+            DoCast(me, SPELL_LIGHTNINGSHIELD);
+            lightshield_timer = 15000;
+        }
+        else lightshield_timer -= uiDiff;
 
-		DoMeleeAttackIfReady();
-	}
+        DoMeleeAttackIfReady();
+    }
 };
 
 CreatureAI* GetAI_npc_elder_kuruti(Creature* creature)
 {
-	return new npc_elder_kurutiAI(creature);
+    return new npc_elder_kurutiAI(creature);
 }
 
 bool GossipHello_npc_elder_kuruti(Player* player, Creature* pCreature)
@@ -584,185 +584,185 @@ CreatureAI* GetAI_npc_baby_murloc(Creature* creature)
 
 struct npc_scoutjyobaAI : public ScriptedAI
 {
-	npc_scoutjyobaAI(Creature* creature) : ScriptedAI(creature) {}
+    npc_scoutjyobaAI(Creature* creature) : ScriptedAI(creature) {}
 
-	void Reset()
-	{
-		me->SetStandState(UNIT_STAND_STATE_DEAD);
-	}
+    void Reset()
+    {
+        me->SetStandState(UNIT_STAND_STATE_DEAD);
+    }
 
-	void UpdateAI(const uint32 diff) { }
+    void UpdateAI(const uint32 diff) { }
 };
 
 CreatureAI* GetAI_npc_scoutjyoba(Creature* creature)
 {
-	return new npc_scoutjyobaAI(creature);
+    return new npc_scoutjyobaAI(creature);
 }
 
 enum WrektSlave
 {
-	SPELL_SHAREDBONDS = 34788,
-	SPELL_KICK = 11978,
+    SPELL_SHAREDBONDS = 34788,
+    SPELL_KICK = 11978,
 
-	SAY_RUN = -1910102,
+    SAY_RUN = -1910102,
 
-	NPC_SLAVEDRIVER = 18089,
-	NPC_WREKTSLAVE = 18123
+    NPC_SLAVEDRIVER = 18089,
+    NPC_WREKTSLAVE = 18123
 };
 
 Position const FleePath = { 555.669f, 7931.552f, 17.374f, 0.0f };
 
 struct npc_wrektslaveAI : public ScriptedAI
 {
-	npc_wrektslaveAI(Creature* pCreature) : ScriptedAI(pCreature) {}
+    npc_wrektslaveAI(Creature* pCreature) : ScriptedAI(pCreature) {}
 
-	void Reset()
-	{
-		kick_timer = 8000;
-		flee_timer = 6000;
-		share_timer = 10000;
+    void Reset()
+    {
+        kick_timer = 8000;
+        flee_timer = 6000;
+        share_timer = 10000;
 
-		me->setFaction(74);
-		flee = false;
-		say = false;
-	}
+        me->setFaction(74);
+        flee = false;
+        say = false;
+    }
 
-	uint32 kick_timer;
-	uint32 flee_timer;
-	uint32 share_timer;
+    uint32 kick_timer;
+    uint32 flee_timer;
+    uint32 share_timer;
 
-	bool flee;
-	bool say;
+    bool flee;
+    bool say;
 
-	void EnterCombat(Unit* /*who*/) { }
+    void EnterCombat(Unit* /*who*/) { }
 
-	void UpdateAI(const uint32 uiDiff)
-	{
-		if (!UpdateVictim())
-		{
-			if (flee == true)
-			{
-				me->GetMotionMaster()->MovePoint(1, FleePath, true);
+    void UpdateAI(const uint32 uiDiff)
+    {
+        if (!UpdateVictim())
+        {
+            if (flee == true)
+            {
+                me->GetMotionMaster()->MovePoint(1, FleePath, true);
 
-				if (!say)
-				{
-					DoScriptText(SAY_RUN, me);
-					say = true;
-				}
+                if (!say)
+                {
+                    DoScriptText(SAY_RUN, me);
+                    say = true;
+                }
 
-				if (flee_timer <= uiDiff)
-				{
-					me->DisappearAndDie();
-					flee_timer = 4000;
-				}
-				else flee_timer -= uiDiff;
-			}
-		}
-		
-		if (UpdateVictim())
-		{
-			if (kick_timer <= uiDiff)
-			{
-				DoCastVictim(SPELL_KICK);
-				kick_timer = 8000;
-			}
-			else kick_timer -= uiDiff;
+                if (flee_timer <= uiDiff)
+                {
+                    me->DisappearAndDie();
+                    flee_timer = 4000;
+                }
+                else flee_timer -= uiDiff;
+            }
+        }
+        
+        if (UpdateVictim())
+        {
+            if (kick_timer <= uiDiff)
+            {
+                DoCastVictim(SPELL_KICK);
+                kick_timer = 8000;
+            }
+            else kick_timer -= uiDiff;
 
-			if (me->FindNearestCreature(NPC_SLAVEDRIVER, 25, false))
-			{
-				me->setFaction(35);
-				me->CombatStop();
-				flee = true;
-			}
+            if (me->FindNearestCreature(NPC_SLAVEDRIVER, 25, false))
+            {
+                me->setFaction(35);
+                me->CombatStop();
+                flee = true;
+            }
 
-			if (Creature* ally = me->FindNearestCreature(NPC_WREKTSLAVE, 10, true))
-			if (share_timer <= uiDiff)
-			{
-				DoCast(ally, SPELL_SHAREDBONDS);
-				share_timer = 20000;
-			}
-			else share_timer -= uiDiff;
-		}
+            if (Creature* ally = me->FindNearestCreature(NPC_WREKTSLAVE, 10, true))
+            if (share_timer <= uiDiff)
+            {
+                DoCast(ally, SPELL_SHAREDBONDS);
+                share_timer = 20000;
+            }
+            else share_timer -= uiDiff;
+        }
 
-		DoMeleeAttackIfReady();
-	}
+        DoMeleeAttackIfReady();
+    }
 };
 
 CreatureAI* GetAI_npc_wrektslave(Creature* creature)
 {
-	return new npc_wrektslaveAI(creature);
+    return new npc_wrektslaveAI(creature);
 }
 
 enum DrudgeSlave
 {
-	NPC_DARKSCRESTSLAVER = 19946,
-	NPC_DREGHOODSLAVE = 18122
+    NPC_DARKSCRESTSLAVER = 19946,
+    NPC_DREGHOODSLAVE = 18122
 };
 
 Position const Flee1Path = { -550.226f, 5535.522f, 22.424f, 0.0f };
 
 struct npc_dreghooddrudgeAI : public ScriptedAI
 {
-	npc_dreghooddrudgeAI(Creature* pCreature) : ScriptedAI(pCreature) {}
+    npc_dreghooddrudgeAI(Creature* pCreature) : ScriptedAI(pCreature) {}
 
-	void Reset()
-	{
-		flee_timer = 8000;
-		share_timer = 10000;
+    void Reset()
+    {
+        flee_timer = 8000;
+        share_timer = 10000;
 
-		me->setFaction(74);
-		flee = false;
-	}
+        me->setFaction(74);
+        flee = false;
+    }
 
-	uint32 flee_timer;
-	uint32 share_timer;
+    uint32 flee_timer;
+    uint32 share_timer;
 
-	bool flee;
+    bool flee;
 
-	void EnterCombat(Unit* /*who*/) { }
+    void EnterCombat(Unit* /*who*/) { }
 
-	void UpdateAI(const uint32 uiDiff)
-	{
-		if (!UpdateVictim())
-		{
-			if (flee == true)
-			{
-				me->GetMotionMaster()->MovePoint(1, Flee1Path, true);
+    void UpdateAI(const uint32 uiDiff)
+    {
+        if (!UpdateVictim())
+        {
+            if (flee == true)
+            {
+                me->GetMotionMaster()->MovePoint(1, Flee1Path, true);
 
-				if (flee_timer <= uiDiff)
-				{
-					me->DisappearAndDie();
-					flee_timer = 8000;
-				}
-				else flee_timer -= uiDiff;
-			}
-		}
+                if (flee_timer <= uiDiff)
+                {
+                    me->DisappearAndDie();
+                    flee_timer = 8000;
+                }
+                else flee_timer -= uiDiff;
+            }
+        }
 
-		if (UpdateVictim())
-		{
-			if (me->FindNearestCreature(NPC_DARKSCRESTSLAVER, 25, false))
-			{
-				me->setFaction(35);
-				me->CombatStop();
-				flee = true;
-			}
+        if (UpdateVictim())
+        {
+            if (me->FindNearestCreature(NPC_DARKSCRESTSLAVER, 25, false))
+            {
+                me->setFaction(35);
+                me->CombatStop();
+                flee = true;
+            }
 
-			if (Creature* ally = me->FindNearestCreature(NPC_DREGHOODSLAVE, 10, true))
-			if (share_timer <= uiDiff)
-			{
-				DoCast(ally, SPELL_SHAREDBONDS);
-				share_timer = 20000;
-			}
-			else share_timer -= uiDiff;
-		}
+            if (Creature* ally = me->FindNearestCreature(NPC_DREGHOODSLAVE, 10, true))
+            if (share_timer <= uiDiff)
+            {
+                DoCast(ally, SPELL_SHAREDBONDS);
+                share_timer = 20000;
+            }
+            else share_timer -= uiDiff;
+        }
 
-		DoMeleeAttackIfReady();
-	}
+        DoMeleeAttackIfReady();
+    }
 };
 
 CreatureAI* GetAI_npc_dreghooddrudge(Creature* creature)
 {
-	return new npc_dreghooddrudgeAI(creature);
+    return new npc_dreghooddrudgeAI(creature);
 }
 
 void AddSC_zangarmarsh()
@@ -783,7 +783,7 @@ void AddSC_zangarmarsh()
 
     newscript = new Script;
     newscript->Name = "npc_elder_kuruti";
-	newscript->GetAI = &GetAI_npc_elder_kuruti;
+    newscript->GetAI = &GetAI_npc_elder_kuruti;
     newscript->pGossipHello =  &GossipHello_npc_elder_kuruti;
     newscript->pGossipSelect = &GossipSelect_npc_elder_kuruti;
     newscript->RegisterSelf();
@@ -811,19 +811,19 @@ void AddSC_zangarmarsh()
     newscript->GetAI = &GetAI_npc_baby_murloc;
     newscript->RegisterSelf();
 
-	newscript = new Script;
-	newscript->Name = "npc_scoutjyoba";
-	newscript->GetAI = &GetAI_npc_scoutjyoba;
-	newscript->RegisterSelf();
+    newscript = new Script;
+    newscript->Name = "npc_scoutjyoba";
+    newscript->GetAI = &GetAI_npc_scoutjyoba;
+    newscript->RegisterSelf();
 
-	newscript = new Script;
-	newscript->Name = "npc_wrektslave";
-	newscript->GetAI = &GetAI_npc_wrektslave;
-	newscript->RegisterSelf();
+    newscript = new Script;
+    newscript->Name = "npc_wrektslave";
+    newscript->GetAI = &GetAI_npc_wrektslave;
+    newscript->RegisterSelf();
 
-	newscript = new Script;
-	newscript->Name = "npc_dreghooddrudge";
-	newscript->GetAI = &GetAI_npc_dreghooddrudge;
-	newscript->RegisterSelf();
+    newscript = new Script;
+    newscript->Name = "npc_dreghooddrudge";
+    newscript->GetAI = &GetAI_npc_dreghooddrudge;
+    newscript->RegisterSelf();
 }
 

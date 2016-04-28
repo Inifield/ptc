@@ -13961,7 +13961,7 @@ bool Player::CanShareQuest(uint32 quest_id) const
 
             // Pooled daily quests that aren't available should not be shareable
             if (sPoolMgr.IsPartOfAPool<Quest>(quest_id) && !sPoolMgr.IsSpawnedObject<Quest>(quest_id))
-				return false;
+                return false;
 
             return true;
         }

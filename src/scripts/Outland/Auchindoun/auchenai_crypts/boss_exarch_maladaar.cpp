@@ -265,15 +265,15 @@ CreatureAI* GetAI_mob_avatar_of_martyred(Creature* pCreature)
 
 enum stolenSoul
 {
-	SPELL_MOONFIRE				= 37328,
-	SPELL_FIREBALL				= 37329,
-	SPELL_MIND_FLAY				= 37330,
-	SPELL_HEMORRHAGE			= 37331,
-	SPELL_FROSTSHOCK			= 37332,
-	SPELL_CURSE_OF_AGONY		= 37334,
-	SPELL_MORTAL_STRIKE			= 37335,
-	SPELL_FREEZING_TRAP			= 37368,
-	SPELL_HAMMER_OF_JUSTICE		= 37369
+    SPELL_MOONFIRE                = 37328,
+    SPELL_FIREBALL                = 37329,
+    SPELL_MIND_FLAY                = 37330,
+    SPELL_HEMORRHAGE            = 37331,
+    SPELL_FROSTSHOCK            = 37332,
+    SPELL_CURSE_OF_AGONY        = 37334,
+    SPELL_MORTAL_STRIKE            = 37335,
+    SPELL_FREEZING_TRAP            = 37368,
+    SPELL_HAMMER_OF_JUSTICE        = 37369
 };
 
 struct mob_stolen_soulAI : public ScriptedAI

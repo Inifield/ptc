@@ -68,7 +68,7 @@ enum AranSpells
     SPELL_DRINK            = 30024,
     SPELL_POTION           = 32453,
     SPELL_AOE_PYROBLAST    = 29978,
-	SPELL_ARCANE_BUBBLE	   = 6724
+    SPELL_ARCANE_BUBBLE       = 6724
 };
 
 enum MiscSpells
@@ -121,20 +121,20 @@ struct boss_aranAI : public ScriptedAI
     uint32 FireCooldown;
     uint32 FrostCooldown;
 
-	uint32 DragonsbreathCooldown;
-	uint32 AETimer;
-	uint32 Wait_Timer;
+    uint32 DragonsbreathCooldown;
+    uint32 AETimer;
+    uint32 Wait_Timer;
 
     uint32 DrinkInturruptTimer;
 
     bool ElementalsSpawned;
     bool Drinking;
     bool DrinkInturrupted;
-	bool CastAE;
+    bool CastAE;
 
-	float x_cord;
-	float y_cord;
-	float z_cord;
+    float x_cord;
+    float y_cord;
+    float z_cord;
 
     void Reset()
     {
@@ -153,44 +153,44 @@ struct boss_aranAI : public ScriptedAI
         ArcaneCooldown = 0;
         FireCooldown = 0;
         FrostCooldown = 0;
-		DragonsbreathCooldown = 0;
+        DragonsbreathCooldown = 0;
         DrinkInturruptTimer = 10000;
 
         ElementalsSpawned = false;
         Drinking = false;
         DrinkInturrupted = false;
 
-		CastAE = false;
-		AETimer = 2000;
+        CastAE = false;
+        AETimer = 2000;
 
-		me->ApplySpellImmune(0, IMMUNITY_ID, 11719, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 1714, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 11719, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 1714, true);
 
-		me->ApplySpellImmune(0, IMMUNITY_ID, 27282, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 26892, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 26786, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 27283, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 26969, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 25347, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 11343, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 13230, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 11358, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 11400, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 11342, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 3421, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 13229, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 11357, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 11341, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 13228, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 8694, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 2837, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 8691, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 13220, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 2835, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 8687, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 5763, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 8681, true);
-		me->ApplySpellImmune(0, IMMUNITY_ID, 3420, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 27282, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 26892, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 26786, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 27283, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 26969, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 25347, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 11343, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 13230, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 11358, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 11400, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 11342, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 3421, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 13229, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 11357, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 11341, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 13228, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 8694, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 2837, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 8691, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 13220, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 2835, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 8687, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 5763, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 8681, true);
+        me->ApplySpellImmune(0, IMMUNITY_ID, 3420, true);
 
         if (pInstance)
         {
@@ -401,15 +401,15 @@ struct boss_aranAI : public ScriptedAI
                 DoCast(me, SPELL_AOE_CS);
                 break;
             case 1:
-				if (Unit* pUnit = SelectUnit(SELECT_TARGET_RANDOM, 0))
-					DoCast(pUnit, SPELL_CHAINSOFICE);
-				break;
-			case 2:
-				if (Unit* pUnit = SelectUnit(SELECT_TARGET_RANDOM, 0))
-					DoCast(pUnit, SPELL_DRAGONSBREATH);
+                if (Unit* pUnit = SelectUnit(SELECT_TARGET_RANDOM, 0))
+                    DoCast(pUnit, SPELL_CHAINSOFICE);
+                break;
+            case 2:
+                if (Unit* pUnit = SelectUnit(SELECT_TARGET_RANDOM, 0))
+                    DoCast(pUnit, SPELL_DRAGONSBREATH);
                 break;
             }
-			SecondarySpellTimer = urand(3000, 8000);
+            SecondarySpellTimer = urand(3000, 8000);
         }
         else SecondarySpellTimer -= diff;
 
@@ -436,8 +436,8 @@ struct boss_aranAI : public ScriptedAI
             LastSuperSpell = Available[urand(0, 1)];
             SetImmune(true);
 
-			Map::PlayerList const &PlayerList = pInstance->instance->GetPlayers();
-			WorldPacket data;
+            Map::PlayerList const &PlayerList = pInstance->instance->GetPlayers();
+            WorldPacket data;
             switch (LastSuperSpell)
             {
             case SUPER_AE:
@@ -446,11 +446,11 @@ struct boss_aranAI : public ScriptedAI
                 DoCast(me, SPELL_BLINK_CENTER, true);
                 DoCast(me, SPELL_PLAYERPULL, true);
                 DoCast(me, SPELL_MASSSLOW, true);
-				DoCast(me, SPELL_ARCANE_BUBBLE, true);
-				me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_INTERRUPT_CAST, true);
-				me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_INTERRUPT, true);
-				AETimer = 1500;
-				CastAE = true;
+                DoCast(me, SPELL_ARCANE_BUBBLE, true);
+                me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_INTERRUPT_CAST, true);
+                me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_INTERRUPT, true);
+                AETimer = 1500;
+                CastAE = true;
                 break;
 
             case SUPER_FLAME:
@@ -464,7 +464,7 @@ struct boss_aranAI : public ScriptedAI
                 FlameWreathTarget[2] = 0;
 
                 FlameWreathEffect();
-				SecondarySpellTimer = 20500;
+                SecondarySpellTimer = 20500;
                 break;
 
             case SUPER_BLIZZARD:
@@ -598,17 +598,17 @@ struct boss_aranAI : public ScriptedAI
         if (ArcaneCooldown && FireCooldown && FrostCooldown && DragonsbreathCooldown)
             DoMeleeAttackIfReady();
 
-		if (CastAE)
-			if (AETimer < diff)
+        if (CastAE)
+            if (AETimer < diff)
 
-			{
-				me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_INTERRUPT_CAST, true);
-				me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_INTERRUPT, true);
-				me->CastSpell(me, SPELL_AEXPLOSION, false);
-				AETimer = 1500;
-				CastAE = false;
-			}
-			else AETimer -= diff;
+            {
+                me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_INTERRUPT_CAST, true);
+                me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_INTERRUPT, true);
+                me->CastSpell(me, SPELL_AEXPLOSION, false);
+                AETimer = 1500;
+                CastAE = false;
+            }
+            else AETimer -= diff;
     }
 
     void DamageTaken(Unit* /*pAttacker*/, uint32& damage)

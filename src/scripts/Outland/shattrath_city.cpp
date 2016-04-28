@@ -47,7 +47,7 @@ EndContentData */
 
 #define SPELL_UPPERCUT          10966
 
-#define SAY_NOWAY				-1910147
+#define SAY_NOWAY                -1910147
 
 struct npc_raliq_the_drunkAI : public ScriptedAI
 {
@@ -99,7 +99,7 @@ bool GossipSelect_npc_raliq_the_drunk(Player* player, Creature* pCreature, uint3
     if (action == GOSSIP_ACTION_INFO_DEF + 1)
     {
         player->CLOSE_GOSSIP_MENU();
-		DoScriptText(SAY_NOWAY, pCreature);
+        DoScriptText(SAY_NOWAY, pCreature);
         pCreature->setFaction(45);
         ((npc_raliq_the_drunkAI*)pCreature->AI())->AttackStart(player);
     }
@@ -112,62 +112,62 @@ bool GossipSelect_npc_raliq_the_drunk(Player* player, Creature* pCreature, uint3
 
 enum eKylene
 {
-	SAY_KYLENE1_MALE = -1910256,
-	SAY_KYLENE1_FEMALE = -1910257,
-	SAY_KYLENE2 = -1910258,
+    SAY_KYLENE1_MALE = -1910256,
+    SAY_KYLENE1_FEMALE = -1910257,
+    SAY_KYLENE2 = -1910258,
 
-	EMOTE_BARMAID_RUDE = -1910259,
+    EMOTE_BARMAID_RUDE = -1910259,
 };
 
 struct npc_kyleneAI : public ScriptedAI
 {
-	npc_kyleneAI(Creature* c) : ScriptedAI(c) {}
+    npc_kyleneAI(Creature* c) : ScriptedAI(c) {}
 
-	void ReceiveEmote(Player* pPlayer, uint32 emote)
-	{
-		switch (emote) 
-		{
-			case TEXT_EMOTE_APPLAUD:
-			case TEXT_EMOTE_BOW:
-				me->HandleEmoteCommand(EMOTE_ONESHOT_BOW);
-				break;
-			case TEXT_EMOTE_DANCE:
-				me->HandleEmoteCommand(EMOTE_ONESHOT_DANCE);
-				break;
-			case TEXT_EMOTE_FLEX:
-				me->HandleEmoteCommand(EMOTE_ONESHOT_LAUGH);
-				break;
-			case TEXT_EMOTE_KISS:
-				me->HandleEmoteCommand(EMOTE_ONESHOT_SHY);
-				break;
-			case TEXT_EMOTE_RUDE:
-				me->HandleEmoteCommand(EMOTE_ONESHOT_RUDE);
-				DoScriptText(EMOTE_BARMAID_RUDE, me, pPlayer);
-				break;
-			case TEXT_EMOTE_SHY:
-				me->HandleEmoteCommand(EMOTE_ONESHOT_KISS);
-				break;
-			case TEXT_EMOTE_WAVE:
-				switch (urand(0, 1))
-				{
-					case 0:
-						if (pPlayer->getGender() == 0)
-							DoScriptText(SAY_KYLENE1_MALE, me);
-						else
-							DoScriptText(SAY_KYLENE1_FEMALE, me);
-						break;
-					case 1:
-						DoScriptText(SAY_KYLENE2, me, pPlayer);
-						break;
-				}
-				break;
-		}
-	}
+    void ReceiveEmote(Player* pPlayer, uint32 emote)
+    {
+        switch (emote) 
+        {
+            case TEXT_EMOTE_APPLAUD:
+            case TEXT_EMOTE_BOW:
+                me->HandleEmoteCommand(EMOTE_ONESHOT_BOW);
+                break;
+            case TEXT_EMOTE_DANCE:
+                me->HandleEmoteCommand(EMOTE_ONESHOT_DANCE);
+                break;
+            case TEXT_EMOTE_FLEX:
+                me->HandleEmoteCommand(EMOTE_ONESHOT_LAUGH);
+                break;
+            case TEXT_EMOTE_KISS:
+                me->HandleEmoteCommand(EMOTE_ONESHOT_SHY);
+                break;
+            case TEXT_EMOTE_RUDE:
+                me->HandleEmoteCommand(EMOTE_ONESHOT_RUDE);
+                DoScriptText(EMOTE_BARMAID_RUDE, me, pPlayer);
+                break;
+            case TEXT_EMOTE_SHY:
+                me->HandleEmoteCommand(EMOTE_ONESHOT_KISS);
+                break;
+            case TEXT_EMOTE_WAVE:
+                switch (urand(0, 1))
+                {
+                    case 0:
+                        if (pPlayer->getGender() == 0)
+                            DoScriptText(SAY_KYLENE1_MALE, me);
+                        else
+                            DoScriptText(SAY_KYLENE1_FEMALE, me);
+                        break;
+                    case 1:
+                        DoScriptText(SAY_KYLENE2, me, pPlayer);
+                        break;
+                }
+                break;
+        }
+    }
 };
 
 CreatureAI* GetAI_npc_kylene(Creature* pCreature)
 {
-	return new npc_kyleneAI(pCreature);
+    return new npc_kyleneAI(pCreature);
 }
 
 /*######
@@ -179,7 +179,7 @@ CreatureAI* GetAI_npc_kylene(Creature* pCreature)
 #define QUEST_10004                     10004
 
 #define SPELL_MAGNETIC_PULL             31705
-#define SAY_DEMONIC						-1910146
+#define SAY_DEMONIC                        -1910146
 
 #define GOSSIP_SALADIM "Altruis sent me. He said that you could help me."
 
@@ -230,27 +230,27 @@ CreatureAI* GetAI_npc_salsalabim(Creature* pCreature)
 
 bool GossipHello_npc_salsalabim(Player* player, Creature* pCreature)
 {
-	if (pCreature->isQuestGiver())
-		player->PrepareQuestMenu(pCreature->GetGUID());
+    if (pCreature->isQuestGiver())
+        player->PrepareQuestMenu(pCreature->GetGUID());
 
-	if (player->GetQuestStatus(QUEST_10004) == QUEST_STATUS_INCOMPLETE)	
-		player->ADD_GOSSIP_ITEM(0, GOSSIP_SALADIM, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
-	
-		player->SEND_GOSSIP_MENU(9435, pCreature->GetGUID());
-	
-	return true;
+    if (player->GetQuestStatus(QUEST_10004) == QUEST_STATUS_INCOMPLETE)    
+        player->ADD_GOSSIP_ITEM(0, GOSSIP_SALADIM, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+    
+        player->SEND_GOSSIP_MENU(9435, pCreature->GetGUID());
+    
+    return true;
 }
 
 bool GossipSelect_npc_salsalabim(Player* player, Creature* pCreature, uint32 /*sender*/, uint32 action)
 {
-	if (action == GOSSIP_ACTION_INFO_DEF + 1)
-	{
-		player->CLOSE_GOSSIP_MENU();
-		DoScriptText(SAY_DEMONIC, pCreature);
-		pCreature->setFaction(FACTION_HOSTILE_SA);
-		((npc_salsalabimAI*)pCreature->AI())->AttackStart(player);
-	}
-	return true;
+    if (action == GOSSIP_ACTION_INFO_DEF + 1)
+    {
+        player->CLOSE_GOSSIP_MENU();
+        DoScriptText(SAY_DEMONIC, pCreature);
+        pCreature->setFaction(FACTION_HOSTILE_SA);
+        ((npc_salsalabimAI*)pCreature->AI())->AttackStart(player);
+    }
+    return true;
 }
 
 /*
@@ -838,255 +838,255 @@ CreatureAI* GetAI_npc_dirty_larryAI(Creature* pCreature)
 
 struct npc_ishanahAI : public ScriptedAI
 {
-	npc_ishanahAI(Creature* pCreature) : ScriptedAI(pCreature) {}
+    npc_ishanahAI(Creature* pCreature) : ScriptedAI(pCreature) {}
 
-	void Reset()
-	{
-		me->SetReactState(REACT_AGGRESSIVE);
+    void Reset()
+    {
+        me->SetReactState(REACT_AGGRESSIVE);
 
-		// Event
-		spellHit = false;
-		spellHit1 = false;
-		EventBegun = false;
-		speak1 = false;
-		speak2 = false;
-		speak3 = false;
-		speak4 = false;
-		speak5 = false;
-		speak6 = false;
-		speak7 = false;
-		combatStart = false;
+        // Event
+        spellHit = false;
+        spellHit1 = false;
+        EventBegun = false;
+        speak1 = false;
+        speak2 = false;
+        speak3 = false;
+        speak4 = false;
+        speak5 = false;
+        speak6 = false;
+        speak7 = false;
+        combatStart = false;
 
-		// Skills
-		smite_timer = 6600;
-		pws_timer = 15000;
-	}
+        // Skills
+        smite_timer = 6600;
+        pws_timer = 15000;
+    }
 
-	// Event
-	bool spellHit;
-	bool spellHit1;
-	bool EventBegun;
-	bool speak1;
-	bool speak2;
-	bool speak3;
-	bool speak4;
-	bool speak5;
-	bool speak6;
-	bool speak7;
-	bool combatStart;
+    // Event
+    bool spellHit;
+    bool spellHit1;
+    bool EventBegun;
+    bool speak1;
+    bool speak2;
+    bool speak3;
+    bool speak4;
+    bool speak5;
+    bool speak6;
+    bool speak7;
+    bool combatStart;
 
-	uint32 continue_timer;
-	uint32 continue_timer1;
-	uint32 continue_timer2;
-	uint32 continue_timer3;
-	uint32 continue_timer4;
-	uint32 continue_timer5;
-	uint32 continue_timer6;
-	uint32 continue_timer7;
+    uint32 continue_timer;
+    uint32 continue_timer1;
+    uint32 continue_timer2;
+    uint32 continue_timer3;
+    uint32 continue_timer4;
+    uint32 continue_timer5;
+    uint32 continue_timer6;
+    uint32 continue_timer7;
 
-	// Skills
-	uint32 smite_timer;
-	uint32 pws_timer;
+    // Skills
+    uint32 smite_timer;
+    uint32 pws_timer;
 
-	void SpellHit(Unit* Hitter, const SpellEntry* Spellkind)
-	{
-		if (Spellkind->Id == 35600 && !spellHit)
-		{
-			me->SetUInt32Value(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_DEAD);
-			me->SetStandState(UNIT_STAND_STATE_DEAD);
-			spellHit = true;
-			continue_timer3 = 6500;
-		}
+    void SpellHit(Unit* Hitter, const SpellEntry* Spellkind)
+    {
+        if (Spellkind->Id == 35600 && !spellHit)
+        {
+            me->SetUInt32Value(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_DEAD);
+            me->SetStandState(UNIT_STAND_STATE_DEAD);
+            spellHit = true;
+            continue_timer3 = 6500;
+        }
 
-		if (Spellkind->Id == 35599 && !spellHit1)
-		{
-			me->SetStandState(UNIT_STAND_STATE_STAND);
-			me->SetUInt32Value(UNIT_DYNAMIC_FLAGS, 0);
-			spellHit1 = true;
-			continue_timer3 = 6500;
-		}
-	}
+        if (Spellkind->Id == 35599 && !spellHit1)
+        {
+            me->SetStandState(UNIT_STAND_STATE_STAND);
+            me->SetUInt32Value(UNIT_DYNAMIC_FLAGS, 0);
+            spellHit1 = true;
+            continue_timer3 = 6500;
+        }
+    }
 
-	void UpdateAI(const uint32 diff)
-	{
-		if (me->HasUnitState(UNIT_STATE_CASTING))
-			return;
+    void UpdateAI(const uint32 diff)
+    {
+        if (me->HasUnitState(UNIT_STATE_CASTING))
+            return;
 
-		if (!UpdateVictim())
-		{
-			if (!EventBegun)
-			{
-				if (Creature* socrethar = me->FindNearestCreature(20132, 45.0f, true))
-				{
-					if (Creature* kaylaan = me->FindNearestCreature(20794, 20.0f, true))
-					{				
-						kaylaan->SetStandState(UNIT_STAND_STATE_KNEEL);
-						kaylaan->MonsterSay(KAYLAAN_SAY_1, LANG_UNIVERSAL, 0);
+        if (!UpdateVictim())
+        {
+            if (!EventBegun)
+            {
+                if (Creature* socrethar = me->FindNearestCreature(20132, 45.0f, true))
+                {
+                    if (Creature* kaylaan = me->FindNearestCreature(20794, 20.0f, true))
+                    {                
+                        kaylaan->SetStandState(UNIT_STAND_STATE_KNEEL);
+                        kaylaan->MonsterSay(KAYLAAN_SAY_1, LANG_UNIVERSAL, 0);
 
-						continue_timer = 6000;
-						EventBegun = true;
-					}				
-				}				
-			}
+                        continue_timer = 6000;
+                        EventBegun = true;
+                    }                
+                }                
+            }
 
-			if (EventBegun == true && !speak1)
-			{
-				if (continue_timer <= diff)
-				{
-					me->MonsterSay(ISHANAH_SAY_1, LANG_UNIVERSAL, 0);
-					speak1 = true;
-					continue_timer1 = 7000;
-				}
-				else continue_timer -= diff;
-			}
+            if (EventBegun == true && !speak1)
+            {
+                if (continue_timer <= diff)
+                {
+                    me->MonsterSay(ISHANAH_SAY_1, LANG_UNIVERSAL, 0);
+                    speak1 = true;
+                    continue_timer1 = 7000;
+                }
+                else continue_timer -= diff;
+            }
 
-			if (speak1 == true && !speak2)
-			{
-				if (continue_timer1 <= diff)
-				{
-					me->MonsterSay(ISHANAH_SAY_2, LANG_UNIVERSAL, 0);
-					speak2 = true;
-					continue_timer2 = 7000;
-				}
-				else continue_timer1 -= diff;
-			}
+            if (speak1 == true && !speak2)
+            {
+                if (continue_timer1 <= diff)
+                {
+                    me->MonsterSay(ISHANAH_SAY_2, LANG_UNIVERSAL, 0);
+                    speak2 = true;
+                    continue_timer2 = 7000;
+                }
+                else continue_timer1 -= diff;
+            }
 
-			if (speak2 == true && !speak3)
-			{
-				if (continue_timer2 <= diff)
-				{
-					if (Creature* socrethar = me->FindNearestCreature(20132, 15.0f, true))						
-					{
-						socrethar->MonsterYell(SOCRETHAR_YELL, LANG_UNIVERSAL, 0);
-						socrethar->CastSpell(me, 35600, true);
-					}
+            if (speak2 == true && !speak3)
+            {
+                if (continue_timer2 <= diff)
+                {
+                    if (Creature* socrethar = me->FindNearestCreature(20132, 15.0f, true))                        
+                    {
+                        socrethar->MonsterYell(SOCRETHAR_YELL, LANG_UNIVERSAL, 0);
+                        socrethar->CastSpell(me, 35600, true);
+                    }
 
-					speak3 = true;					
-				}
-				else continue_timer2 -= diff;
-			}
+                    speak3 = true;                    
+                }
+                else continue_timer2 -= diff;
+            }
 
-			if (spellHit == true && !speak4)
-			{
-				if (continue_timer3 <= diff)
-				{
-					if (Creature* kaylaan = me->FindNearestCreature(20794, 15.0f, true))
-					{			
-						kaylaan->RemoveAllAuras();
-						kaylaan->setFaction(35);
-						kaylaan->SetStandState(UNIT_STAND_STATE_STAND);
-						kaylaan->MonsterYell(KAYLAAN_SAY_2, LANG_UNIVERSAL, 0);		
-						continue_timer4 = 7000;
-					}
+            if (spellHit == true && !speak4)
+            {
+                if (continue_timer3 <= diff)
+                {
+                    if (Creature* kaylaan = me->FindNearestCreature(20794, 15.0f, true))
+                    {            
+                        kaylaan->RemoveAllAuras();
+                        kaylaan->setFaction(35);
+                        kaylaan->SetStandState(UNIT_STAND_STATE_STAND);
+                        kaylaan->MonsterYell(KAYLAAN_SAY_2, LANG_UNIVERSAL, 0);        
+                        continue_timer4 = 7000;
+                    }
 
-					speak4 = true;
-				}
-				else continue_timer3 -= diff;
-			}
+                    speak4 = true;
+                }
+                else continue_timer3 -= diff;
+            }
 
-			if (speak4 == true && !speak5)
-			{
-				if (continue_timer4 <= diff)
-				{
-					if (Creature* kaylaan = me->FindNearestCreature(20794, 15.0f, true))
-					{					
-						kaylaan->MonsterYell(KAYLAAN_SAY_3, LANG_UNIVERSAL, 0);
-						kaylaan->CastSpell(kaylaan, 13874, true);
-						continue_timer5 = 1500;
-					}
+            if (speak4 == true && !speak5)
+            {
+                if (continue_timer4 <= diff)
+                {
+                    if (Creature* kaylaan = me->FindNearestCreature(20794, 15.0f, true))
+                    {                    
+                        kaylaan->MonsterYell(KAYLAAN_SAY_3, LANG_UNIVERSAL, 0);
+                        kaylaan->CastSpell(kaylaan, 13874, true);
+                        continue_timer5 = 1500;
+                    }
 
-					speak5 = true;
-				}
-				else continue_timer4 -= diff;
-			}
+                    speak5 = true;
+                }
+                else continue_timer4 -= diff;
+            }
 
-			if (speak5 == true && !speak6)
-			{
-				if (continue_timer5 <= diff)
-				{
-					if (Creature* kaylaan = me->FindNearestCreature(20794, 15.0f, true))
-					{					
-						kaylaan->CastSpell(me, 35599, true);
-						continue_timer6 = 8000;
-					}
+            if (speak5 == true && !speak6)
+            {
+                if (continue_timer5 <= diff)
+                {
+                    if (Creature* kaylaan = me->FindNearestCreature(20794, 15.0f, true))
+                    {                    
+                        kaylaan->CastSpell(me, 35599, true);
+                        continue_timer6 = 8000;
+                    }
 
-					speak6 = true;
-				}
-				else continue_timer5 -= diff;
-			}
+                    speak6 = true;
+                }
+                else continue_timer5 -= diff;
+            }
 
-			if (speak6 == true && !speak7)
-			{
-				if (continue_timer6 <= diff)
-				{
-					if (Creature* socrethar = me->FindNearestCreature(20132, 25.0f, true))
-					{
-						socrethar->MonsterYell(SOCRETHAR_YELL_1, LANG_UNIVERSAL, 0);
+            if (speak6 == true && !speak7)
+            {
+                if (continue_timer6 <= diff)
+                {
+                    if (Creature* socrethar = me->FindNearestCreature(20132, 25.0f, true))
+                    {
+                        socrethar->MonsterYell(SOCRETHAR_YELL_1, LANG_UNIVERSAL, 0);
 
-						if (Creature* kaylaan = me->FindNearestCreature(20794, 15.0f, true))
-						{
-							socrethar->CastSpell(kaylaan, 35598, true);
-						}
+                        if (Creature* kaylaan = me->FindNearestCreature(20794, 15.0f, true))
+                        {
+                            socrethar->CastSpell(kaylaan, 35598, true);
+                        }
 
-						continue_timer7 = 5500;
-					}
+                        continue_timer7 = 5500;
+                    }
 
-					speak7 = true;
-				}
-				else continue_timer6 -= diff;
-			}
+                    speak7 = true;
+                }
+                else continue_timer6 -= diff;
+            }
 
-			if (speak7 == true && !combatStart)
-			{
-				if (continue_timer7 <= diff)
-				{
-					if (Creature* socrethar = me->FindNearestCreature(20132, 25.0f, true))
-					{
-						socrethar->setFaction(1786);
-						socrethar->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-						socrethar->AI()->AttackStart(me);
-						me->AI()->AttackStart(socrethar);
+            if (speak7 == true && !combatStart)
+            {
+                if (continue_timer7 <= diff)
+                {
+                    if (Creature* socrethar = me->FindNearestCreature(20132, 25.0f, true))
+                    {
+                        socrethar->setFaction(1786);
+                        socrethar->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                        socrethar->AI()->AttackStart(me);
+                        me->AI()->AttackStart(socrethar);
 
-						if (Creature* karja = me->FindNearestCreature(61022, 50.0f, true))
-							karja->AI()->AttackStart(socrethar);
+                        if (Creature* karja = me->FindNearestCreature(61022, 50.0f, true))
+                            karja->AI()->AttackStart(socrethar);
 
-						if (Creature* orelis = me->FindNearestCreature(19466, 50.0f, true))
-							orelis->AI()->AttackStart(socrethar);
+                        if (Creature* orelis = me->FindNearestCreature(19466, 50.0f, true))
+                            orelis->AI()->AttackStart(socrethar);
 
-						if (Creature * adyen = me->FindNearestCreature(61021, 50.0f, true))
-							adyen->AI()->AttackStart(socrethar);
+                        if (Creature * adyen = me->FindNearestCreature(61021, 50.0f, true))
+                            adyen->AI()->AttackStart(socrethar);
 
-						combatStart = true;
-					}				
-				}
-				else continue_timer7 -= diff;
-			}
-		}
+                        combatStart = true;
+                    }                
+                }
+                else continue_timer7 -= diff;
+            }
+        }
 
-		if (UpdateVictim())
-		{
-			if (smite_timer <= diff)
-			{
-				DoCastVictim(SPELL_HOLY_SMITE);
-				smite_timer = urand(8000, 12000);
-			}
-			else smite_timer -= diff;
+        if (UpdateVictim())
+        {
+            if (smite_timer <= diff)
+            {
+                DoCastVictim(SPELL_HOLY_SMITE);
+                smite_timer = urand(8000, 12000);
+            }
+            else smite_timer -= diff;
 
-			if (pws_timer <= diff)
-			{
-				DoCast(me, SPELL_PWS);
-				pws_timer = urand(20000, 28000);
-			}
-			else pws_timer -= diff;
-		}
+            if (pws_timer <= diff)
+            {
+                DoCast(me, SPELL_PWS);
+                pws_timer = urand(20000, 28000);
+            }
+            else pws_timer -= diff;
+        }
 
-		DoMeleeAttackIfReady();
-	}
+        DoMeleeAttackIfReady();
+    }
 };
 
 CreatureAI* GetAI_npc_ishanah(Creature* pCreature)
 {
-	return new npc_ishanahAI(pCreature);
+    return new npc_ishanahAI(pCreature);
 }
 
 bool GossipHello_npc_ishanah(Player* player, Creature* pCreature)
@@ -1182,16 +1182,16 @@ void AddSC_shattrath_city()
     newscript->pGossipSelect = &GossipSelect_npc_raliq_the_drunk;
     newscript->RegisterSelf();
 
-	newscript = new Script;
-	newscript->Name = "npc_kylene";
-	newscript->GetAI = &GetAI_npc_kylene;
-	newscript->RegisterSelf();
+    newscript = new Script;
+    newscript->Name = "npc_kylene";
+    newscript->GetAI = &GetAI_npc_kylene;
+    newscript->RegisterSelf();
 
     newscript = new Script;
     newscript->Name = "npc_salsalabim";
     newscript->GetAI = &GetAI_npc_salsalabim;
     newscript->pGossipHello =  &GossipHello_npc_salsalabim;
-	newscript->pGossipSelect = &GossipSelect_npc_salsalabim;
+    newscript->pGossipSelect = &GossipSelect_npc_salsalabim;
     newscript->RegisterSelf();
 
     newscript = new Script;
@@ -1220,7 +1220,7 @@ void AddSC_shattrath_city()
 
     newscript = new Script;
     newscript->Name = "npc_ishanah";
-	newscript->GetAI = &GetAI_npc_ishanah;
+    newscript->GetAI = &GetAI_npc_ishanah;
     newscript->pGossipHello =  &GossipHello_npc_ishanah;
     newscript->pGossipSelect = &GossipSelect_npc_ishanah;
     newscript->RegisterSelf();

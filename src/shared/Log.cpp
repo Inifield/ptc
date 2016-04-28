@@ -276,16 +276,16 @@ void Log::SetColor(ColorTypes color)
     if (sConsole.IsEnabled())
     {
         fputc(0xFF, stderr);
-		#if defined(__PDCURSES__) && !defined(PDC_RGB)
-		// BGR mode, convert from RGB then
-		int clr = int(color);
-		int rgb = (clr & 0x07);
-		clr &= ~0x07;
-		clr |= (rgb & 0x1) << 2; // red
-		clr |= (rgb & 0x2);      // green
-		clr |= (rgb & 0x4) >> 2; // blue
-		color = ColorTypes(clr);
-		#endif
+        #if defined(__PDCURSES__) && !defined(PDC_RGB)
+        // BGR mode, convert from RGB then
+        int clr = int(color);
+        int rgb = (clr & 0x07);
+        clr &= ~0x07;
+        clr |= (rgb & 0x1) << 2; // red
+        clr |= (rgb & 0x2);      // green
+        clr |= (rgb & 0x4) >> 2; // blue
+        color = ColorTypes(clr);
+        #endif
         fputc((char) color, stderr);
         return;
     }
@@ -304,7 +304,7 @@ void Log::SetColor(ColorTypes color)
         FOREGROUND_INTENSITY,                                                            // BLACK, BOLD (GREY?)
         FOREGROUND_RED   | FOREGROUND_INTENSITY,                                         // RED, BOLD
         FOREGROUND_GREEN | FOREGROUND_INTENSITY,                                         // GREEN, BOLD
-		FOREGROUND_RED   | FOREGROUND_GREEN     | FOREGROUND_INTENSITY,                  // YELLOW
+        FOREGROUND_RED   | FOREGROUND_GREEN     | FOREGROUND_INTENSITY,                  // YELLOW
         FOREGROUND_BLUE  | FOREGROUND_INTENSITY,                                         // BLUE, BOLD
         FOREGROUND_RED   | FOREGROUND_BLUE      | FOREGROUND_INTENSITY,                  // MAGENTA, BOLD
         FOREGROUND_GREEN | FOREGROUND_BLUE      | FOREGROUND_INTENSITY,                  // CYAN, BOLD
@@ -406,8 +406,8 @@ void Log::DoLog(LogTypes type, bool newline, const char* prefix, const char* fmt
     size_t len = vsnprintf(NULL, 0, fmt, ap2) + 1;
     char* buffer = (char*) ((len > 1024) ? malloc(len * sizeof(char)) : alloca(len * sizeof(char)));
     
-	va_end(ap2);
-	vsprintf(buffer, fmt, ap);
+    va_end(ap2);
+    vsprintf(buffer, fmt, ap);
 
     if (m_logMaskDatabase & (1 << type))
     {

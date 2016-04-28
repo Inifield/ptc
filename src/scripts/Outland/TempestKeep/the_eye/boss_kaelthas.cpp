@@ -1046,10 +1046,10 @@ struct boss_thaladred_the_darkenerAI : public advisorbase_ai
         advisorbase_ai::Reset();
     }
 
-	void EnterCombat(Unit* /*who*/)
-	{
-		DoScriptText(SAY_THALADRED_AGGRO, me);
-	}
+    void EnterCombat(Unit* /*who*/)
+    {
+        DoScriptText(SAY_THALADRED_AGGRO, me);
+    }
 
     void Aggro(Unit* who)
     {
@@ -1126,10 +1126,10 @@ struct boss_lord_sanguinarAI : public advisorbase_ai
         advisorbase_ai::Reset();
     }
 
-	void EnterCombat(Unit* /*who*/)
-	{
-		DoScriptText(SAY_SANGUINAR_AGGRO, me);
-	}
+    void EnterCombat(Unit* /*who*/)
+    {
+        DoScriptText(SAY_SANGUINAR_AGGRO, me);
+    }
 
     void Aggro(Unit* who)
     {
@@ -1322,10 +1322,10 @@ struct boss_master_engineer_telonicusAI : public advisorbase_ai
             DoScriptText(SAY_TELONICUS_DEATH, me);
     }
 
-	void EnterCombat(Unit* /*who*/)
-	{
-		DoScriptText(SAY_TELONICUS_AGGRO, me);
-	}
+    void EnterCombat(Unit* /*who*/)
+    {
+        DoScriptText(SAY_TELONICUS_AGGRO, me);
+    }
 
     void Aggro(Unit* who)
     {

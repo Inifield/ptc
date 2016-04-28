@@ -514,7 +514,7 @@ class Map : public GridRefManager<NGridType>, public Oregon::ObjectLevelLockable
         void Insert(const GameObjectModel& mdl) { m_dyn_tree.insert(mdl); }
         bool Contains(const GameObjectModel& mdl) const { return m_dyn_tree.contains(mdl);}
         bool getObjectHitPos(float x1, float y1, float z1, float x2, float y2, float z2, float& rx, float &ry, float& rz, float modifyDist);
-		
+        
         GridMap* GetGrid(float x, float y);
         void EnsureGridCreated(const GridCoord&);
     private:

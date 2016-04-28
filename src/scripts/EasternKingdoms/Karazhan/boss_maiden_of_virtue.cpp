@@ -59,7 +59,7 @@ struct boss_maiden_of_virtueAI : public ScriptedAI
         Holyground_Timer    = 3000;
         Enrage_Timer        = 600000;
 
-		me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_AURA_PERIODIC_MANA_LEECH, true);
+        me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_AURA_PERIODIC_MANA_LEECH, true);
 
         Enraged = false;
     }
@@ -95,7 +95,7 @@ struct boss_maiden_of_virtueAI : public ScriptedAI
         if (Holyground_Timer <= diff)
         {
             DoCast(me, SPELL_HOLYGROUND, true);   //Triggered so it doesn't interrupt her at all
-			Holyground_Timer = 1500;
+            Holyground_Timer = 1500;
         }
         else Holyground_Timer -= diff;
 
@@ -104,7 +104,7 @@ struct boss_maiden_of_virtueAI : public ScriptedAI
             DoCastVictim( SPELL_REPENTANCE);
             DoScriptText(RAND(SAY_REPENTANCE1, SAY_REPENTANCE2), me);
 
-			Repentance_Timer = 32000;
+            Repentance_Timer = 32000;
         }
         else Repentance_Timer -= diff;
 
@@ -113,7 +113,7 @@ struct boss_maiden_of_virtueAI : public ScriptedAI
             if (Unit* pTarget = SelectTarget(SELECT_TARGET_RANDOM, 0, 100, true))
                 DoCast(pTarget, SPELL_HOLYFIRE);
 
-			Holyfire_Timer = urand(10000, 17000);     //Anywhere from 8 to 25 seconds, good luck having several of those in a row!
+            Holyfire_Timer = urand(10000, 17000);     //Anywhere from 8 to 25 seconds, good luck having several of those in a row!
         }
         else Holyfire_Timer -= diff;
 
@@ -122,7 +122,7 @@ struct boss_maiden_of_virtueAI : public ScriptedAI
             if (Unit* pTarget = SelectTarget(SELECT_TARGET_RANDOM, 0, 100, true))
                 DoCast(pTarget, SPELL_HOLYWRATH);
 
-			Holywrath_Timer = urand(8000, 15000);
+            Holywrath_Timer = urand(8000, 15000);
         }
         else Holywrath_Timer -= diff;
 

@@ -260,7 +260,7 @@ struct boss_felmystAI : public ScriptedAI
                 uiFlightCount++;
                 uiFlightTimer = 1;
                 break;
-            case 2:	
+            case 2:    
                 me->RemoveAurasDueToSpell(SPELL_FOG_BREATH);
                 fogactivated = false;
 
@@ -421,7 +421,7 @@ struct boss_felmystAI : public ScriptedAI
                 me->GetMotionMaster()->MovePoint(3, prepareLandingLoc[0].GetPositionX(),prepareLandingLoc[0].GetPositionY(),prepareLandingLoc[0].GetPositionZ(), false);
             else
                 me->GetMotionMaster()->MovePoint(3, prepareLandingLoc[1].GetPositionX(),prepareLandingLoc[1].GetPositionY(),prepareLandingLoc[1].GetPositionZ(), false);
-			
+            
             uiFlightTimer = 15000;
             break;
         default:

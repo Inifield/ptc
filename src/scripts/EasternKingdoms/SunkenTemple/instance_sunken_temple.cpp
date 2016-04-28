@@ -163,13 +163,13 @@ struct instance_sunken_temple : public ScriptedInstance
         case GO_ATALAI_STATUE6:
             if (s1 && s2 && s3 && s4 && s5 && !s6)
             {
-				if (GameObject* pAtalaiStatue6 = instance->GetGameObject(GOAtalaiStatue6))
-				{
-					UseStatue(pAtalaiStatue6);
-					UseLastStatue();
-					s6 = true;
-					State = 0;
-				}
+                if (GameObject* pAtalaiStatue6 = instance->GetGameObject(GOAtalaiStatue6))
+                {
+                    UseStatue(pAtalaiStatue6);
+                    UseLastStatue();
+                    s6 = true;
+                    State = 0;
+                }
             }
             break;
         }
@@ -182,11 +182,11 @@ struct instance_sunken_temple : public ScriptedInstance
     }
    
     void UseLastStatue()
-    {	
-		if (GameObject* pAtalaiStatue6 = instance->GetGameObject(GOAtalaiStatue6))
-		{
-			pAtalaiStatue6->SummonGameObject(148838, -488.997, 96.61, -189.019, -1.52, 0, 0, 0, 0, 100000);
-		}
+    {    
+        if (GameObject* pAtalaiStatue6 = instance->GetGameObject(GOAtalaiStatue6))
+        {
+            pAtalaiStatue6->SummonGameObject(148838, -488.997, 96.61, -189.019, -1.52, 0, 0, 0, 0, 100000);
+        }
     }
     
     void SetData(uint32 type, uint32 data)

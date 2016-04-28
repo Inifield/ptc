@@ -3193,10 +3193,10 @@ void Spell::EffectEnergize(SpellEffIndex effIndex)
     if (damage < 0)
         return;
 
-	// Handle Mana Gems / Serpent-Coil Braid
-	if (m_spellInfo->SpellFamilyName == SPELLFAMILY_MAGE && m_spellInfo->SpellFamilyFlags == 0x10000000000LL)
-		if (unitTarget->HasAura(37447, 0))
-			unitTarget->CastSpell(unitTarget, 37445, true);
+    // Handle Mana Gems / Serpent-Coil Braid
+    if (m_spellInfo->SpellFamilyName == SPELLFAMILY_MAGE && m_spellInfo->SpellFamilyFlags == 0x10000000000LL)
+        if (unitTarget->HasAura(37447, 0))
+            unitTarget->CastSpell(unitTarget, 37445, true);
 
     Powers power = Powers(m_spellInfo->EffectMiscValue[effIndex]);
 

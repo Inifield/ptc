@@ -326,15 +326,15 @@ set(ace_STAT_SRCS
 )
 
 add_definitions(-DACE_BUILD_DLL
-				-DWIN32
-				-D_WIN32
-				-D_WINDOWS
-				-D_CRT_NONSTDC_NO_WARNINGS
-				-D_CRT_SECURE_NO_WARNINGS
-				-D_CRT_SECURE_NO_DEPRECATE
-				-D_CRT_NONSTDC_NO_DEPRECATE
-				-D_WINSOCK_DEPRECATED_NO_WARNINGS
-				-DMPC_LIB_MODIFIER="d")
+                -DWIN32
+                -D_WIN32
+                -D_WINDOWS
+                -D_CRT_NONSTDC_NO_WARNINGS
+                -D_CRT_SECURE_NO_WARNINGS
+                -D_CRT_SECURE_NO_DEPRECATE
+                -D_CRT_NONSTDC_NO_DEPRECATE
+                -D_WINSOCK_DEPRECATED_NO_WARNINGS
+                -DMPC_LIB_MODIFIER="d")
 
 include_directories(
   ${CMAKE_SOURCE_DIR}/dep/acelite

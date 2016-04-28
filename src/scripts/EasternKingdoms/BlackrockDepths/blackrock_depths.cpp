@@ -1599,7 +1599,7 @@ void AddSC_blackrock_depths()
     newscript->pGossipHello =  &GossipHello_npc_lokhtos_darkbargainer;
     newscript->pGossipSelect = &GossipSelect_npc_lokhtos_darkbargainer;
     newscript->RegisterSelf();
-	
+    
         newscript = new Script;
         newscript->Name = "npc_dughal_stormwing";
     newscript->GetAI = &GetAI_npc_dughal_stormwing;
@@ -1644,7 +1644,7 @@ void AddSC_blackrock_depths()
     newscript->Name = "npc_jaz";
     newscript->GetAI = &GetAI_npc_jaz;
     newscript->RegisterSelf();
-		
+        
     newscript = new Script;
     newscript->Name = "npc_rocknot";
     newscript->GetAI = &GetAI_npc_rocknot;

@@ -13133,7 +13133,7 @@ public:
     }
 
 private:
-	Unit* _unit;
+    Unit* _unit;
 };
 
 void Unit::UpdateSplineMovement(uint32 t_diff)

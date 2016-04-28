@@ -28,7 +28,7 @@ EndScriptData */
 
 #define SPELL_FIREBALL              (HeroicMode?36920:34653)
 #define SPELL_CONE_OF_FIRE          (HeroicMode?36921:30926)
-#define SPELL_BLAZE				    (HeroicMode?30542:30542)
+#define SPELL_BLAZE                    (HeroicMode?30542:30542)
 #define SPELL_BELLOWING_ROAR        39427
 #define SPELL_REVENGE               (HeroicMode?40392:19130)
 #define SPELL_KIDNEY_SHOT           30621
@@ -90,8 +90,8 @@ struct boss_nazanAI : public ScriptedAI
         Turn_Timer = 0;
         UnsummonCheck = 5000;
 
-		me->SetCanFly(true);
-		me->SetHover(true);
+        me->SetCanFly(true);
+        me->SetHover(true);
     }
 
     void EnterCombat(Unit* /*who*/) {}
@@ -128,7 +128,7 @@ struct boss_nazanAI : public ScriptedAI
             return;
         }
 
-		if (Fireball_Timer <= diff && flight == true)
+        if (Fireball_Timer <= diff && flight == true)
         {
             if (Unit* victim = SelectUnit(SELECT_TARGET_RANDOM, 0))
                 DoCast(victim, SPELL_FIREBALL, true);
@@ -223,7 +223,7 @@ struct boss_vazrudenAI : public ScriptedAI
             break;
         }
 
-		me->SetInCombatWithZone();
+        me->SetInCombatWithZone();
     }
 
     void KilledUnit(Unit* who)

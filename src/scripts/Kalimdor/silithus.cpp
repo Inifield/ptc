@@ -44,27 +44,27 @@ EndContentData */
 
 bool GossipHello_npc_scout_landion(Player* player, Creature* _Creature)
 {
-	if (player->GetQuestStatus(8738) == QUEST_STATUS_INCOMPLETE)
-	{
-		player->ADD_GOSSIP_ITEM(0, GOSSIP_LANDION, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
-	}
+    if (player->GetQuestStatus(8738) == QUEST_STATUS_INCOMPLETE)
+    {
+        player->ADD_GOSSIP_ITEM(0, GOSSIP_LANDION, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+    }
 
-	//Need proper ID of menu text, if there was any.
-	player->SEND_GOSSIP_MENU(68, _Creature->GetGUID());
+    //Need proper ID of menu text, if there was any.
+    player->SEND_GOSSIP_MENU(68, _Creature->GetGUID());
 
-	return true;
+    return true;
 }
 
 bool GossipSelect_npc_scout_landion(Player* player, Creature* _Creature, uint32 sender, uint32 action)
 {
-	switch (action)
-	{
-	case GOSSIP_ACTION_INFO_DEF + 1:
-		player->AddItem(21160, 1);
-		player->CLOSE_GOSSIP_MENU();
-		break;
-	}
-	return true;
+    switch (action)
+    {
+    case GOSSIP_ACTION_INFO_DEF + 1:
+        player->AddItem(21160, 1);
+        player->CLOSE_GOSSIP_MENU();
+        break;
+    }
+    return true;
 }
 
 /*###
@@ -1187,10 +1187,10 @@ void AddSC_silithus()
     newscript->pGossipSelect = &GossipSelect_npc_highlord_demitrian;
     newscript->RegisterSelf();
 
-	newscript = new Script;
-	newscript->Name = "npc_scout_landion";
-	newscript->pGossipHello = &GossipHello_npc_scout_landion;
-	newscript->pGossipSelect = &GossipSelect_npc_scout_landion;
+    newscript = new Script;
+    newscript->Name = "npc_scout_landion";
+    newscript->pGossipHello = &GossipHello_npc_scout_landion;
+    newscript->pGossipSelect = &GossipSelect_npc_scout_landion;
     newscript->RegisterSelf();
 
     newscript = new Script;
