@@ -1050,6 +1050,7 @@ void World::LoadConfigSettings(bool reload)
     // Misc
     m_configs[CONFIG_UI_QUESTLEVELS_IN_DIALOGS] = sConfig.GetBoolDefault("UI.ShowQuestLevelsInDialogs", false);
     m_configs[CONFIG_HEALTH_IN_PERCENTS] = sConfig.GetBoolDefault("HealthInPercents", true);
+    m_configs[CONFIG_DONT_CACHE_RANDOM_MOVEMENT_PATHS] = sConfig.GetBoolDefault("DontCacheRandomMovementPaths", true); // pussywizard
 
     // SQLUpdater
     m_configs[CONFIG_SQLUPDATER_ENABLED] = sConfig.GetBoolDefault("DatabaseUpdater.Enabled", false);

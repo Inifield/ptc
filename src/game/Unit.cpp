@@ -497,6 +497,46 @@ void Unit::GetRandomContactPoint(const Unit* obj, float& x, float& y, float& z, 
         , GetAngle(obj) + (attacker_number ? (static_cast<float>(M_PI/2) - static_cast<float>(M_PI) * (float)rand_norm()) * float(attacker_number) / combat_reach * 0.3f : 0));
 }
 
+bool Unit::GetRandomContactPointSunwell(const Unit* obj, float &x, float &y, float &z, bool force) const
+{
+    float combat_reach = GetCombatReach();
+    if (combat_reach < 0.1f) // sometimes bugged for players
+        combat_reach = DEFAULT_COMBAT_REACH;
+
+    uint32 attacker_number = getAttackers().size();
+    if (attacker_number > 0)
+        --attacker_number;
+    const Creature* c = obj->ToCreature();
+    if (c)
+        if (c->isWorldBoss() || (obj->IsPet() && const_cast<Unit*>(obj)->ToPet()->isControlled()))
+            attacker_number = 0; // pussywizard: pets and bosses just come to target from their angle
+
+    GetNearPoint(obj, x, y, z, isMoving() ? (obj->GetCombatReach() > 7.75f ? obj->GetCombatReach() - 7.5f : 0.25f) : obj->GetCombatReach(), 0.0f,
+        GetAngle(obj) + (attacker_number ? (static_cast<float>(M_PI / 2) - static_cast<float>(M_PI) * (float)rand_norm()) * float(attacker_number) / combat_reach * 0.3f : 0));
+
+    // pussywizard
+    if (fabs(this->GetPositionZ() - z) > 3.0f || !IsWithinLOS(x, y, z))
+    {
+        x = this->GetPositionX();
+        y = this->GetPositionY();
+        z = this->GetPositionZ();
+        obj->UpdateAllowedPositionZ(x, y, z);
+    }
+    float maxDist = MELEE_RANGE + GetMeleeReach() + obj->GetMeleeReach();
+    if (GetExactDistSq(x, y, z) >= maxDist*maxDist)
+    {
+        if (force)
+        {
+            x = this->GetPositionX();
+            y = this->GetPositionY();
+            z = this->GetPositionZ();
+            return true;
+        }
+        return false;
+    }
+    return true;
+}
+
 void Unit::RemoveMovementImpairingAuras()
 {
     for (AuraMap::iterator iter = m_Auras.begin(); iter != m_Auras.end();)
@@ -13069,31 +13109,69 @@ void Unit::BuildMovementPacket(ByteBuffer *data) const
     *data << uint32(0);
 }
 
+class SplineHandler
+{
+public:
+    SplineHandler(Unit* unit) : _unit(unit) { }
+
+    bool operator()(Movement::MoveSpline::UpdateResult result)
+    {
+        if ((result & (Movement::MoveSpline::Result_NextSegment | Movement::MoveSpline::Result_Arrived)) &&
+            _unit->GetTypeId() == TYPEID_UNIT && _unit->GetMotionMaster()->GetCurrentMovementGeneratorType() == ESCORT_MOTION_TYPE &&
+            _unit->movespline->GetId() == _unit->GetMotionMaster()->GetCurrentSplineId())
+        {
+            _unit->ToCreature()->AI()->MovementInform(ESCORT_MOTION_TYPE, _unit->movespline->currentPathIdx() - 1);
+        }
+
+        return true;
+    }
+
+private:
+	Unit* _unit;
+};
+
 void Unit::UpdateSplineMovement(uint32 t_diff)
 {
     if (movespline->Finalized())
         return;
 
-    movespline->updateState(t_diff);
+    // xinef: process movementinform
+    // this code cant be placed inside EscortMovementGenerator, because we cant delete active MoveGen while it is updated
+    SplineHandler handler(this);
+    movespline->updateState(t_diff, handler);
+    // Xinef: Spline was cleared by StopMoving, return
+    if (!movespline->Initialized())
+    {
+        DisableSpline();
+        return;
+    }
+
     bool arrived = movespline->Finalized();
 
     if (arrived)
         DisableSpline();
 
-    m_movesplineTimer.Update(t_diff);
-    if (m_movesplineTimer.Passed() || arrived)
-    {
-        m_movesplineTimer.Reset(POSITION_UPDATE_DELAY);
-        Movement::Location loc = movespline->ComputePosition();
+    // pussywizard: update always! not every 400ms, because movement generators need the actual position
+    //m_movesplineTimer.Update(t_diff);
+    //if (m_movesplineTimer.Passed() || arrived)
+    UpdateSplinePosition();
+}
 
-        if (HasUnitState(UNIT_STATE_CANNOT_TURN))
-            loc.orientation = GetOrientation();
-        
+void Unit::UpdateSplinePosition()
+{ 
+    //static uint32 const positionUpdateDelay = 400;
+
+    //m_movesplineTimer.Reset(positionUpdateDelay);
+    Movement::Location loc = movespline->ComputePosition();
+
+    // Xinef: this is bullcrap, if we had spline running update orientation along with position
+    //if (HasUnitState(UNIT_STATE_CANNOT_TURN))
+    //    loc.orientation = GetOrientation();
+
+    if (GetTypeId() == TYPEID_PLAYER)
         SetPosition(loc.x, loc.y, loc.z, loc.orientation);
-        
-        if (GetTypeId() == TYPEID_UNIT)
-            ToCreature()->UpdateMovementFlags(true);
-    }
+    else
+        ToCreature()->SetPosition(loc.x, loc.y, loc.z, loc.orientation);
 }
 
 void Unit::DisableSpline()

@@ -800,6 +800,9 @@ class WorldObject : public Object, public WorldLocation
             // angle calculated from current orientation
             GetNearPoint(NULL, x, y, z, size, distance2d, GetOrientation() + angle);
         }
+
+        bool GetClosePointSunwell(float &x, float &y, float &z, float size, float distance2d = 0, float angle = 0, const WorldObject* forWho = NULL, bool force = false) const;
+
         void MovePosition(Position& pos, float dist, float angle);
         void GetNearPosition(Position& pos, float dist, float angle)
         {

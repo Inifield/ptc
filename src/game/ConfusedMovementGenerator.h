@@ -19,26 +19,27 @@
 #define OREGON_CONFUSEDGENERATOR_H
 
 #include "MovementGenerator.h"
+#include "Timer.h"
+
+#define MAX_CONF_WAYPOINTS 24 //! Allows a twelve second confusion if i_nextMove always is the absolute minimum timer.
 
 template<class T>
 class ConfusedMovementGenerator
     : public MovementGeneratorMedium< T, ConfusedMovementGenerator<T> >
 {
-    public:
-        explicit ConfusedMovementGenerator() : i_nextMoveTime(0), i_x(0), i_y(0), i_z(0) {}
+public:
+    explicit ConfusedMovementGenerator() : i_nextMoveTime(1) {}
 
-        void Initialize(T&);
-        void Finalize(T&);
-        void Reset(T&);
-        bool Update(T&, const uint32&);
+    void Initialize(T&);
+    void Finalize(T&);
+    void Reset(T&);
+    bool Update(T&, const uint32&);
 
-        MovementGeneratorType GetMovementGeneratorType()
-        {
-            return CONFUSED_MOTION_TYPE;
-        }
-    private:
-        TimeTracker i_nextMoveTime;
-        float i_x, i_y, i_z;
+    MovementGeneratorType GetMovementGeneratorType() { return CONFUSED_MOTION_TYPE; }
+private:
+    void _InitSpecific(T&, bool &, bool &);
+    TimeTracker i_nextMoveTime;
+    float i_waypoints[MAX_CONF_WAYPOINTS + 1][3];
+    uint32 i_nextMove;
 };
 #endif
-

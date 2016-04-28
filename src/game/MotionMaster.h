@@ -67,9 +67,10 @@ enum MovementSlot
 
 enum MMCleanFlag
 {
-    MMCF_NONE   = 0,
-    MMCF_UPDATE = 1, // Clear or Expire called from update
-    MMCF_RESET  = 2  // Flag if need top()->Reset()
+    MMCF_NONE   = 0x00,
+    MMCF_UPDATE = 0x01, // Clear or Expire called from update
+    MMCF_RESET  = 0x02, // Flag if need top()->Reset()
+    MMCF_INUSE  = 0x04 // pussywizard: Flag if in MotionMaster::UpdateMotion
 };
 
 enum RotateDirection
@@ -140,6 +141,8 @@ class MotionMaster //: private std::stack<MovementGenerator *>
             return Impl[slot];
         }
 
+        uint8 GetCleanFlags() const { return m_cleanFlag; }
+
         void DirectDelete(_Ty curr);
         void DelayedDelete(_Ty curr);
 
@@ -182,10 +185,11 @@ class MotionMaster //: private std::stack<MovementGenerator *>
         {
             MovePoint(id, pos.m_positionX, pos.m_positionY, pos.m_positionZ, usePathfinding);
         }
-        void MovePoint(uint32 id, float x, float y, float z, bool usePathfinding = true);	
+        void MovePoint(uint32 id, float x, float y, float z, bool usePathfinding = true);
+
         void MoveSplinePath(Movement::PointsArray* path);
-        void MoveCharge(float x, float y, float z, float speed = SPEED_CHARGE, uint32 id = EVENT_CHARGE, bool usePathfinding = true);
-        void MoveFall(float z = 0, uint32 id = 0);
+        void MoveCharge(float x, float y, float z, float speed = SPEED_CHARGE, uint32 id = EVENT_CHARGE, const Movement::PointsArray* path = NULL, bool generatePath = false);
+        void MoveFall(uint32 id = 0, bool addFlagForNPC = false);
         void MoveSeekAssistance(float x, float y, float z);
         void MoveSeekAssistanceDistract(uint32 timer);
         void MoveTaxiFlight(uint32 path, uint32 pathnode);
@@ -202,7 +206,10 @@ class MotionMaster //: private std::stack<MovementGenerator *>
         MovementGeneratorType GetCurrentMovementGeneratorType() const;
         MovementGeneratorType GetMotionSlotType(int slot) const;
 
+        uint32 GetCurrentSplineId() const; // Xinef: Escort system
+
         void propagateSpeedChange();
+        void ReinitializeMovement();
 
         bool GetDestination(float& x, float& y, float& z);
     private:

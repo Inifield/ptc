@@ -24,63 +24,75 @@
 #include "PathFinder.h"
 #include "Player.h"
 
-#include <vector>
-#include <set>
-
-#define STOP_TIME_FOR_PLAYER  3 * MINUTE * IN_MILLISECONDS          // 3 Minutes
+#define FLIGHT_TRAVEL_UPDATE  100
+#define STOP_TIME_FOR_PLAYER  2 * MINUTE * IN_MILLISECONDS           // 3 Minutes
 #define TIMEDIFF_NEXT_WP      250
 
 template<class T, class P>
 class PathMovementBase
 {
-    public:
-        PathMovementBase() : i_currentNode(0) {}
-        virtual ~PathMovementBase() {};
+public:
+    PathMovementBase() : i_path(), i_currentNode(0) {}
+    PathMovementBase(P path) : i_path(path), i_currentNode(0) {}
+    virtual ~PathMovementBase() {};
 
-        void LoadPath(T&);
-        void ReloadPath(T&);
-        uint32 GetCurrentNode() const
-        {
-            return i_currentNode;
-        }
+    uint32 GetCurrentNode() const { return i_currentNode; }
 
-        void PreloadEndGrid();
-        void InitEndGridInfo();
-
-    protected:
-        uint32 i_currentNode;
-        P i_path;
+protected:
+    P i_path;
+    uint32 i_currentNode;
 };
 
 template<class T>
+class WaypointMovementGenerator;
 
-class WaypointMovementGenerator
-    : public MovementGeneratorMedium< T, WaypointMovementGenerator<T> >, public PathMovementBase<T, WaypointPath const*>
+template<>
+class WaypointMovementGenerator<Creature> : public MovementGeneratorMedium< Creature, WaypointMovementGenerator<Creature> >,
+    public PathMovementBase<Creature, WaypointPath const*>
 {
-    public:
-        WaypointMovementGenerator(uint32 _path_id = 0, bool _repeating = true) :
-            node(NULL), path_id(_path_id), i_nextMoveTime(0), repeating(_repeating), StopedByPlayer(false) {}
+public:
+    WaypointMovementGenerator(uint32 _path_id = 0, bool _repeating = true)
+        : PathMovementBase((WaypointPath const*)NULL), i_nextMoveTime(0), m_isArrivalDone(false), path_id(_path_id), repeating(_repeating) {}
+    ~WaypointMovementGenerator() { i_path = NULL; }
+    void Initialize(Creature&);
+    void Finalize(Creature&);
+    void Reset(Creature&);
+    bool Update(Creature&, const uint32& diff);
 
-        void Initialize(T&);
-        void Finalize(T&);
-        void MovementInform(T&);
-        void InitTraveller(T&);
-        void GeneratePathId(T&);
-        void Reset(T& unit);
-        bool Update(T&, const uint32&);
-        MovementGeneratorType GetMovementGeneratorType()
-        {
-            return WAYPOINT_MOTION_TYPE;
-        }
+    void MovementInform(Creature&);
 
-    private:
-        void MoveToNextNode(T&, const WaypointData&);
-        WaypointData* node;
-        uint32 path_id;
-        TimeTrackerSmall i_nextMoveTime;
-        WaypointPath const* waypoints;
-        bool repeating, StopedByPlayer;
+    MovementGeneratorType GetMovementGeneratorType() { return WAYPOINT_MOTION_TYPE; }
+
+    // now path movement implmementation
+    void LoadPath(Creature&);
+
+private:
+
+    void Stop(int32 time) { i_nextMoveTime.Reset(time); }
+
+    bool Stopped() { return !i_nextMoveTime.Passed(); }
+
+    bool CanMove(int32 diff)
+    {
+        i_nextMoveTime.Update(diff);
+        return i_nextMoveTime.Passed();
+    }
+
+    void OnArrived(Creature&);
+    bool StartMove(Creature&);
+
+    void StartMoveNow(Creature& creature)
+    {
+        i_nextMoveTime.Reset(0);
+        StartMove(creature);
+    }
+
+    TimeTrackerSmall i_nextMoveTime;
+    bool m_isArrivalDone;
+    uint32 path_id;
+    bool repeating;
 };
+
 
 /** FlightPathMovementGenerator generates movement of the player for the paths
  * and hence generates ground and activities for the player.

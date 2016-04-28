@@ -41,13 +41,15 @@ class MovementGenerator
 
         virtual MovementGeneratorType GetMovementGeneratorType() = 0;
 
+        virtual uint32 GetSplineId() const { return 0; }  // Xinef: Escort system
+
         virtual void unitSpeedChanged() { }
 
         // given destination unreachable? due to pathfinsing or other
-        virtual bool IsReachable() const
-        {
-            return true;
-        }
+        virtual bool IsReachable() const { return true; }
+
+        // used by Evade code for select point to evade with expected restart default movement
+        virtual bool GetResetPosition(float& /*x*/, float& /*y*/, float& /*z*/) { return false; }
 };
 
 template<class T, class D>

@@ -19,57 +19,121 @@
 #include "Errors.h"
 #include "Creature.h"
 #include "CreatureAI.h"
-#include "ScriptedInstance.h"
-#include "TemporarySummon.h"
-#include "MapManager.h"
 #include "World.h"
-#include "PathFinder.h"
 #include "MoveSplineInit.h"
 #include "MoveSpline.h"
+#include "Player.h"
 
-//----- Point Movement Generator
+ //----- Point Movement Generator
 template<class T>
 void PointMovementGenerator<T>::Initialize(T& unit)
 {
     if (!unit.IsStopped())
         unit.StopMoving();
 
-    unit.AddUnitState(UNIT_STATE_ROAMING);
+    unit.AddUnitState(UNIT_STATE_ROAMING | UNIT_STATE_ROAMING_MOVE);
+    i_recalculateSpeed = false;
     Movement::MoveSplineInit init(unit);
-    init.MoveTo(i_x, i_y, i_z, m_usePathfinding);
+    if (m_precomputedPath.size() > 2) // pussywizard: for charge
+        init.MovebyPath(m_precomputedPath);
+    else if (_generatePath)
+    {
+        PathInfo path(&unit);
+        bool result = path.Update(i_x, i_y, i_z, _forceDestination);
+        if (result && !(path.GetPathType() & PATHFIND_NOPATH) && path.GetPath().size() > 2)
+        {
+            m_precomputedPath = path.GetPath();
+            init.MovebyPath(m_precomputedPath);
+        }
+        else
+        {
+            // Xinef: fix strange client visual bug, moving on z coordinate only switches orientation by 180 degrees (visual only)
+            if (G3D::fuzzyEq(unit.GetPositionX(), i_x) && G3D::fuzzyEq(unit.GetPositionY(), i_y))
+            {
+                i_x += 0.2f*cos(unit.GetOrientation());
+                i_y += 0.2f*sin(unit.GetOrientation());
+            }
+
+            init.MoveTo(i_x, i_y, i_z);
+        }
+    }
+    else
+    {
+        // Xinef: fix strange client visual bug, moving on z coordinate only switches orientation by 180 degrees (visual only)
+        if (G3D::fuzzyEq(unit.GetPositionX(), i_x) && G3D::fuzzyEq(unit.GetPositionY(), i_y))
+        {
+            i_x += 0.2f*cos(unit.GetOrientation());
+            i_y += 0.2f*sin(unit.GetOrientation());
+        }
+
+        init.MoveTo(i_x, i_y, i_z);
+    }
     if (speed > 0.0f)
         init.SetVelocity(speed);
     init.Launch();
 }
 
 template<class T>
-void PointMovementGenerator<T>:: Finalize(T& unit)
+bool PointMovementGenerator<T>::Update(T& unit, const uint32& /*diff*/)
 {
-    if (unit.HasUnitState(UNIT_STATE_CHARGING))
-        unit.ClearUnitState(UNIT_STATE_CHARGING | UNIT_STATE_JUMPING);
+    if (!&unit)
+        return false;
+
+    if (unit.HasUnitState(UNIT_STATE_ROOT | UNIT_STATE_STUNNED))
+    {
+        unit.ClearUnitState(UNIT_STATE_ROAMING_MOVE);
+        return true;
+    }
+
+    unit.AddUnitState(UNIT_STATE_ROAMING_MOVE);
+
+    if (i_recalculateSpeed && !unit.movespline->Finalized())
+    {
+        i_recalculateSpeed = false;
+        Movement::MoveSplineInit init(unit);
+
+        // xinef: speed changed during path execution, calculate remaining path and launch it once more
+        if (m_precomputedPath.size())
+        {
+            uint32 offset = std::min(uint32(unit.movespline->_currentSplineIdx()), uint32(m_precomputedPath.size()));
+            Movement::PointsArray::iterator offsetItr = m_precomputedPath.begin();
+            std::advance(offsetItr, offset);
+            m_precomputedPath.erase(m_precomputedPath.begin(), offsetItr);
+
+            // restore 0 element (current position)
+            m_precomputedPath.insert(m_precomputedPath.begin(), G3D::Vector3(unit.GetPositionX(), unit.GetPositionY(), unit.GetPositionZ()));
+
+            if (m_precomputedPath.size() > 2)
+                init.MovebyPath(m_precomputedPath);
+            else if (m_precomputedPath.size() == 2)
+                init.MoveTo(m_precomputedPath[1].x, m_precomputedPath[1].y, m_precomputedPath[1].z);
+        }
+        else
+            init.MoveTo(i_x, i_y, i_z);
+        if (speed > 0.0f) // Default value for point motion type is 0.0, if 0.0 spline will use GetSpeed on unit
+            init.SetVelocity(speed);
+        init.Launch();
+    }
+
+    return !unit.movespline->Finalized();
+}
+
+template<class T>
+void PointMovementGenerator<T>::Finalize(T& unit)
+{
+    unit.ClearUnitState(UNIT_STATE_ROAMING | UNIT_STATE_ROAMING_MOVE);
 
     if (unit.movespline->Finalized())
         MovementInform(unit);
 }
 
 template<class T>
-bool PointMovementGenerator<T>::Update(T& unit, const uint32& diff)
+void PointMovementGenerator<T>::Reset(T& unit)
 {
-    if (unit.HasUnitState(UNIT_STATE_ROOT | UNIT_STATE_STUNNED))
-    {
-        if (unit.HasUnitState(UNIT_STATE_CHARGING))
-            return false;
-        else
-            return true;
-    }
+    if (!unit.IsStopped())
+        unit.StopMoving();
 
-    if (unit.movespline->Finalized())
-    {
-        unit.ClearUnitState(UNIT_STATE_MOVE);
-        return false;
-    }
-
-    return true;
+    unit.AddUnitState(UNIT_STATE_ROAMING | UNIT_STATE_ROAMING_MOVE);
 }
 
 template<class T>
@@ -79,37 +143,18 @@ void PointMovementGenerator<T>::MovementInform(T& /*unit*/)
 
 template <> void PointMovementGenerator<Creature>::MovementInform(Creature& unit)
 {
-    unit.AI()->MovementInform(POINT_MOTION_TYPE, id);
-
-    if (unit.IsSummon())
-    {
-        if (TempSummon* pSummon = (TempSummon*)(&unit))
-        {
-            if (Unit* pSummoner = pSummon->GetSummoner())
-            {
-            if (pSummoner->GetTypeId() == TYPEID_UNIT)
-            {
-                    if (ScriptedInstance* pInstance = (ScriptedInstance*)pSummoner->GetInstanceData())
-                        pInstance->MovementInform(&unit, POINT_MOTION_TYPE, id);
-
-                    if (pSummoner->ToCreature()->AI())
-                        pSummoner->ToCreature()->AI()->SummonedMovementInform(&unit, POINT_MOTION_TYPE, id);
-                }
-            }
-        }
-    }
+    if (unit.AI())
+        unit.AI()->MovementInform(POINT_MOTION_TYPE, id);
 }
 
 template void PointMovementGenerator<Player>::Initialize(Player&);
-template void PointMovementGenerator<Player>::Finalize(Player&);
-template void PointMovementGenerator<Player>::Reset(Player&);
-template bool PointMovementGenerator<Player>::Update(Player&, const uint32& diff);
-template void PointMovementGenerator<Player>::MovementInform(Player&);
-
 template void PointMovementGenerator<Creature>::Initialize(Creature&);
+template void PointMovementGenerator<Player>::Finalize(Player&);
 template void PointMovementGenerator<Creature>::Finalize(Creature&);
+template void PointMovementGenerator<Player>::Reset(Player&);
 template void PointMovementGenerator<Creature>::Reset(Creature&);
-template bool PointMovementGenerator<Creature>::Update(Creature&, const uint32& diff);
+template bool PointMovementGenerator<Player>::Update(Player&, const uint32&);
+template bool PointMovementGenerator<Creature>::Update(Creature&, const uint32&);
 
 void AssistanceMovementGenerator::Finalize(Unit& unit)
 {
@@ -129,14 +174,17 @@ void EffectMovementGenerator::Finalize(Unit& unit)
     if (unit.GetTypeId() != TYPEID_UNIT)
         return;
 
+    if (unit.GetTypeId() == TYPEID_UNIT && unit.HasUnitMovementFlag(MOVEMENTFLAG_FALLING) && unit.movespline->isFalling()) // pussywizard
+        unit.RemoveUnitMovementFlag(MOVEMENTFLAG_FALLING);
+
     // Need restore previous movement since we have no proper states system
-    if (unit.IsAlive() && !unit.HasUnitState(UNIT_STATE_CONFUSED | UNIT_STATE_FLEEING | UNIT_STATE_DISTRACTED))
-    {
-        if (Unit* victim = unit.getVictim())
-            unit.GetMotionMaster()->MoveChase(victim);
-        else
-            unit.GetMotionMaster()->Initialize();
-    }
+    //if (unit.IsAlive() && !unit.HasUnitState(UNIT_STATE_CONFUSED | UNIT_STATE_FLEEING))
+    //{
+    //    if (Unit* victim = unit.GetVictim())
+    //        unit.GetMotionMaster()->MoveChase(victim);
+    //    else
+    //        unit.GetMotionMaster()->Initialize();
+    //}
 
     if (unit.ToCreature()->AI())
         unit.ToCreature()->AI()->MovementInform(EFFECT_MOTION_TYPE, m_Id);

@@ -20,70 +20,60 @@
 
 #include "MovementGenerator.h"
 #include "FollowerReference.h"
+#include "Timer.h"
+#include "Unit.h"
 #include "PathFinder.h"
 
 class TargetedMovementGeneratorBase
 {
-    public:
-        TargetedMovementGeneratorBase(Unit& target)
-        {
-            i_target.link(&target, this);
-        }
-        void stopFollowing() { }
-    protected:
-        FollowerReference i_target;
+public:
+    TargetedMovementGeneratorBase(Unit& target) { i_target.link(&target, this); }
+    void stopFollowing() { }
+protected:
+    FollowerReference i_target;
+    Position lastOwnerXYZ;
+    Position lastTargetXYZ;
 };
 
 template<class T, typename D>
-class TargetedMovementGeneratorMedium
+class TargetedMovementGeneratorMedium 
     : public MovementGeneratorMedium< T, D >, public TargetedMovementGeneratorBase
 {
-    protected:
-        TargetedMovementGeneratorMedium(Unit& target, float offset = 0, float angle = 0) :
-            TargetedMovementGeneratorBase(target),
-            m_evadeTimer(urand(4000, 8000)),
-            i_offset(offset), i_angle(angle),
-            i_recheckDistance(0), i_path(NULL),
-            m_speedChanged(false), i_targetReached(false)
-        {
-        }
-        ~TargetedMovementGeneratorMedium()
-        {
-            delete i_path;
-        }
+protected:
+    TargetedMovementGeneratorMedium(Unit& target, float offset, float angle) :
+        TargetedMovementGeneratorBase(target), i_path(NULL), lastPathingFailMSTime(0),
+        i_recheckDistance(0), i_recheckDistanceForced(2500), i_offset(offset), i_angle(angle),
+        i_recalculateTravel(false), i_targetReached(false)
+    {
+    }
+    ~TargetedMovementGeneratorMedium() { delete i_path; }
 
-    public:
-        bool Update(T&, const uint32&);
+public:
+    bool Update(T&, const uint32&);
+    Unit* GetTarget() const { return i_target.getTarget(); }
 
-        Unit* GetTarget() const { return i_target.getTarget(); }
+    void unitSpeedChanged() { i_recalculateTravel = true; }
+    bool IsReachable() const { return (i_path) ? (i_path->GetPathType() & PATHFIND_NORMAL) : true; }
 
-        bool IsReachable() const
-        {
-            return (i_path) ? (i_path->getPathType() & PATHFIND_NORMAL) : true;
-        }
+protected:
+    void _setTargetLocation(T& owner, bool initial);
 
-        void unitSpeedChanged() { m_speedChanged = true; }
-
-        virtual void MovementInform(T&) { }
-
-    protected:
-        void _setTargetLocation(T&, bool updateDestination);
-        bool RequiresNewPosition(T& owner, float x, float y, float z) const;
-
-        TimeTrackerSmall i_recheckDistance;
-        float i_offset;
-        float i_angle;
-        bool m_speedChanged : 1;
-        bool i_targetReached : 1;
-
-        PathInfo* i_path;
-        uint32 m_evadeTimer;
+    TimeTrackerSmall i_recheckDistance;
+    TimeTrackerSmall i_recheckDistanceForced;
+    float i_offset;
+    float i_angle;
+    bool i_recalculateTravel : 1;
+    bool i_targetReached : 1;
+    PathInfo* i_path;
+    uint32 lastPathingFailMSTime;
 };
 
 template<class T>
 class ChaseMovementGenerator : public TargetedMovementGeneratorMedium<T, ChaseMovementGenerator<T> >
 {
 public:
+    ChaseMovementGenerator(Unit& target)
+        : TargetedMovementGeneratorMedium<T, ChaseMovementGenerator<T> >(target) {}
     ChaseMovementGenerator(Unit& target, float offset, float angle)
         : TargetedMovementGeneratorMedium<T, ChaseMovementGenerator<T> >(target, offset, angle) {}
     ~ChaseMovementGenerator() {}
@@ -95,12 +85,16 @@ public:
     void Reset(T&);
     void MovementInform(T&);
 
+    static void _clearUnitStateMove(T& u) { u.ClearUnitState(UNIT_STATE_CHASE_MOVE); }
+    static void _addUnitStateMove(T& u) { u.AddUnitState(UNIT_STATE_CHASE_MOVE); }
     bool EnableWalking() const { return false; }
+    bool _lostTarget(T& u) const { return u.getVictim() != this->GetTarget(); }
     void _reachTarget(T&);
 };
 
 template<class T>
-class FollowMovementGenerator : public TargetedMovementGeneratorMedium<T, FollowMovementGenerator<T> >
+class FollowMovementGenerator
+    : public TargetedMovementGeneratorMedium<T, FollowMovementGenerator<T> >
 {
 public:
     FollowMovementGenerator(Unit& target)
@@ -116,11 +110,13 @@ public:
     void Reset(T&);
     void MovementInform(T&);
 
+    static void _clearUnitStateMove(T& u) { u.ClearUnitState(UNIT_STATE_FOLLOW_MOVE); }
+    static void _addUnitStateMove(T& u) { u.AddUnitState(UNIT_STATE_FOLLOW_MOVE); }
     bool EnableWalking() const;
+    bool _lostTarget(T&) const { return false; }
     void _reachTarget(T&) {}
-
 private:
-    void _updateSpeed(T& u);
+    void _updateSpeed(T& owner);
 };
 
 #endif

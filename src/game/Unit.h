@@ -873,6 +873,32 @@ enum
 
 struct SpellProcEventEntry;                                 // used only privately
 
+// pussywizard:
+class MMapTargetData
+{
+public:
+    MMapTargetData() {}
+    MMapTargetData(uint32 endTime, const Position* o, const Position* t)
+    {
+        _endTime = endTime;
+        _posOwner.Relocate(o);
+        _posTarget.Relocate(t);
+    }
+    MMapTargetData(const MMapTargetData& c)
+    {
+        _endTime = c._endTime;
+        _posOwner.Relocate(c._posOwner);
+        _posTarget.Relocate(c._posTarget);
+    }
+    bool PosChanged(const Position& o, const Position& t) const
+    {
+        return _posOwner.GetExactDistSq(&o) > 0.5f*0.5f || _posTarget.GetExactDistSq(&t) > 0.5f*0.5f;
+    }
+    uint32 _endTime;
+    Position _posOwner;
+    Position _posTarget;
+};
+
 class Unit : public WorldObject
 {
     friend class ScriptEvent;
@@ -942,6 +968,7 @@ class Unit : public WorldObject
         bool IsWithinCombatRange(const Unit* obj, float dist2compare) const;
         bool IsWithinMeleeRange(Unit* obj, float dist = MELEE_RANGE) const;
         void GetRandomContactPoint(const Unit* target, float& x, float& y, float& z, float distance2dMin, float distance2dMax) const;
+        bool GetRandomContactPointSunwell(const Unit* target, float &x, float &y, float &z, bool force = false) const;
         uint32 m_extraAttacks;
         bool m_canDualWield;
 
@@ -2096,6 +2123,12 @@ class Unit : public WorldObject
         TempSummon* ToTempSummon() { if (IsSummon()) return reinterpret_cast<TempSummon*>(this); else return NULL; }
         TempSummon const* ToTempSummon() const { if (IsSummon()) return reinterpret_cast<TempSummon const*>(this); else return NULL; }
 
+        // pussywizard:
+        // MMaps
+        std::map<uint64, MMapTargetData> m_targetsNotAcceptable;
+        bool isTargetNotAcceptableByMMaps(uint64 guid, uint32 currTime, const Position* t = NULL) const { std::map<uint64, MMapTargetData>::const_iterator itr = m_targetsNotAcceptable.find(guid); if (itr != m_targetsNotAcceptable.end() && (itr->second._endTime >= currTime || t && !itr->second.PosChanged(*this, *t))) return true; return false; }
+        uint32 m_mmapNotAcceptableStartTime;
+
     protected:
         explicit Unit (bool isWorldObject);
 
@@ -2199,6 +2232,7 @@ class Unit : public WorldObject
         time_t _lastDamagedTime; // Part of Evade mechanics
 
         void UpdateSplineMovement(uint32 t_diff);
+        void UpdateSplinePosition();
 };
 
 namespace Oregon
