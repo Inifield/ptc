@@ -100,7 +100,6 @@ enum ScriptsType
     SCRIPTS_QUEST_END = SCRIPTS_FIRST,
     SCRIPTS_QUEST_START,
     SCRIPTS_SPELL,
-    SCRIPTS_GAMEOBJECT,
     SCRIPTS_EVENT,
     SCRIPTS_WAYPOINT,
     SCRIPTS_GOSSIP,
@@ -329,7 +328,6 @@ typedef std::map<uint32, ScriptMap > ScriptMapMap;
 extern ScriptMapMap sQuestEndScripts;
 extern ScriptMapMap sQuestStartScripts;
 extern ScriptMapMap sSpellScripts;
-extern ScriptMapMap sGameObjectScripts;
 extern ScriptMapMap sEventScripts;
 extern ScriptMapMap sGossipScripts;
 extern ScriptMapMap sWaypointScripts;
@@ -774,7 +772,6 @@ class ObjectMgr
         QuestRelations mCreatureQuestRelations;
         QuestRelations mCreatureQuestInvolvedRelations;
 
-        void LoadGameObjectScripts();
         void LoadQuestEndScripts();
         void LoadQuestStartScripts();
         void LoadEventScripts();

@@ -3296,7 +3296,6 @@ void Spell::SendLoot(uint64 guid, LootType loottype)
         case GAMEOBJECT_TYPE_DOOR:
         case GAMEOBJECT_TYPE_BUTTON:
             gameObjTarget->UseDoorOrButton(0, false, player);
-            player->GetMap()->ScriptsStart(sGameObjectScripts, gameObjTarget->GetDBTableGUIDLow(), player, gameObjTarget);
             return;
 
         case GAMEOBJECT_TYPE_QUESTGIVER:
@@ -3324,8 +3323,6 @@ void Spell::SendLoot(uint64 guid, LootType loottype)
                 // Quest require to be active for GO using
                 if (player->GetQuestStatus(gameObjTarget->GetGOInfo()->goober.questId) != QUEST_STATUS_INCOMPLETE)
                     return;
-
-            player->GetMap()->ScriptsStart(sGameObjectScripts, gameObjTarget->GetDBTableGUIDLow(), player, gameObjTarget);
 
             gameObjTarget->AddUniqueUse(player);
             gameObjTarget->SetLootState(GO_JUST_DEACTIVATED);

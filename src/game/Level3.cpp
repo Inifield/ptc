@@ -529,7 +529,6 @@ bool ChatHandler::HandleReloadAllScriptsCommand(const char*)
     }
 
     sLog.outString("Re-Loading Scripts...");
-    HandleReloadGameObjectScriptsCommand("a");
     HandleReloadEventScriptsCommand("a");
     HandleReloadQuestEndScriptsCommand("a");
     HandleReloadQuestStartScriptsCommand("a");
@@ -945,26 +944,6 @@ bool ChatHandler::HandleReloadItemEnchantementsCommand(const char*)
     sLog.outString("Re-Loading Item Random Enchantments Table...");
     LoadRandomEnchantmentsTable();
     SendGlobalGMSysMessage("DB table item_enchantment_template reloaded.");
-    return true;
-}
-
-bool ChatHandler::HandleReloadGameObjectScriptsCommand(const char* arg)
-{
-    if (sWorld.IsScriptScheduled())
-    {
-        SendSysMessage("DB scripts used currently, please attempt reload later.");
-        SetSentErrorMessage(true);
-        return false;
-    }
-
-    if (*arg != 'a')
-        sLog.outString("Re-Loading Scripts from gameobject_scripts...");
-
-    sObjectMgr.LoadGameObjectScripts();
-
-    if (*arg != 'a')
-        SendGlobalGMSysMessage("DB table gameobject_scripts reloaded.");
-
     return true;
 }
 

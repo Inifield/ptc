@@ -48,7 +48,6 @@ INSTANTIATE_SINGLETON_1(ObjectMgr);
 ScriptMapMap sQuestEndScripts;
 ScriptMapMap sQuestStartScripts;
 ScriptMapMap sSpellScripts;
-ScriptMapMap sGameObjectScripts;
 ScriptMapMap sEventScripts;
 ScriptMapMap sGossipScripts;
 ScriptMapMap sWaypointScripts;
@@ -66,9 +65,6 @@ std::string GetScriptsTableNameByType(ScriptsType type)
         break;
     case SCRIPTS_SPELL:
         res = "spell_scripts";
-        break;
-    case SCRIPTS_GAMEOBJECT:
-        res = "gameobject_scripts";
         break;
     case SCRIPTS_EVENT:
         res = "event_scripts";
@@ -98,9 +94,6 @@ ScriptMapMap* GetScriptsMapByType(ScriptsType type)
         break;
     case SCRIPTS_SPELL:
         res = &sSpellScripts;
-        break;
-    case SCRIPTS_GAMEOBJECT:
-        res = &sGameObjectScripts;
         break;
     case SCRIPTS_EVENT:
         res = &sEventScripts;
@@ -4236,18 +4229,6 @@ void ObjectMgr::LoadScripts(ScriptsType type)
     while (result->NextRow());
 
     sLog.outString(">> Loaded %u script definitions", count);
-}
-
-void ObjectMgr::LoadGameObjectScripts()
-{
-    LoadScripts(SCRIPTS_GAMEOBJECT);
-
-    // check ids
-    for (ScriptMapMap::const_iterator itr = sGameObjectScripts.begin(); itr != sGameObjectScripts.end(); ++itr)
-    {
-        if (!GetGOData(itr->first))
-            sLog.outErrorDb("Table `gameobject_scripts` has not existing gameobject (GUID: %u) as script id", itr->first);
-    }
 }
 
 void ObjectMgr::LoadQuestEndScripts()
