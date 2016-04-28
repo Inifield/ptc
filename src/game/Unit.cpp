@@ -238,7 +238,7 @@ Unit::Unit(bool isWorldObject):
       m_lastSanctuaryTime(0),
       m_procDeep(0),
       movespline(new Movement::MoveSpline()),
-      m_movesplineTimer(POSITION_UPDATE_DELAY),
+      //m_movesplineTimer(POSITION_UPDATE_DELAY),
       _lastDamagedTime(0)
 {
     m_objectType |= TYPEMASK_UNIT;
@@ -12134,11 +12134,48 @@ void Unit::NearTeleportTo(float x, float y, float z, float orientation, bool cas
     {
         Position pos = {x, y, z, orientation};
         SendTeleportPacket(pos);
-        SetPosition(x, y, z, orientation, true);
+        UpdatePosition(x, y, z, orientation, true);
         UpdateObjectVisibility();
+		
+        GetMotionMaster()->ReinitializeMovement();
     }
 }
 
+bool Unit::UpdatePosition(float x, float y, float z, float orientation, bool teleport)
+{
+    if (!Oregon::IsValidMapCoord(x, y, z, orientation))
+        return false;
+
+    float old_orientation = GetOrientation();
+    float current_z = GetPositionZ();
+    bool turn = (old_orientation != orientation);
+    bool relocated = (teleport || GetPositionX() != x || GetPositionY() != y || current_z != z);
+
+    if (relocated)
+    {
+        if (GetTypeId() == TYPEID_PLAYER)
+            GetMap()->PlayerRelocation(ToPlayer(), x, y, z, orientation);
+        else
+            GetMap()->CreatureRelocation(ToCreature(), x, y, z, orientation);
+    }
+    else if (turn)
+        UpdateOrientation(orientation);
+
+    return (relocated || turn);
+}
+
+//! Only server-side orientation update, does not broadcast to client
+void Unit::UpdateOrientation(float orientation)
+{
+    SetOrientation(orientation);
+}
+
+//! Only server-side height update, does not broadcast to client
+void Unit::UpdateHeight(float newZ)
+{
+    Relocate(GetPositionX(), GetPositionY(), newZ);
+}
+ 
 void Unit::SendTeleportPacket(Position& pos)
 {
     Position oldPos = { GetPositionX(), GetPositionY(), GetPositionZ(), GetOrientation() };
@@ -12425,7 +12462,6 @@ void Unit::SetControlled(bool apply, UnitState state)
         {
             case UNIT_STATE_STUNNED:
                 SetStunned(true);
-                CastStop();
                 break;
             case UNIT_STATE_ROOT:
                 if (!HasUnitState(UNIT_STATE_STUNNED))
@@ -12461,31 +12497,35 @@ void Unit::SetControlled(bool apply, UnitState state)
                 if (HasAuraType(SPELL_AURA_MOD_STUN))
                     return;
 
+                ClearUnitState(state);
                 SetStunned(false);
                 break;
             case UNIT_STATE_ROOT:
                 if (HasAuraType(SPELL_AURA_MOD_ROOT))
                     return;
 
+                ClearUnitState(state);
                 SetRooted(false);
                 break;
             case UNIT_STATE_CONFUSED:
                 if (HasAuraType(SPELL_AURA_MOD_CONFUSE))
                     return;
 
+                ClearUnitState(state);
                 SetConfused(false);
                 break;
             case UNIT_STATE_FLEEING:
                 if (HasAuraType(SPELL_AURA_MOD_FEAR))
                     return;
 
+                ClearUnitState(state);
                 SetFeared(false);
                 break;
             default:
                 return;
         }
 
-        ClearUnitState(state);
+        //ClearUnitState(state);
 
         // Unit States might have been already cleared but auras still present. I need to check with HasAuraType
         if (HasAuraType(SPELL_AURA_MOD_STUN))
@@ -12515,15 +12555,20 @@ void Unit::SetStunned(bool apply)
         // setting MOVEMENTFLAG_ROOT
         RemoveUnitMovementFlag(MOVEMENTFLAG_MOVING);
         AddUnitMovementFlag(MOVEMENTFLAG_ROOT);
-        StopMoving();
-
-        if (GetTypeId() == TYPEID_PLAYER)
-            SetStandState(UNIT_STAND_STATE_STAND);
 
         WorldPacket data(SMSG_FORCE_MOVE_ROOT, 8);
         data << GetPackGUID();
         data << uint32(0);
         SendMessageToSet(&data, true);
+
+        // xinef: inform client about our current orientation
+        SendMovementFlagUpdate();
+
+        // Creature specific
+        if (GetTypeId() != TYPEID_PLAYER)
+            StopMoving();
+        else
+            SetStandState(UNIT_STAND_STATE_STAND);
 
         CastStop();
     }
@@ -12532,9 +12577,19 @@ void Unit::SetStunned(bool apply)
         if (IsAlive() && getVictim())
            SetTarget(getVictim()->GetGUID());
 
-        // don't remove UNIT_FLAG_STUNNED for pet when owner is mounted (disabled pet's interface)
-        Unit* owner = GetOwner();
-        if (!owner || (owner->GetTypeId() == TYPEID_PLAYER && !owner->ToPlayer()->IsMounted()))
+        if (GetTypeId() == TYPEID_UNIT)
+        {
+            // don't remove UNIT_FLAG_STUNNED for pet when owner is mounted (disabled pet's interface)
+            Unit* owner = GetOwner();
+            if (!owner || owner->GetTypeId() != TYPEID_PLAYER || !owner->ToPlayer()->IsMounted())
+                RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
+
+            // Xinef: same for charmed npcs
+            owner = GetCharmer();
+            if (!owner || owner->GetTypeId() != TYPEID_PLAYER || !owner->ToPlayer()->IsMounted())
+                RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
+        }
+        else
             RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
 
         if (!HasUnitState(UNIT_STATE_ROOT))         // prevent moving if it also has root effect
@@ -12553,18 +12608,20 @@ void Unit::SetRooted(bool apply)
 {
     if (apply)
     {
+        if (m_rootTimes > 0) // blizzard internal check?
+            m_rootTimes++;
+
         // MOVEMENTFLAG_ROOT cannot be used in conjunction with MOVEMENTFLAG_MASK_MOVING (tested 3.3.5a)
         // this will freeze clients. That's why we remove MOVEMENTFLAG_MASK_MOVING before
         // setting MOVEMENTFLAG_ROOT
         RemoveUnitMovementFlag(MOVEMENTFLAG_MOVING);
         m_movementInfo.AddMovementFlag(MOVEMENTFLAG_ROOT);
-        StopMoving();
 
         if (GetTypeId() == TYPEID_PLAYER)
         {
             WorldPacket data(SMSG_FORCE_MOVE_ROOT, 10);
             data << GetPackGUID();
-            data << (uint32)2; // @todo Identify this
+            data << m_rootTimes;
             SendMessageToSet(&data, true);
         }
         else
@@ -12572,6 +12629,7 @@ void Unit::SetRooted(bool apply)
             WorldPacket data(SMSG_SPLINE_MOVE_ROOT, 8);
             data << GetPackGUID();
             SendMessageToSet(&data, true);
+            StopMoving();
         }
     }
     else
@@ -12582,7 +12640,7 @@ void Unit::SetRooted(bool apply)
             {
                 WorldPacket data(SMSG_FORCE_MOVE_UNROOT, 10);
                 data << GetPackGUID();
-                data << (uint32)2; // @todo Identify this
+                data << ++m_rootTimes;
                 SendMessageToSet(&data, true);
             }
             else
@@ -12592,7 +12650,7 @@ void Unit::SetRooted(bool apply)
                 SendMessageToSet(&data, true);
             }
 
-            m_movementInfo.RemoveMovementFlag(MOVEMENTFLAG_ROOT);
+            RemoveUnitMovementFlag(MOVEMENTFLAG_ROOT);
         }
     }
 }
@@ -12615,16 +12673,24 @@ void Unit::SetFeared(bool apply)
     {
         if (IsAlive())
         {
-            if (GetMotionMaster()->GetCurrentMovementGeneratorType() == FLEEING_MOTION_TYPE)
+            if (GetMotionMaster()->GetMotionSlotType(MOTION_SLOT_CONTROLLED) == FLEEING_MOTION_TYPE)
+            {
                 GetMotionMaster()->MovementExpired();
+                StopMoving();
+            }
+
             if (getVictim())
                 SetTarget(getVictim()->GetGUID());
         }
     }
 
-    if (Player* player = ToPlayer())
-        if(!player->HasUnitState(UNIT_STATE_POSSESSED))
-            player->SetClientControl(this, !apply);
+    // To Verify
+    if (GetTypeId() == TYPEID_PLAYER)
+    {
+        if (Player* player = ToPlayer())
+            if (!player->HasUnitState(UNIT_STATE_POSSESSED))
+                player->SetClientControl(this, !apply);
+    }
 }
 
 void Unit::SetConfused(bool apply)
@@ -12638,16 +12704,24 @@ void Unit::SetConfused(bool apply)
     {
         if (IsAlive())
         {
-            if (GetMotionMaster()->GetCurrentMovementGeneratorType() == CONFUSED_MOTION_TYPE)
+            if (GetMotionMaster()->GetMotionSlotType(MOTION_SLOT_CONTROLLED) == CONFUSED_MOTION_TYPE)
+            {
                 GetMotionMaster()->MovementExpired();
+                StopMoving();
+            }
+
             if (getVictim())
                 SetTarget(getVictim()->GetGUID());
         }
     }
 
-    if (Player* player = ToPlayer())
-        if (!player->HasUnitState(UNIT_STATE_POSSESSED))
-            player->SetClientControl(this, !apply);
+    // To Verify
+    if (GetTypeId() == TYPEID_PLAYER)
+    {
+        if (Player* player = ToPlayer())
+            if (!player->HasUnitState(UNIT_STATE_POSSESSED))
+                player->SetClientControl(this, !apply);
+    }
 }
 
 void Unit::SetCharmedBy(Unit* charmer, CharmType type)
@@ -13175,7 +13249,7 @@ void Unit::UpdateSplinePosition()
     //    loc.orientation = GetOrientation();
 
     if (GetTypeId() == TYPEID_PLAYER)
-        SetPosition(loc.x, loc.y, loc.z, loc.orientation);
+        UpdatePosition(loc.x, loc.y, loc.z, loc.orientation);
     else
         ToCreature()->SetPosition(loc.x, loc.y, loc.z, loc.orientation);
 }

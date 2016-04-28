@@ -1431,6 +1431,11 @@ class Unit : public WorldObject
 
         void NearTeleportTo(float x, float y, float z, float orientation, bool casting = false);
         void SendTeleportPacket(Position& pos);
+        virtual bool UpdatePosition(float x, float y, float z, float ang, bool teleport = false);
+        // returns true if unit's position really changed
+        bool UpdatePosition(const Position &pos, bool teleport = false) { return UpdatePosition(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), pos.GetOrientation(), teleport); }
+        void UpdateOrientation(float orientation);
+        void UpdateHeight(float newZ);
 
         void SendMovementFlagUpdate(bool self = false);
 
@@ -2028,9 +2033,10 @@ class Unit : public WorldObject
         Movement::MoveSpline* movespline;
 
         void SetControlled(bool apply, UnitState state);
-        void SetFeared(bool apply/*, uint64 casterGUID = 0, uint32 spellID = 0*/);
-        void SetConfused(bool apply/*, uint64 casterGUID = 0, uint32 spellID = 0*/);
+        void SetFeared(bool apply);
+        void SetConfused(bool apply);
         void SetStunned(bool apply);
+        void SetRooted(bool apply);
 
         void MonsterMoveWithSpeed(float x, float y, float z, float speed, bool generatePath = false, bool forceDestination = false);
         void SendMonsterMoveWithSpeedToCurrentDestination(float speed);
@@ -2098,8 +2104,6 @@ class Unit : public WorldObject
         bool IsFalling() const;
         bool IsWalking() const { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_WALK_MODE); }
         bool IsRooted() const { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_ROOT); }
-
-        void SetRooted(bool apply);
 
         virtual bool SetWalk(bool enable);
         virtual bool SetSwim(bool enable);
@@ -2204,13 +2208,17 @@ class Unit : public WorldObject
         bool HandleOverrideClassScriptAuraProc(Unit* pVictim, Aura* triggredByAura, SpellEntry const* procSpell, uint32 cooldown);
         bool HandleMendingAuraProc(Aura* triggeredByAura);
 
+        void UpdateSplineMovement(uint32 t_diff);
+        void UpdateSplinePosition();
+
+        uint32 m_rootTimes;
         uint32 m_state;                                     // Even derived shouldn't modify
         uint32 m_CombatTimer;
         uint32 m_lastManaUse;                               // msecs
 
         Spell* m_currentSpells[CURRENT_MAX_SPELL];
 
-        TimeTrackerSmall m_movesplineTimer;
+        //TimeTrackerSmall m_movesplineTimer;
 
         Diminishing m_Diminishing;
         // Manage all Units threatening us
@@ -2230,9 +2238,6 @@ class Unit : public WorldObject
         uint32 m_procDeep;
 
         time_t _lastDamagedTime; // Part of Evade mechanics
-
-        void UpdateSplineMovement(uint32 t_diff);
-        void UpdateSplinePosition();
 };
 
 namespace Oregon

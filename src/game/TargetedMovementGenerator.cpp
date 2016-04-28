@@ -164,7 +164,7 @@ bool TargetedMovementGeneratorMedium<T, D>::Update(T& owner, const uint32& time_
     if (!i_target.isValid() || !i_target->IsInWorld())
         return false;
 
-    if (!owner.IsAlive())
+    if (!&owner || !owner.IsAlive())
         return false;
 
     if (owner.HasUnitState(UNIT_STATE_NOT_MOVE))

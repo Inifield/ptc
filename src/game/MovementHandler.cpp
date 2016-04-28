@@ -215,7 +215,7 @@ void WorldSession::HandleMoveTeleportAck(WorldPacket& recv_data)
 
     WorldLocation const& dest = plMover->GetTeleportDest();
 
-    plMover->SetPosition(dest, true);
+    plMover->UpdatePosition(dest, true);
 
     uint32 newzone = plMover->GetZoneId();
 
@@ -239,12 +239,16 @@ void WorldSession::HandleMoveTeleportAck(WorldPacket& recv_data)
         plMover->m_temporaryUnsummonedPetNumber = 0;
     }
 
+    plMover->GetMotionMaster()->ReinitializeMovement();
+
     //lets process all delayed operations on successful teleport
     plMover->ProcessDelayedOperations();
 }
 
 void WorldSession::HandleMovementOpcodes(WorldPacket& recv_data)
 {
+    uint16 opcode = recv_data.GetOpcode();
+
     Unit* mover = _player->m_mover;
 
     ASSERT(mover != NULL);                                  // there must always be a mover
@@ -258,12 +262,14 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recv_data)
         return;
     }
 
-    //get opcode
-    uint16 opcode = recv_data.GetOpcode();
-
     /* extract packet */
     MovementInfo movementInfo;
     recv_data >> movementInfo;
+	
+    // pussywizard: typical check for incomming movement packets
+    if (!mover || !mover->IsInWorld() || mover->IsDuringRemoveFromWorld())
+        return;
+
     /*----------------*/
 
     /*if (recv_data.size() != recv_data.rpos())
@@ -500,7 +506,7 @@ void WorldSession::HandleMoveKnockBackAck(WorldPacket& recv_data)
     mstime = getMSTime();
     if(m_clientTimeDelay == 0)
         m_clientTimeDelay = mstime - movementInfo.time;
-    move_time = (movementInfo.time - (mstime - m_clientTimeDelay)) + mstime + 500;
+    move_time = (movementInfo.time - (mstime - m_clientTimeDelay)) + mstime;
     movementInfo.time = move_time;
 
     // Save movement flags
