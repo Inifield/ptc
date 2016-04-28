@@ -9263,6 +9263,10 @@ int32 Unit::ModifyHealth(int32 dVal)
     if (dVal == 0)
         return 0;
 
+    // Part of Evade mechanics. Only track health lost, not gained.
+    if (dVal < 0 && GetTypeId() != TYPEID_PLAYER && !ToCreature()->IsPet())
+        SetLastDamagedTime(time(NULL));
+
     int32 curHealth = (int32)GetHealth();
 
     int32 val = dVal + curHealth;
@@ -9905,28 +9909,6 @@ Unit* Creature::SelectVictim()
         }
         return target;
     }
-
-    // Case where mob is being kited.
-    // Mob may not be in range to attack or may have dropped target. In any case,
-    //  don't evade if damage received within the last 10 seconds
-    // Does not apply to world bosses to prevent kiting to cities
-    /* @todo: Fix this
-    if (!isWorldBoss() && !GetInstanceId())
-        if (time(NULL) - GetLastDamagedTime() <= MAX_AGGRO_RESET_TIME)
-            return target;*/
-
-    // last case when creature don't must go to evade mode:
-    // it in combat but attacker not make any damage and not enter to aggro radius to have record in threat list
-    // for example at owner command to pet attack some far away creature
-    // Note: creature not have targeted movement generator but have attacker in this case
-    /*if (GetMotionMaster()->GetCurrentMovementGeneratorType() != TARGETED_MOTION_TYPE)
-    {
-        for (AttackerSet::const_iterator itr = m_attackers.begin(); itr != m_attackers.end(); ++itr)
-        {
-            if ((*itr)->IsInMap(this) && canAttack(*itr) && (*itr)->isInAccessiblePlaceFor(ToCreature()))
-                return NULL;
-        }
-    }*/
 
     // search nearby enemy before enter evade mode
     if (HasReactState(REACT_AGGRESSIVE))

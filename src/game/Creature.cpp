@@ -2047,6 +2047,14 @@ bool Creature::CanCreatureAttack(Unit const* victim) const
     if (GetMap()->IsDungeon())
         return true;
 
+    // Case where mob is being kited.
+    // Mob may not be in range to attack or may have dropped target. In any case,
+    // don't evade if damage received within the last 10 seconds
+    // Does not apply to world bosses to prevent kiting to cities
+    if (!isWorldBoss() && !GetInstanceId())
+        if (time(NULL) - GetLastDamagedTime() <= MAX_AGGRO_RESET_TIME)
+            return false;
+
     //Use AttackDistance in distance check if threat radius is lower. This prevents creature bounce in and out of combat every update tick.
     float dist = std::max(uint32(GetAttackDistance(victim)), sWorld.getConfig(CONFIG_THREAT_RADIUS)) + m_CombatDistance;
 
