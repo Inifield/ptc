@@ -287,6 +287,26 @@ MotionMaster::MovePoint(uint32 id, float x, float y, float z, bool usePathfindin
     }
 }
 
+void 
+MotionMaster::MoveSplinePath(Movement::PointsArray* path)
+{
+    // Xinef: do not allow to move with UNIT_FLAG_DISABLE_MOVE
+    if (i_owner->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE))
+        return;
+
+    if (i_owner->GetTypeId() == TYPEID_PLAYER)
+    {
+        ;//sLog->outStaticDebug("Player (GUID: %u) targeted point (Id: %u X: %f Y: %f Z: %f)", _owner->GetGUIDLow(), id, x, y, z);
+        Mutate(new EscortMovementGenerator<Player>(path), MOTION_SLOT_ACTIVE);
+    }
+    else
+    {
+        ;//sLog->outStaticDebug("Creature (Entry: %u GUID: %u) targeted point (ID: %u X: %f Y: %f Z: %f)",
+        //    _owner->GetEntry(), _owner->GetGUIDLow(), id, x, y, z);
+        Mutate(new EscortMovementGenerator<Creature>(path), MOTION_SLOT_ACTIVE);
+    }
+}
+
 void
 MotionMaster::MoveCharge(float x, float y, float z, float speed, uint32 id, bool usePathfinding)
 {

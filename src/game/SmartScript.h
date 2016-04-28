@@ -1,22 +1,22 @@
 /*
-* This file is part of the OregonCore Project. See AUTHORS file for Copyright information
-*
-* This program is free software; you can redistribute it and/or modify it
-* under the terms of the GNU General Public License as published by the
-* Free Software Foundation; either version 2 of the License, or (at your
-* option) any later version.
-*
-* This program is distributed in the hope that it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
-* more details.
-*
-* You should have received a copy of the GNU General Public License along
-* with this program. If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (C) 
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
-#ifndef OREGON_SMARTSCRIPT_H
-#define OREGON_SMARTSCRIPT_H
+#ifndef TRINITY_SMARTSCRIPT_H
+#define TRINITY_SMARTSCRIPT_H
 
 #include "Common.h"
 #include "Creature.h"
@@ -65,22 +65,22 @@ class SmartScript
 
         bool IsUnit(WorldObject* obj)
         {
-            return obj && (obj->GetTypeId() == TYPEID_UNIT || obj->GetTypeId() == TYPEID_PLAYER);
+            return obj && obj->IsInWorld() && (obj->GetTypeId() == TYPEID_UNIT || obj->GetTypeId() == TYPEID_PLAYER);
         }
 
         bool IsPlayer(WorldObject* obj)
         {
-            return obj && obj->GetTypeId() == TYPEID_PLAYER;
+            return obj && obj->IsInWorld() && obj->GetTypeId() == TYPEID_PLAYER;
         }
 
         bool IsCreature(WorldObject* obj)
         {
-            return obj && obj->GetTypeId() == TYPEID_UNIT;
+            return obj && obj->IsInWorld() && obj->GetTypeId() == TYPEID_UNIT;
         }
 
         bool IsGameObject(WorldObject* obj)
         {
-            return obj && obj->GetTypeId() == TYPEID_GAMEOBJECT;
+            return obj && obj->IsInWorld() && obj->GetTypeId() == TYPEID_GAMEOBJECT;
         }
 
         void OnUpdate(const uint32 diff);
@@ -118,7 +118,7 @@ class SmartScript
                 smart = false;
 
             if (!smart)
-                sLog.outError("SmartScript: Action target Creature (GUID: %u Entry: %u) is not using SmartAI, action called by Creature (GUID: %u Entry: %u) skipped to prevent crash.", c ? c->GetDBTableGUIDLow() : 0, c ? c->GetEntry() : 0, me ? me->GetDBTableGUIDLow() : 0, me ? me->GetEntry() : 0);
+                sLog.outErrorDb("SmartScript: Action target Creature(entry: %u) is not using SmartAI, action skipped to prevent crash.", c ? c->GetEntry() : (me ? me->GetEntry() : 0));
 
             return smart;
         }
@@ -132,7 +132,7 @@ class SmartScript
             if (!go || go->GetAIName() != "SmartGameObjectAI")
                 smart = false;
             if (!smart)
-                sLog.outError("SmartScript: Action target GameObject (GUID: %u Entry: %u) is not using SmartGameObjectAI, action called by GameObject (GUID: %u Entry: %u) skipped to prevent crash.", g ? g->GetDBTableGUIDLow() : 0, g ? g->GetEntry() : 0, go ? go->GetDBTableGUIDLow() : 0, go ? go->GetEntry() : 0);
+                sLog.outErrorDb("SmartScript: Action target GameObject(entry: %u) is not using SmartGameObjectAI, action skipped to prevent crash.", g ? g->GetEntry() : (go ? go->GetEntry() : 0));
 
             return smart;
         }
@@ -147,24 +147,18 @@ class SmartScript
 
         void StoreCounter(uint32 id, uint32 value, uint32 reset)
         {
-            CounterMap::const_iterator itr = mCounterList.find(id);
+            CounterMap::iterator itr = mCounterList.find(id);
             if (itr != mCounterList.end())
             {
                 if (reset == 0)
-                    value += GetCounterValue(id);
-                mCounterList.erase(id);
+                    itr->second += value;
+                else
+                    itr->second = value;
             }
+            else
+                mCounterList.insert(std::make_pair(id, value));
 
-            mCounterList.insert(std::make_pair(id, value));
-            ProcessEventsFor(SMART_EVENT_COUNTER_SET);
-        }
-
-        uint32 GetCounterId(uint32 id)
-        {
-            CounterMap::iterator itr = mCounterList.find(id);
-            if (itr != mCounterList.end())
-                return itr->first;
-            return 0;
+            ProcessEventsFor(SMART_EVENT_COUNTER_SET, NULL, id);
         }
 
         uint32 GetCounterValue(uint32 id)
@@ -186,7 +180,7 @@ class SmartScript
             Oregon::GameObjectSearcher<Oregon::GameObjectWithDbGUIDCheck> checker(gameObject, goCheck);
 
             TypeContainerVisitor<Oregon::GameObjectSearcher<Oregon::GameObjectWithDbGUIDCheck>, GridTypeMapContainer > objectChecker(checker);
-            cell.Visit(p, objectChecker, *searchObject->GetMap(), *searchObject, searchObject->GetGridActivationRange());
+            cell.Visit(p, objectChecker, *searchObject->GetMap(), *searchObject, searchObject->GetVisibilityRange());
 
             return gameObject;
         }
@@ -194,7 +188,6 @@ class SmartScript
         Creature* FindCreatureNear(WorldObject* searchObject, uint32 guid) const
         {
             Creature* creature = NULL;
-            
             CellCoord p(Oregon::ComputeCellCoord(searchObject->GetPositionX(), searchObject->GetPositionY()));
             Cell cell(p);
 
@@ -202,7 +195,7 @@ class SmartScript
             Oregon::CreatureSearcher<Oregon::CreatureWithDbGUIDCheck> checker(creature, target_check);
 
             TypeContainerVisitor<Oregon::CreatureSearcher <Oregon::CreatureWithDbGUIDCheck>, GridTypeMapContainer > unit_checker(checker);
-            cell.Visit(p, unit_checker, *searchObject->GetMap(), *searchObject, searchObject->GetGridActivationRange());
+            cell.Visit(p, unit_checker, *searchObject->GetMap(), *searchObject, searchObject->GetVisibilityRange());
 
             return creature;
         }
@@ -228,35 +221,53 @@ class SmartScript
                     go = o;
                 }
             }
-            goOrigGUID.Clear();
-            meOrigGUID.Clear();
+            goOrigGUID = 0;
+            meOrigGUID = 0;
         }
 
         //TIMED_ACTIONLIST (script type 9 aka script9)
         void SetScript9(SmartScriptHolder& e, uint32 entry);
-        Unit* GetLastInvoker();
-        ObjectGuid mLastInvoker;
+        Unit* GetLastInvoker(Unit* invoker = NULL);
+        uint64 mLastInvoker;
         typedef UNORDERED_MAP<uint32, uint32> CounterMap;
         CounterMap mCounterList;
 
+        // Xinef: Fix Combat Movement
+        void SetActualCombatDist(uint32 dist) { mActualCombatDist = dist; }
+        void RestoreMaxCombatDist() { mActualCombatDist = mMaxCombatDist; }
+        uint32 GetActualCombatDist() const { return mActualCombatDist; }
+        uint32 GetMaxCombatDist() const { return mMaxCombatDist; }
+
+        // Xinef: SmartCasterAI, replace above
+        void SetCasterActualDist(float dist) { smartCasterActualDist = dist; }
+        void RestoreCasterMaxDist() { smartCasterActualDist = smartCasterMaxDist; }
+        Powers GetCasterPowerType() const { return smartCasterPowerType; }
+        float GetCasterActualDist() const { return smartCasterActualDist; }
+        float GetCasterMaxDist() const { return smartCasterMaxDist; }
+
+        bool AllowPhaseReset() const { return _allowPhaseReset; }
+        void SetPhaseReset(bool allow) { _allowPhaseReset = allow; }
+
     private:
-        void IncPhase(int32 p = 1)
+        void IncPhase(uint32 p)
         {
-            if (p >= 0)
-                mEventPhase += (uint32)p;
-            else
-                DecPhase(abs(p));
+            // Xinef: protect phase from overflowing
+            mEventPhase = std::min<uint32>(SMART_EVENT_PHASE_12, mEventPhase + p);
         }
 
-        void DecPhase(int32 p = 1) 
-        { 
-            if(mEventPhase > (uint32)p)
-                mEventPhase -= (uint32)p; 
-            else
+        void DecPhase(uint32 p) 
+        {
+            if (p >= mEventPhase)
                 mEventPhase = 0;
+            else
+                mEventPhase -= p;
         }
-
-        bool IsInPhase(uint32 p) const { return ((1 << (mEventPhase - 1)) & p) != 0; }
+        bool IsInPhase(uint32 p) const 
+        { 
+            if (mEventPhase == 0)
+                return false;
+            return (1 << (mEventPhase - 1)) & p;
+        }
         void SetPhase(uint32 p = 0) { mEventPhase = p; }
 
         SmartAIEventList mEvents;
@@ -264,38 +275,68 @@ class SmartScript
         SmartAIEventList mTimedActionList;
         bool isProcessingTimedActionList;
         Creature* me;
-        ObjectGuid meOrigGUID;
+        uint64 meOrigGUID;
         GameObject* go;
-        ObjectGuid goOrigGUID;
+        uint64 goOrigGUID;
         AreaTriggerEntry const* trigger;
         SmartScriptType mScriptType;
         uint32 mEventPhase;
 
+        UNORDERED_MAP<int32, int32> mStoredDecimals;
         uint32 mPathId;
-        SmartAIEventList mStoredEvents;
-        std::list<uint32>mRemIDs;
+        SmartAIEventStoredList mStoredEvents;
+        std::list<uint32> mRemIDs;
 
         uint32 mTextTimer;
         uint32 mLastTextID;
         uint32 mTalkerEntry;
         bool mUseTextTimer;
 
+        // Xinef: Fix Combat Movement
+        uint32 mActualCombatDist;
+        uint32 mMaxCombatDist;
+
+        // Xinef: SmartCasterAI, replace above in future
+        uint32 smartCasterActualDist;
+        uint32 smartCasterMaxDist;
+        Powers smartCasterPowerType;
+
+        // Xinef: misc
+        bool _allowPhaseReset;
+
         SMARTAI_TEMPLATE mTemplate;
         void InstallEvents();
 
-        void RemoveStoredEvent(uint32 id)
+        void RemoveStoredEvent (uint32 id)
         {
             if (!mStoredEvents.empty())
             {
-                for (SmartAIEventList::iterator i = mStoredEvents.begin(); i != mStoredEvents.end(); ++i)
+                for (SmartAIEventStoredList::iterator i = mStoredEvents.begin(); i != mStoredEvents.end(); ++i)
                 {
                     if (i->event_id == id)
                     {
                         mStoredEvents.erase(i);
                         return;
                     }
+
                 }
             }
+        }
+        SmartScriptHolder FindLinkedEvent (uint32 link)
+        {
+            if (!mEvents.empty())
+            {
+                for (SmartAIEventList::iterator i = mEvents.begin(); i != mEvents.end(); ++i)
+                {
+                    if (i->event_id == link)
+                    {
+                        return (*i);
+                    }
+
+                }
+            }
+            SmartScriptHolder s;
+            return s;
         }
 };
 

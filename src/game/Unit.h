@@ -430,6 +430,11 @@ enum UnitState
     UNIT_STATE_MOVE               = 0x00100000,
     UNIT_STATE_ROTATING           = 0x00200000,
     UNIT_STATE_EVADE              = 0x00400000,
+    UNIT_STATE_ROAMING_MOVE       = 0x00800000,
+    UNIT_STATE_CONFUSED_MOVE      = 0x01000000,
+    UNIT_STATE_FLEEING_MOVE       = 0x02000000,
+    UNIT_STATE_CHASE_MOVE         = 0x04000000,
+    UNIT_STATE_FOLLOW_MOVE        = 0x08000000,
     UNIT_STATE_IGNORE_PATHFINDING = 0x10000000,                 // do not use pathfinding in any MovementGenerator
 
     UNIT_STATE_UNATTACKABLE    = UNIT_STATE_IN_FLIGHT,
@@ -440,6 +445,7 @@ enum UnitState
     UNIT_STATE_SIGHTLESS       = (UNIT_STATE_LOST_CONTROL | UNIT_STATE_EVADE),
     UNIT_STATE_CANNOT_AUTOATTACK     = (UNIT_STATE_LOST_CONTROL | UNIT_STATE_CASTING),
     UNIT_STATE_CANNOT_TURN     = (UNIT_STATE_LOST_CONTROL | UNIT_STATE_ROTATING),
+    UNIT_STATE_NOT_MOVE        = UNIT_STATE_ROOT | UNIT_STATE_STUNNED | UNIT_STATE_DIED | UNIT_STATE_DISTRACTED,
     UNIT_STATE_ALL_STATE       = 0xffffffff                      //(UNIT_STATEE_STOPPED | UNIT_STATEE_MOVING | UNIT_STATEE_IN_COMBAT | UNIT_STATEE_IN_FLIGHT)
 };
 
@@ -1051,6 +1057,7 @@ class Unit : public WorldObject
         float GetHealthPct() const { return GetMaxHealth() ? 100.f * GetHealth() / GetMaxHealth() : 0.0f; }
         uint32 CountPctFromMaxHealth(int32 pct) const { return CalculatePct(GetMaxHealth(), pct); }
         uint32 CountPctFromCurHealth(int32 pct) const { return CalculatePct(GetHealth(), pct); }
+        float GetPowerPct(Powers power) const { return GetMaxPower(power) ? 100.f * GetPower(power) / GetMaxPower(power) : 0.0f; }
 
         void SetHealth(  uint32 val);
         void SetMaxHealth(uint32 val);

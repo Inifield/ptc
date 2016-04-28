@@ -22,6 +22,7 @@
 #include <vector>
 #include "SharedDefines.h"
 #include "Object.h"
+#include "MoveSpline.h"
 
 class MovementGenerator;
 class Unit;
@@ -51,7 +52,8 @@ enum MovementGeneratorType
     ROTATE_MOTION_TYPE    = 14,
     FOLLOW_MOTION_TYPE    = 15,                             // TargetedMovementGenerator.h
     EFFECT_MOTION_TYPE    = 16,
-    NULL_MOTION_TYPE      = 17,
+    ESCORT_MOTION_TYPE    = 17,                             // xinef: EscortMovementGenerator.h
+    NULL_MOTION_TYPE      = 18,
     TARGETED_MOTION_TYPE = (CHASE_MOTION_TYPE | FOLLOW_MOTION_TYPE),
 };
 
@@ -180,7 +182,8 @@ class MotionMaster //: private std::stack<MovementGenerator *>
         {
             MovePoint(id, pos.m_positionX, pos.m_positionY, pos.m_positionZ, usePathfinding);
         }
-        void MovePoint(uint32 id, float x, float y, float z, bool usePathfinding = true);
+        void MovePoint(uint32 id, float x, float y, float z, bool usePathfinding = true);	
+        void MoveSplinePath(Movement::PointsArray* path);
         void MoveCharge(float x, float y, float z, float speed = SPEED_CHARGE, uint32 id = EVENT_CHARGE, bool usePathfinding = true);
         void MoveFall(float z = 0, uint32 id = 0);
         void MoveSeekAssistance(float x, float y, float z);
