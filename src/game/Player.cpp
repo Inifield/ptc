@@ -1589,6 +1589,15 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     SetUnitMovementFlags(MOVEMENTFLAG_NONE);
     DisableSpline();
 
+    // Xinef: Remove all movement imparing effects auras, skip small teleport like blink
+    if (mapid != GetMapId() || GetDistance2d(x, y) > 100)
+    {
+        RemoveAurasByType(SPELL_AURA_MOD_STUN);
+        RemoveAurasByType(SPELL_AURA_MOD_FEAR);
+        RemoveAurasByType(SPELL_AURA_MOD_CONFUSE);
+        RemoveAurasByType(SPELL_AURA_MOD_ROOT);
+    }
+
     if (m_transport)
     {
         if (options & TELE_TO_NOT_LEAVE_TRANSPORT)
