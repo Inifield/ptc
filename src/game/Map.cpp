@@ -314,32 +314,37 @@ void Map::DeleteFromWorld(Player* pl)
     delete pl;
 }
 
+void Map::EnsureGridCreated(const GridCoord &p)
+{
+    if (getNGrid(p.x_coord, p.y_coord)) // pussywizard
+        return;
+
+    Guard guard(*this);
+    EnsureGridCreated_i(p);
+}
+
 //Create NGrid so the object can be added to it
 //But object data is not loaded here
-void Map::EnsureGridCreated(const GridCoord &p)
+void Map::EnsureGridCreated_i(const GridCoord &p)
 {
     if (!getNGrid(p.x_coord, p.y_coord))
     {
-        Guard guard(*this);
-        if (!getNGrid(p.x_coord, p.y_coord))
-        {
-            sLog.outMap("Creating grid[%u,%u] for map %u instance %u", p.x_coord, p.y_coord, GetId(), i_InstanceId);
+        sLog.outMap("Creating grid[%u,%u] for map %u instance %u", p.x_coord, p.y_coord, GetId(), i_InstanceId);
 
-            setNGrid(new NGridType(p.x_coord * MAX_NUMBER_OF_GRIDS + p.y_coord, p.x_coord, p.y_coord, i_gridExpiry, sWorld.getConfig(CONFIG_GRID_UNLOAD)),
-                     p.x_coord, p.y_coord);
+        setNGrid(new NGridType(p.x_coord * MAX_NUMBER_OF_GRIDS + p.y_coord, p.x_coord, p.y_coord, i_gridExpiry, sWorld.getConfig(CONFIG_GRID_UNLOAD)),
+                p.x_coord, p.y_coord);
 
-            // build a linkage between this map and NGridType
-            buildNGridLinkage(getNGrid(p.x_coord, p.y_coord));
+        // build a linkage between this map and NGridType
+        buildNGridLinkage(getNGrid(p.x_coord, p.y_coord));
 
-            getNGrid(p.x_coord, p.y_coord)->SetGridState(GRID_STATE_IDLE);
+        getNGrid(p.x_coord, p.y_coord)->SetGridState(GRID_STATE_IDLE);
 
-            //z coord
-            int gx = (MAX_NUMBER_OF_GRIDS - 1) - p.x_coord;
-            int gy = (MAX_NUMBER_OF_GRIDS - 1) - p.y_coord;
+        //z coord
+        int gx = (MAX_NUMBER_OF_GRIDS - 1) - p.x_coord;
+        int gy = (MAX_NUMBER_OF_GRIDS - 1) - p.y_coord;
 
-            if (!GridMaps[gx][gy])
-                LoadMapAndVMap(gx, gy);
-        }
+        if (!GridMaps[gx][gy])
+            LoadMapAndVMap(gx, gy);
     }
 }
 
@@ -1542,7 +1547,7 @@ inline ZLiquidStatus GridMap::getLiquidStatus(float x, float y, float z, uint8 R
     return LIQUID_MAP_ABOVE_WATER;
 }
 
-inline GridMap* Map::GetGrid(float x, float y)
+GridMap* Map::GetGrid(float x, float y)
 {
     // half opt method
     int gx = (int)(CENTER_GRID_ID - x / SIZE_OF_GRIDS);                       //grid x

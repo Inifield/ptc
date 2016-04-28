@@ -514,12 +514,14 @@ class Map : public GridRefManager<NGridType>, public Oregon::ObjectLevelLockable
         void Insert(const GameObjectModel& mdl) { m_dyn_tree.insert(mdl); }
         bool Contains(const GameObjectModel& mdl) const { return m_dyn_tree.contains(mdl);}
         bool getObjectHitPos(float x1, float y1, float z1, float x2, float y2, float z2, float& rx, float &ry, float& rz, float modifyDist);
+		
+        GridMap* GetGrid(float x, float y);
+        void EnsureGridCreated(const GridCoord&);
     private:
         void LoadMapAndVMap(int gx, int gy);
         void LoadVMap(int gx, int gy);
         void LoadMMap(int gx, int gy);
         void LoadMap(int gx, int gy, bool reload = false);
-        GridMap* GetGrid(float x, float y);
 
         void SetTimer(uint32 t)
         {
@@ -537,7 +539,7 @@ class Map : public GridRefManager<NGridType>, public Oregon::ObjectLevelLockable
         CreatureMoveList i_creaturesToMove;
 
         bool IsGridLoaded(const GridCoord &) const;
-        void EnsureGridCreated(const GridCoord&);
+        void EnsureGridCreated_i(const GridCoord&);
         bool EnsureGridLoaded(Cell const&);
         void EnsureGridLoadedForActiveObject(Cell const&, WorldObject* object);
 
