@@ -868,6 +868,10 @@ class Creature : public Unit, public GridObject<Creature>
 
         bool m_isTempWorldObject; //true when possessed
 
+                                  // Part of Evade mechanics
+        time_t GetLastDamagedTime() const { return _lastDamagedTime; }
+        void SetLastDamagedTime(time_t val) { _lastDamagedTime = val; }
+
     protected:
         bool CreateFromProto(uint32 guidlow, uint32 Entry, uint32 team, const CreatureData* data = NULL);
         bool InitEntry(uint32 entry, uint32 team = ALLIANCE, const CreatureData* data = NULL);
@@ -931,6 +935,8 @@ class Creature : public Unit, public GridObject<Creature>
         CreatureGroup* m_formation;
 
         bool TriggerJustRespawned;
+
+        time_t _lastDamagedTime; // Part of Evade mechanics
 
         CreatureInfo const* m_creatureInfo;                 // in heroic mode can different from sObjectMgr::GetCreatureTemplate(GetEntry())
 

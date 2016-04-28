@@ -2120,10 +2120,6 @@ class Unit : public WorldObject
         uint64 LastCharmerGUID;
         bool m_ControlledByPlayer;
 
-        // Part of Evade mechanics
-        time_t GetLastDamagedTime() const { return _lastDamagedTime; }
-        void SetLastDamagedTime(time_t val) { _lastDamagedTime = val; }
-
         TempSummon* ToTempSummon() { if (IsSummon()) return reinterpret_cast<TempSummon*>(this); else return NULL; }
         TempSummon const* ToTempSummon() const { if (IsSummon()) return reinterpret_cast<TempSummon const*>(this); else return NULL; }
 
@@ -2236,8 +2232,6 @@ class Unit : public WorldObject
         bool m_duringRemoveFromWorld; // lock made to not add stuff after begining removing from world
 
         uint32 m_procDeep;
-
-        time_t _lastDamagedTime; // Part of Evade mechanics
 };
 
 namespace Oregon

@@ -152,7 +152,7 @@ Creature::Creature(bool isWorldObject): Unit(isWorldObject),
     m_defaultMovementType(IDLE_MOTION_TYPE), m_DBTableGuid(0), m_equipmentId(0),
     m_AlreadyCallAssistance(false), m_AlreadySearchedAssistance(false), m_regenHealth(true), m_AI_locked(false),
     m_meleeDamageSchoolMask(SPELL_SCHOOL_MASK_NORMAL), DisableReputationGain(false), m_creatureData(NULL),
-    m_formation(NULL), m_creatureInfo(NULL)
+    m_formation(NULL), m_creatureInfo(NULL), _lastDamagedTime(0)
 {
     m_regenTimer = CREATURE_REGEN_INTERVAL;
     m_valuesCount = UNIT_END;
@@ -2067,13 +2067,10 @@ bool Creature::CanCreatureAttack(Unit const* victim) const
     if (GetMap()->IsDungeon())
         return true;
 
-    // Case where mob is being kited.
-    // Mob may not be in range to attack or may have dropped target. In any case,
-    // don't evade if damage received within the last 10 seconds
-    // Does not apply to world bosses to prevent kiting to cities
-    if (!isWorldBoss() && !GetInstanceId())
-        if (time(NULL) - GetLastDamagedTime() <= MAX_AGGRO_RESET_TIME)
-            return false;
+    // pussywizard: don't check distance to home position if recently damaged (allow kiting away from spawnpoint!)
+    // xinef: this should include taunt auras
+    if (!isWorldBoss() && (GetLastDamagedTime() > sWorld.GetGameTime() || HasAuraType(SPELL_AURA_MOD_TAUNT)))
+        return true;
 
     //Use AttackDistance in distance check if threat radius is lower. This prevents creature bounce in and out of combat every update tick.
     float dist = std::max(uint32(GetAttackDistance(victim)), sWorld.getConfig(CONFIG_THREAT_RADIUS)) + m_CombatDistance;

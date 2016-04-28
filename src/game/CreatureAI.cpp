@@ -226,9 +226,6 @@ void CreatureAI::EnterEvadeMode()
     if (!_EnterEvadeMode())
         return;
 
-    // Required to prevent attacking creatures that are evading and cause them to reenter combat
-    // Does not apply to MoveFollow
-    me->AddUnitState(UNIT_STATE_EVADE);
     sLog.outDebug("Creature %u enters evade mode.", me->GetEntry());
 
     if (Unit* owner = me->GetCharmerOrOwner())
@@ -245,8 +242,6 @@ void CreatureAI::EnterEvadeMode()
     }
 
     Reset();
-
-    me->SetLastDamagedTime(0);
 }
 
 /*void CreatureAI::AttackedBy(Unit* attacker)
