@@ -503,7 +503,6 @@ bool ChatHandler::HandleReloadAllLootCommand(const char*)
 
 bool ChatHandler::HandleReloadAllNpcCommand(const char* /*args*/)
 {
-    HandleReloadNpcGossipCommand("a");
     HandleReloadNpcTrainerCommand("a");
     HandleReloadNpcVendorCommand("a");
     return true;
@@ -802,14 +801,6 @@ bool ChatHandler::HandleReloadOregonStringCommand(const char*)
     sLog.outString("Re-Loading oregon_string Table!");
     sObjectMgr.LoadOregonStrings();
     SendGlobalGMSysMessage("DB table oregon_string reloaded.");
-    return true;
-}
-
-bool ChatHandler::HandleReloadNpcGossipCommand(const char*)
-{
-    sLog.outString("Re-Loading npc_gossip Table!");
-    sObjectMgr.LoadNpcTextId();
-    SendGlobalGMSysMessage("DB table npc_gossip reloaded.");
     return true;
 }
 

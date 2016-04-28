@@ -1463,9 +1463,6 @@ void World::SetInitialWorldSettings()
     sConsole.SetLoadingLabel("Loading GameTeleports...");
     sObjectMgr.LoadGameTele();
 
-    sConsole.SetLoadingLabel("Loading Npc Text Id...");
-    sObjectMgr.LoadNpcTextId();                                 // must be after load Creature and NpcText
-
     sConsole.SetLoadingLabel( "Loading Gossip scripts...");
     sObjectMgr.LoadGossipScripts();                             // must be before gossip menu options
 

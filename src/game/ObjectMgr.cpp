@@ -7082,51 +7082,6 @@ void ObjectMgr::LoadVendors()
     sLog.outString(">> Loaded %d Vendors ", count);
 }
 
-void ObjectMgr::LoadNpcTextId()
-{
-
-    m_mCacheNpcTextIdMap.clear();
-
-    QueryResult_AutoPtr result = WorldDatabase.Query("SELECT npc_guid, textid FROM npc_gossip");
-    if (!result)
-    {
-
-
-        sLog.outErrorDb(">> Loaded npc_gossip, table is empty!");
-        return;
-    }
-
-
-    uint32 count = 0;
-    uint32 guid, textid;
-    do
-    {
-
-        Field* fields = result->Fetch();
-
-        guid   = fields[0].GetUInt32();
-        textid = fields[1].GetUInt32();
-
-        if (!GetCreatureData(guid))
-        {
-            sLog.outErrorDb("Table npc_gossip has invalid creature (GUID: %u) entry, ignore. ", guid);
-            continue;
-        }
-        if (!GetGossipText(textid))
-        {
-            sLog.outErrorDb("Table npc_gossip for creature (GUID: %u) has invalid Textid (%u), ignore. ", guid, textid);
-            continue;
-        }
-
-        m_mCacheNpcTextIdMap[guid] = textid ;
-        ++count;
-
-    }
-    while (result->NextRow());
-
-    sLog.outString(">> Loaded %d NpcTextId ", count);
-}
-
 void ObjectMgr::LoadGossipMenu()
 {
     m_mGossipMenusMap.clear();
