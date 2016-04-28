@@ -711,40 +711,6 @@ void GameEventMgr::LoadFromDB()
         sLog.outString(">> Loaded %u vendor additions in game events", count);
     }
 
-    // load game event npc gossip ids
-    //                                   0         1        2
-    result = WorldDatabase.Query("SELECT guid, event_id, textid FROM game_event_npc_gossip");
-
-    count = 0;
-    if (!result)
-
-        sLog.outString(">> Loaded %u npc gossip textids in game events", count);
-    else
-    {
-
-        do
-        {
-            Field* fields = result->Fetch();
-
-            uint32 guid     = fields[0].GetUInt32();
-            uint16 event_id = fields[1].GetUInt16();
-            uint32 textid  = fields[2].GetUInt32();
-
-            if (event_id >= mGameEvent.size())
-            {
-                sLog.outErrorDb("game_event_npc_gossip game event id (%u) is out of range compared to max event id in game_event", event_id);
-                continue;
-            }
-
-            mNPCGossipIds[guid] = EventNPCGossipIdPair(event_id, textid);
-
-            ++count;
-
-        }
-        while (result->NextRow());
-        sLog.outString(">> Loaded %u npc gossip textids in game events", count);
-    }
-
     // set all flags to 0
     mGameEventBattlegroundHolidays.resize(mGameEvent.size(), 0);
     // load game event battleground flags
@@ -1426,18 +1392,6 @@ void GameEventMgr::SaveWorldEventStateToDB(uint16 event_id)
     else
         CharacterDatabase.PExecute("INSERT INTO game_event_save (event_id, state, next_start) VALUES ('%u','%u','0000-00-00 00:00:00')", event_id, mGameEvent[event_id].state);
     CharacterDatabase.CommitTransaction();
-}
-
-void GameEventMgr::HandleWorldEventGossip(Player* plr, Creature* c)
-{
-    // this function is used to send world state update before sending gossip menu
-    // find the npc's gossip id (if set) in an active game event
-    // if present, send the event's world states
-    GuidEventNpcGossipIdMap::iterator itr = mNPCGossipIds.find(c->GetDBTableGUIDLow());
-    if (itr != mNPCGossipIds.end())
-        if (IsActiveEvent(itr->second.first))
-            // send world state updates to the player about the progress
-            SendWorldStateUpdate(plr, itr->second.first);
 }
 
 void GameEventMgr::SendWorldStateUpdate(Player* plr, uint16 event_id)
