@@ -123,6 +123,9 @@ void PointMovementGenerator<T>::Finalize(T& unit)
 {
     unit.ClearUnitState(UNIT_STATE_ROAMING | UNIT_STATE_ROAMING_MOVE);
 
+    if (unit.HasUnitState(UNIT_STATE_CHARGING))
+        unit.ClearUnitState(UNIT_STATE_CHARGING | UNIT_STATE_JUMPING);
+
     if (unit.movespline->Finalized())
         MovementInform(unit);
 }

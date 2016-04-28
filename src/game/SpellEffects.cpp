@@ -205,7 +205,7 @@ pEffect SpellEffects[TOTAL_SPELL_EFFECTS] =
     &Spell::EffectUnused,                                   //146 SPELL_EFFECT_ACTIVATE_RUNE            unused
     &Spell::EffectQuestFail,                                //147 SPELL_EFFECT_QUEST_FAIL               quest fail
     &Spell::EffectUnused,                                   //148 SPELL_EFFECT_148                      unused
-    &Spell::EffectNULL,                                     //149 SPELL_EFFECT_149                      swoop
+    &Spell::EffectChargeDest,                               //149 SPELL_EFFECT_CHARGE_DEST
     &Spell::EffectUnused,                                   //150 SPELL_EFFECT_150                      unused
     &Spell::EffectTriggerRitualOfSummoning,                 //151 SPELL_EFFECT_TRIGGER_SPELL_2
     &Spell::EffectSummonFriend,                             //152 SPELL_EFFECT_SUMMON_FRIEND            summon Refer-a-Friend
@@ -6492,20 +6492,57 @@ void Spell::EffectCharge(SpellEffIndex /*effIndex*/)
     if (!m_caster)
         return;
 
-    Unit* target = m_targets.getUnitTarget();
+    Unit *target = m_targets.getUnitTarget();
+
     if (!target)
         return;
 
-    float x, y, z;
-    target->GetContactPoint(m_caster, x, y, z);
-    Movement::MoveSplineInit init(*m_caster);
-    init.MoveTo(x, y, z, true);
-    init.SetVelocity(25);
-    init.Launch();
+    // charge changes fall time
+    if (m_caster->GetTypeId() == TYPEID_PLAYER)
+        m_caster->ToPlayer()->SetFallInformation(time(NULL), m_caster->GetPositionZ());
+
+
+    if (m_pathFinder)
+    {
+        m_caster->GetMotionMaster()->MoveCharge(m_pathFinder->GetEndPosition().x, m_pathFinder->GetEndPosition().y, m_pathFinder->GetEndPosition().z, 42.0f, EVENT_CHARGE, &m_pathFinder->GetPath());
+    }
+    else
+    {
+        Position pos;
+        target->GetContactPoint(m_caster, pos.m_positionX, pos.m_positionY, pos.m_positionZ);
+
+        // assume that target is not in water - else should be always in los
+        if (!m_caster->IsWithinLOS(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ()))
+        {
+            float angle = m_caster->GetRelativeAngle(&pos);
+            float dist = m_caster->GetDistance(pos);
+            m_caster->GetFirstCollisionPosition(pos, dist, angle);
+        }
+
+        m_caster->GetMotionMaster()->MoveCharge(pos.m_positionX, pos.m_positionY, pos.m_positionZ + 0.5f);
+    }
 
     // not all charge effects used in negative spells
     if (!IsPositiveSpell(m_spellInfo->Id) && m_caster->GetTypeId() == TYPEID_PLAYER)
         m_caster->Attack(target, true);
+}
+
+void Spell::EffectChargeDest(SpellEffIndex /*effIndex*/)
+{
+    if (m_targets.HasDst())
+    {
+        Position pos;
+        m_targets.m_dstPos.GetPosition(&pos);
+
+        if (!m_caster->IsWithinLOS(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ()))
+        {
+            float angle = m_caster->GetRelativeAngle(&pos);
+            float dist = m_caster->GetDistance(pos);
+            m_caster->GetFirstCollisionPosition(pos, dist, angle);
+        }
+
+        m_caster->GetMotionMaster()->MoveCharge(pos.m_positionX, pos.m_positionY, pos.m_positionZ);
+    }
 }
 
 void Spell::EffectKnockBack(SpellEffIndex effIndex)
