@@ -2092,31 +2092,32 @@ void Unit::AttackerStateUpdate (Unit* victim, WeaponAttackType attType, bool ext
     if (attType == BASE_ATTACK && m_currentSpells[CURRENT_MELEE_SPELL] && !extra)
     {
         m_currentSpells[CURRENT_MELEE_SPELL]->cast();
-        return;
     }
-
-    CalcDamageInfo damageInfo;
-    CalculateMeleeDamage(victim, 0, &damageInfo, attType);
-    // Send log damage message to client
-    SendAttackStateUpdate(&damageInfo);
-
-    ProcDamageAndSpell(damageInfo.target, damageInfo.procAttacker, damageInfo.procVictim, damageInfo.procEx, damageInfo.damage, damageInfo.attackType);
-
-    DealMeleeDamage(&damageInfo, true);
-
-    // We call this last because DealMeleeDamage has to check for sit state to
-    // allow critical hits, but we set STANDING in CombatStart, therefore always
-    // nullifying the check.
-    CombatStart(victim);
-
-    #ifdef OREGON_DEBUG
-    if (GetTypeId() == TYPEID_PLAYER)
-        DEBUG_LOG("AttackerStateUpdate: (Player) %u attacked %u (TypeId: %u) for %u dmg, absorbed %u, blocked %u, resisted %u.",
-                  GetGUIDLow(), victim->GetGUIDLow(), victim->GetTypeId(), damageInfo.damage, damageInfo.absorb, damageInfo.blocked_amount, damageInfo.resist);
     else
-        DEBUG_LOG("AttackerStateUpdate: (NPC)    %u attacked %u (TypeId: %u) for %u dmg, absorbed %u, blocked %u, resisted %u.",
-                  GetGUIDLow(), victim->GetGUIDLow(), victim->GetTypeId(), damageInfo.damage, damageInfo.absorb, damageInfo.blocked_amount, damageInfo.resist);
-    #endif
+    {
+        victim = GetMeleeHitRedirectTarget(victim);
+
+        CalcDamageInfo damageInfo;
+        CalculateMeleeDamage(victim, 0, &damageInfo, attType);
+        // Send log damage message to client
+        SendAttackStateUpdate(&damageInfo);
+        ProcDamageAndSpell(damageInfo.target, damageInfo.procAttacker, damageInfo.procVictim, damageInfo.procEx, damageInfo.damage, damageInfo.attackType);
+        DealMeleeDamage(&damageInfo, true);
+
+        // We call this last because DealMeleeDamage has to check for sit state to
+        // allow critical hits, but we set STANDING in CombatStart, therefore always
+        // nullifying the check.
+        CombatStart(victim);
+
+        #ifdef OREGON_DEBUG
+        if (GetTypeId() == TYPEID_PLAYER)
+            DEBUG_LOG("AttackerStateUpdate: (Player) %u attacked %u (TypeId: %u) for %u dmg, absorbed %u, blocked %u, resisted %u.",
+                GetGUIDLow(), victim->GetGUIDLow(), victim->GetTypeId(), damageInfo.damage, damageInfo.absorb, damageInfo.blocked_amount, damageInfo.resist);
+        else
+            DEBUG_LOG("AttackerStateUpdate: (NPC)    %u attacked %u (TypeId: %u) for %u dmg, absorbed %u, blocked %u, resisted %u.",
+                GetGUIDLow(), victim->GetGUIDLow(), victim->GetTypeId(), damageInfo.damage, damageInfo.absorb, damageInfo.blocked_amount, damageInfo.resist);
+        #endif
+    }
 
 }
 
@@ -5670,6 +5671,10 @@ bool Unit::HandleDummyAuraProc(Unit* pVictim, uint32 damage, Aura* triggeredByAu
                     // heal amount
                     basepoints0 = triggeredByAura->GetModifierValue() * std::min(damage, GetMaxHealth() - GetHealth()) / 100;
                     target = this;
+
+                    sLog.outError("mod: %i", triggeredByAura->GetModifierValue());
+                    sLog.outError("damage: %u", damage);
+                    sLog.outError("basepoints0: %u", basepoints0);
 
                     if (basepoints0)
                         triggered_spell_id = 31786;
@@ -9907,18 +9912,36 @@ Unit* Creature::SelectVictim()
         return target;
     }
 
-    // last case when creature don't must go to evade mode:
-    // it in combat but attacker not make any damage and not enter to aggro radius to have record in threat list
-    // for example at owner command to pet attack some far away creature
-    // Note: creature not have targeted movement generator but have attacker in this case
-    /*if (GetMotionMaster()->GetCurrentMovementGeneratorType() != TARGETED_MOTION_TYPE)
+    if (target && CanCreatureAttack(target))
     {
-        for (AttackerSet::const_iterator itr = m_attackers.begin(); itr != m_attackers.end(); ++itr)
-        {
-            if ((*itr)->IsInMap(this) && canAttack(*itr) && (*itr)->isInAccessiblePlaceFor(ToCreature()))
-                return NULL;
-        }
-    }*/
+        if (m_mmapNotAcceptableStartTime) m_mmapNotAcceptableStartTime = 0; // pussywizard: finding any valid target resets timer
+        SetInFront(target);
+        return target;
+    }
+
+    // pussywizard: if victim is not acceptable only due to mmaps, it may be for example a knockback, wait for a few secs before evading
+    if (!target && !isWorldBoss() && !GetInstanceId() && IsAlive() && (!CanHaveThreatList() || !getThreatManager().isThreatListEmpty()))
+        if (Unit* v = getVictim())
+            if (isTargetNotAcceptableByMMaps(v->GetGUID(), sWorld.GetGameTime(), v))
+                if (CanCreatureAttack(v))
+                {
+                    if (m_mmapNotAcceptableStartTime)
+                    {
+                        if (sWorld.GetGameTime() <= m_mmapNotAcceptableStartTime + 4)
+                            return NULL;
+                    }
+                    else
+                    {
+                        m_mmapNotAcceptableStartTime = sWorld.GetGameTime();
+                        return NULL;
+                    }
+                }
+
+    // pussywizard: not sure why it's here
+    // pussywizard: if some npc (not player pet) is attacking us and we can't fight back - don't evade o_O
+    for (AttackerSet::const_iterator itr = m_attackers.begin(); itr != m_attackers.end(); ++itr)
+        if ((*itr) && !CanCreatureAttack(*itr) && (*itr)->GetTypeId() != TYPEID_PLAYER && !(*itr)->ToCreature()->HasUnitTypeMask(UNIT_MASK_CONTROLABLE_GUARDIAN))
+            return NULL;
 
     // search nearby enemy before enter evade mode
     if (HasReactState(REACT_AGGRESSIVE))
@@ -13098,6 +13121,27 @@ void Unit::UpdateObjectVisibility(bool forced)
         Oregon::AIRelocationNotifier notifier(*this);
         VisitNearbyObject(GetVisibilityRange(), notifier);
     }
+}
+
+Unit* Unit::GetMeleeHitRedirectTarget(Unit* victim, SpellEntry const* spellInfo)
+{
+    float maxRange = NOMINAL_MELEE_RANGE;
+    if (spellInfo && spellInfo->rangeIndex)
+        maxRange = GetSpellMaxRange(sSpellRangeStore.LookupEntry(spellInfo->rangeIndex));
+
+    Unit::AuraList const& hitTriggerAuras = victim->GetAurasByType(SPELL_AURA_ADD_CASTER_HIT_TRIGGER);
+    for (Unit::AuraList::const_iterator i = hitTriggerAuras.begin(); i != hitTriggerAuras.end(); ++i)
+    {
+        if (Unit* magnet = (*i)->GetCaster())
+        {
+            if (magnet->IsWithinLOSInMap(this) && magnet->IsWithinDistInMap(this, maxRange) && (*i)->m_procCharges > 0)
+            {
+                victim->RemoveAurasDueToSpell((*i)->GetId());
+                return magnet;
+            }
+        }
+    }
+    return victim;
 }
 
 void CharmInfo::SetIsCommandAttack(bool val)
