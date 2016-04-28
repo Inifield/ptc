@@ -11623,8 +11623,14 @@ Unit* Unit::SelectNearbyTarget(Unit* exclude, float dist) const
 
     // remove not LoS targets
     for (std::list<Unit* >::iterator tIter = targets.begin(); tIter != targets.end();)
-    {
-        if (!IsWithinLOSInMap(*tIter))
+    {                                                                                       // Remove target if:
+        if (!IsWithinLOSInMap(*tIter)                                                       // Is not in LoS
+            || (*tIter)->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE)                // Is not Selectable
+            || (*tIter)->isSpiritService()                                                  // Is Spirit Healer
+            || (*tIter)->GetTypeId() == TYPEID_UNIT && (((Creature*)(*tIter))->isCivilian() // Is Civilian
+            || ((Creature*)(*tIter))->isTrigger()                                           // Is Trigger
+            || ((Creature*)(*tIter))->IsTotem()                                             // Is Totem
+            || ((Creature*)(*tIter))->GetCreatureType() == CREATURE_TYPE_CRITTER))          // Is Critter
         {
             std::list<Unit* >::iterator tIter2 = tIter;
             ++tIter;
