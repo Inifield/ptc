@@ -116,7 +116,7 @@ namespace Movement
         {
             PathInfo path(&unit);
             path.Update(dest.x, dest.y, dest.z, forceDestination);
-            MovebyPath(path.getFullPath());
+            MovebyPath(path.GetPath());
         }
         else
         {

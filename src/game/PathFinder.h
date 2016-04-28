@@ -32,172 +32,128 @@ class Unit;
 // 74*4.0f=296y  number_of_points*interval = max_path_len
 // this is way more than actual evade range
 // I think we can safely cut those down even more
-#define MAX_PATH_LENGTH         74
-#define MAX_POINT_PATH_LENGTH   74
+#define MAX_PATH_LENGTH             74
+#define MAX_POINT_PATH_LENGTH       74
 
-#define SMOOTH_PATH_STEP_SIZE   4.0f
-#define SMOOTH_PATH_SLOP        0.3f
+#define SMOOTH_PATH_STEP_SIZE       4.0f
+#define SMOOTH_PATH_SLOP            0.3f
+#define ALLOWED_DIST_FROM_POLY      2.5f
+#define ADDED_Z_FOR_POLY_LOOKUP     0.3f
+#define DISALLOW_TIME_AFTER_FAIL    3 // secs
+#define MAX_FIXABLE_Z_ERROR         12.0f
+#define MAX_PATH_LENGTH_FOR_CHARGE  45.0f
 
 #define VERTEX_SIZE       3
 #define INVALID_POLYREF   0
 
 enum PathType
 {
-    PATHFIND_BLANK          = 0x0000,   // path not built yet
-    PATHFIND_NORMAL         = 0x0001,   // normal path
-    PATHFIND_SHORTCUT       = 0x0002,   // travel through obstacles, terrain, air, etc (old behavior)
-    PATHFIND_INCOMPLETE     = 0x0004,   // we have partial path to follow - getting closer to target
-    PATHFIND_NOPATH         = 0x0008,   // no valid path at all or error in generating one
-    PATHFIND_NOT_USING_PATH = 0x0010,   // used when we are either flying/swiming or on map w/o mmaps
-    PATHFIND_SHORT          = 0x0020    // too long path, truncating
+    PATHFIND_BLANK = 0x00,             // path not built yet
+    PATHFIND_NORMAL = 0x01,            // normal path
+    PATHFIND_SHORTCUT = 0x02,          // travel through obstacles, terrain, air, etc (old behavior)
+    PATHFIND_INCOMPLETE = 0x04,        // we have partial path to follow - getting closer to target
+    PATHFIND_NOPATH = 0x08,            // no valid path at all or error in generating one
+    PATHFIND_NOT_USING_PATH = 0x10,    // used when we are either flying/swiming or on map w/o mmaps
+    PATHFIND_SHORT = 0x20,             // path is longer or equal to its limited path length
 };
 
 class PathInfo
 {
-    public:
-        PathInfo(Unit const* owner);
-        ~PathInfo();
+public:
+    explicit PathInfo(Unit const* owner);
+    ~PathInfo();
 
-        // Calculate the path from owner to given destination
-        // return: true if new path was calculated, false otherwise (no change needed)
-        bool Update(float destX, float destY, float destZ, bool forceDest = false);
+    // Calculate the path from owner to given destination
+    // return: true if new path was calculated, false otherwise (no change needed)
+    bool Update(float destX, float destY, float destZ, bool forceDest = false);
 
-        // option setters - use optional
-        void setUseStrightPath(bool useStraightPath)
-        {
-            m_useStraightPath = useStraightPath;
-        };
-        void setPathLengthLimit(float distance)
-        {
-            m_pointPathLimit = std::min<uint32>(uint32(distance / SMOOTH_PATH_STEP_SIZE), MAX_POINT_PATH_LENGTH);
-        };
+    // option setters - use optional
+    void SetUseStraightPath(bool useStraightPath) { _useStraightPath = useStraightPath; }
+    void SetPathLengthLimit(float distance) { _pointPathLimit = std::min<uint32>(uint32(distance / SMOOTH_PATH_STEP_SIZE), MAX_POINT_PATH_LENGTH); }
 
-        // result getters
-        void getStartPosition(float& x, float& y, float& z)
+    // result getters
+    G3D::Vector3 const& GetStartPosition() const { return _startPosition; }
+    G3D::Vector3 const& GetEndPosition() const { return _endPosition; }
+    G3D::Vector3 const& GetActualEndPosition() const { return _actualEndPosition; }
+
+    Movement::PointsArray const& GetPath() const { return _pathPoints; }
+
+    PathType GetPathType() const { return _type; }
+    float getPathLength() const
+    {
+        float len = 0.0f;
+        float dx, dy, dz;
+        uint32 size = _pathPoints.size();
+        if (size)
         {
-            x = m_startPosition.x;
-            y = m_startPosition.y;
-            z = m_startPosition.z;
+            dx = _pathPoints[0].x - _startPosition.x; dy = _pathPoints[0].y - _startPosition.y; dz = _pathPoints[0].z - _startPosition.z;
+            len += sqrt(dx*dx + dy*dy + dz*dz);
         }
-        void getNextPosition(float& x, float& y, float& z)
+        else
+            return len;
+        for (uint32 i = 1; i<size; ++i)
         {
-            x = m_nextPosition.x;
-            y = m_nextPosition.y;
-            z = m_nextPosition.z;
+            dx = _pathPoints[i].x - _pathPoints[i - 1].x; dy = _pathPoints[i].y - _pathPoints[i - 1].y; dz = _pathPoints[i].z - _pathPoints[i - 1].z;
+            len += sqrt(dx*dx + dy*dy + dz*dz);
         }
-        void getEndPosition(float& x, float& y, float& z)
-        {
-            x = m_endPosition.x;
-            y = m_endPosition.y;
-            z = m_endPosition.z;
-        }
-        void getActualEndPosition(float& x, float& y, float& z)
-        {
-            x = m_actualEndPosition.x;
-            y = m_actualEndPosition.y;
-            z = m_actualEndPosition.z;
-        }
+        return len;
+    }
 
-        Vector3 getStartPosition() const
-        {
-            return m_startPosition;
-        }
-        Vector3 getNextPosition() const
-        {
-            return m_nextPosition;
-        }
-        Vector3 getEndPosition() const
-        {
-            return m_endPosition;
-        }
-        Vector3 getActualEndPosition() const
-        {
-            return m_actualEndPosition;
-        }
+private:
 
-        PointsArray& getFullPath()
-        {
-            return m_pathPoints;
-        }
-        PathType getPathType() const
-        {
-            return m_type;
-        }
+    dtPolyRef _pathPolyRefs[MAX_PATH_LENGTH];   // array of detour polygon references
+    uint32 _polyLength;                         // number of polygons in the path
 
-        bool inRange(const Vector3& p1, const Vector3& p2, float r, float h) const;
-        float dist3DSqr(const Vector3& p1, const Vector3& p2) const;
-    private:
+    Movement::PointsArray _pathPoints;  // our actual (x,y,z) path to the target
+    PathType _type;                     // tells what kind of path this is
 
-        dtPolyRef       m_pathPolyRefs[MAX_PATH_LENGTH];   // array of detour polygon references
-        uint32          m_polyLength;                      // number of polygons in the path
+    bool _useStraightPath;  // type of path will be generated
+    bool _forceDestination; // when set, we will always arrive at given point
+    uint32 _pointPathLimit; // limit point path size; min(this, MAX_POINT_PATH_LENGTH)
 
-        PointsArray       m_pathPoints;       // our actual (x,y,z) path to the target
-        PathType        m_type;             // tells what kind of path this is
+    G3D::Vector3 _startPosition;        // {x, y, z} of current location
+    G3D::Vector3 _endPosition;          // {x, y, z} of the destination
+    G3D::Vector3 _actualEndPosition;    // {x, y, z} of the closest possible point to given destination
 
-        bool            m_useStraightPath;  // type of path will be generated
-        bool            m_forceDestination; // when set, we will always arrive at given point
-        uint32          m_pointPathLimit;   // limit point path size; min(this, MAX_POINT_PATH_LENGTH)
+    Unit const* const _sourceUnit;          // the unit that is moving
+    dtNavMesh const* _navMesh;              // the nav mesh
+    dtNavMeshQuery const* _navMeshQuery;    // the nav mesh query used to find the path
 
-        Vector3        m_startPosition;    // {x, y, z} of current location
-        Vector3        m_nextPosition;     // {x, y, z} of next location on the path
-        Vector3        m_endPosition;      // {x, y, z} of the destination
-        Vector3        m_actualEndPosition;  // {x, y, z} of the closest possible point to given destination
+    dtQueryFilter _filter;  // use single filter for all movements, update it when needed
 
-        const Unit* const       m_sourceUnit;       // the unit that is moving
-        const dtNavMesh*       m_navMesh;          // the nav mesh
-        const dtNavMeshQuery*  m_navMeshQuery;     // the nav mesh query used to find the path
+    void SetStartPosition(G3D::Vector3 const& point) { _startPosition = point; }
+    void SetEndPosition(G3D::Vector3 const& point) { _actualEndPosition = point; _endPosition = point; }
+    void SetActualEndPosition(G3D::Vector3 const& point) { _actualEndPosition = point; }
 
-        dtQueryFilter m_filter;                     // use single filter for all movements, update it when needed
+    void Clear()
+    {
+        _polyLength = 0;
+        _pathPoints.clear();
+    }
 
-        void setNextPosition(Vector3 point)
-        {
-            m_nextPosition = point;
-        }
-       void setStartPosition(Vector3 point)
-        {
-            m_startPosition = point;
-        }
-        void setEndPosition(Vector3 point)
-        {
-            m_actualEndPosition = point;
-            m_endPosition = point;
-        }
-        void setActualEndPosition(Vector3 point)
-        {
-            m_actualEndPosition = point;
-        }
+    bool InRange(G3D::Vector3 const& p1, G3D::Vector3 const& p2, float r, float h) const;
+    float Dist3DSqr(G3D::Vector3 const& p1, G3D::Vector3 const& p2) const;
+    bool InRangeYZX(float const* v1, float const* v2, float r, float h) const;
 
-        void NormalizePath();
+    dtPolyRef GetPathPolyByPosition(dtPolyRef const* polyPath, uint32 polyPathSize, float const* Point, float* Distance = NULL) const;
+    dtPolyRef GetPolyByLocation(float* Point, float* Distance) const;
+    bool HaveTile(G3D::Vector3 const& p) const;
 
-        void clear()
-        {
-            m_polyLength = 0;
-            m_pathPoints.clear();
-        }
+    void BuildPolyPath(G3D::Vector3 const& startPos, G3D::Vector3 const& endPos);
+    void BuildPointPath(float const* startPoint, float const* endPoint);
+    void BuildShortcut();
 
-        bool inRangeYZX(const float* v1, const float* v2, float r, float h) const;
+    NavTerrain GetNavTerrain(float x, float y, float z);
+    void CreateFilter();
+    void UpdateFilter();
 
-        dtPolyRef getPathPolyByPosition(const dtPolyRef* polyPath, uint32 polyPathSize, const float* point, float* distance = NULL) const;
-        dtPolyRef getPolyByLocation(const float* point, float* distance) const;
-       bool HaveTile(const Vector3& p) const;
-
-        void BuildPolyPath(const Vector3& startPos, const Vector3& endPos);
-        void BuildPointPath(const float* startPoint, const float* endPoint);
-        void BuildShortcut();
-
-        NavTerrain getNavTerrain(float x, float y, float z);
-        void createFilter();
-        void updateFilter();
-
-        // smooth path functions
-        uint32 fixupCorridor(dtPolyRef* path, uint32 npath, uint32 maxPath,
-                             const dtPolyRef* visited, uint32 nvisited);
-        bool getSteerTarget(const float* startPos, const float* endPos, float minTargetDist,
-                            const dtPolyRef* path, uint32 pathSize, float* steerPos,
-                            unsigned char& steerPosFlag, dtPolyRef& steerPosRef);
-        dtStatus findSmoothPath(const float* startPos, const float* endPos,
-                                const dtPolyRef* polyPath, uint32 polyPathSize,
-                                float* smoothPath, int* smoothPathSize, uint32 smoothPathMaxSize);
+    // smooth path aux functions
+    uint32 FixupCorridor(dtPolyRef* path, uint32 npath, uint32 maxPath, dtPolyRef const* visited, uint32 nvisited);
+    bool GetSteerTarget(float const* startPos, float const* endPos, float minTargetDist, dtPolyRef const* path, uint32 pathSize, float* steerPos,
+        unsigned char& steerPosFlag, dtPolyRef& steerPosRef);
+    dtStatus FindSmoothPath(float const* startPos, float const* endPos,
+        dtPolyRef const* polyPath, uint32 polyPathSize,
+        float* smoothPath, int* smoothPathSize, uint32 smoothPathMaxSize);
 };
 
 #endif
