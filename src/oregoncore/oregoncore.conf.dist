@@ -936,13 +936,21 @@ TalentsInspecting = 1
 #          as a multiplier of its Corpse.Decay.* config.
 #         Default: 0.5
 #
-#    Rate.Creature.Normal.Damage
-#    Rate.Creature.Elite.Elite.Damage
-#    Rate.Creature.Elite.RAREELITE.Damage
-#    Rate.Creature.Elite.WORLDBOSS.Damage
-#    Rate.Creature.Elite.RARE.Damage
-#        Creature Damage Rates.
-#        Examples: 2 - creatures will damage 2x, 1.7 - 1.7x.
+#    Rate.Creature.Normal.Damage.Min
+#    Rate.Creature.Elite.Elite.Damage.Min
+#    Rate.Creature.Elite.RAREELITE.Damage.Min
+#    Rate.Creature.Elite.WORLDBOSS.Damage.Min
+#    Rate.Creature.Elite.RARE.Damage.Min
+#        Creature Min Damage Rates.
+#        Examples: 2 - creatures will set min damage 2x, 1.7 - 1.7x.
+#
+#    Rate.Creature.Normal.Damage.Max
+#    Rate.Creature.Elite.Elite.Damage.Max
+#    Rate.Creature.Elite.RAREELITE.Damage.Max
+#    Rate.Creature.Elite.WORLDBOSS.Damage.Max
+#    Rate.Creature.Elite.RARE.Damage.Max
+#        Creature Max Damage Rates.
+#        Examples: 2 - creatures will set max damage 2x, 1.7 - 1.7x.
 #
 #    Rate.Creature.Normal.SpellDamage
 #    Rate.Creature.Elite.Elite.SpellDamage
@@ -995,11 +1003,16 @@ Corpse.Decay.ELITE = 300
 Corpse.Decay.RAREELITE = 300
 Corpse.Decay.WORLDBOSS = 3600
 Rate.Corpse.Decay.Looted = 0.5
-Rate.Creature.Normal.Damage = 1
-Rate.Creature.Elite.Elite.Damage = 1
-Rate.Creature.Elite.RAREELITE.Damage = 1
-Rate.Creature.Elite.WORLDBOSS.Damage = 1
-Rate.Creature.Elite.RARE.Damage = 1
+Rate.Creature.Normal.Damage.Min = 1
+Rate.Creature.Elite.Elite.Damage.Min = 1
+Rate.Creature.Elite.RAREELITE.Damage.Min = 1
+Rate.Creature.Elite.WORLDBOSS.Damage.Min = 1
+Rate.Creature.Elite.RARE.Damage.Min = 1
+Rate.Creature.Normal.Damage.Max = 1
+Rate.Creature.Elite.Elite.Damage.Max = 1
+Rate.Creature.Elite.RAREELITE.Damage.Max = 1
+Rate.Creature.Elite.WORLDBOSS.Damage.Max = 1
+Rate.Creature.Elite.RARE.Damage.Max = 1
 Rate.Creature.Normal.SpellDamage = 1
 Rate.Creature.Elite.Elite.SpellDamage = 1
 Rate.Creature.Elite.RAREELITE.SpellDamage = 1

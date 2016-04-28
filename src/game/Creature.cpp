@@ -1184,18 +1184,19 @@ void Creature::SelectLevel()
     SetModifierValue(UNIT_MOD_MANA, BASE_VALUE, (float)mana);
 
     // damage
-    float damagemod = _GetDamageMod(rank);
+    float damagemod_min = _GetDamageModMin(rank);
+    float damagemod_max = _GetDamageModMax(rank);
 
-    SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, cInfo->mindmg * damagemod);
-    SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, cInfo->maxdmg * damagemod);
-    SetBaseWeaponDamage(OFF_ATTACK, MINDAMAGE, cInfo->mindmg * damagemod);
-    SetBaseWeaponDamage(OFF_ATTACK, MAXDAMAGE, cInfo->maxdmg * damagemod);
-    SetBaseWeaponDamage(RANGED_ATTACK, MINDAMAGE, cInfo->minrangedmg * damagemod);
-    SetBaseWeaponDamage(RANGED_ATTACK, MAXDAMAGE, cInfo->maxrangedmg * damagemod);
+    SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, cInfo->mindmg * damagemod_min);
+    SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, cInfo->maxdmg * damagemod_max);
+    SetBaseWeaponDamage(OFF_ATTACK, MINDAMAGE, cInfo->mindmg * damagemod_min);
+    SetBaseWeaponDamage(OFF_ATTACK, MAXDAMAGE, cInfo->maxdmg * damagemod_max);
+    SetBaseWeaponDamage(RANGED_ATTACK, MINDAMAGE, cInfo->minrangedmg * damagemod_min);
+    SetBaseWeaponDamage(RANGED_ATTACK, MAXDAMAGE, cInfo->maxrangedmg * damagemod_max);
 
     // this value is not accurate, but should be close to the real value
-    SetModifierValue(UNIT_MOD_ATTACK_POWER, BASE_VALUE, level * 5);
-    SetModifierValue(UNIT_MOD_ATTACK_POWER_RANGED, BASE_VALUE, level * 5);
+    SetModifierValue(UNIT_MOD_ATTACK_POWER, BASE_VALUE, 0);
+    SetModifierValue(UNIT_MOD_ATTACK_POWER_RANGED, BASE_VALUE, 0);
     //SetModifierValue(UNIT_MOD_ATTACK_POWER, BASE_VALUE, cinfo->attackpower * damagemod);
     //SetModifierValue(UNIT_MOD_ATTACK_POWER_RANGED, BASE_VALUE, cinfo->rangedattackpower * damagemod);
     UpdateAllStats();
@@ -1225,22 +1226,41 @@ void Creature::SetPlayerDamaged(bool set)
     hasPlayerDamaged = set;
 }
 
-float Creature::_GetDamageMod(int32 Rank)
+float Creature::_GetDamageModMin(int32 Rank)
 {
     switch (Rank)                                           // define rates for each elite rank
     {
-        case CREATURE_ELITE_NORMAL:
-            return sWorld.getRate(RATE_CREATURE_NORMAL_DAMAGE);
-        case CREATURE_ELITE_ELITE:
-            return sWorld.getRate(RATE_CREATURE_ELITE_ELITE_DAMAGE);
-        case CREATURE_ELITE_RAREELITE:
-            return sWorld.getRate(RATE_CREATURE_ELITE_RAREELITE_DAMAGE);
-        case CREATURE_ELITE_WORLDBOSS:
-            return sWorld.getRate(RATE_CREATURE_ELITE_WORLDBOSS_DAMAGE);
-        case CREATURE_ELITE_RARE:
-            return sWorld.getRate(RATE_CREATURE_ELITE_RARE_DAMAGE);
-        default:
-            return sWorld.getRate(RATE_CREATURE_ELITE_ELITE_DAMAGE);
+    case CREATURE_ELITE_NORMAL:
+        return sWorld.getConfig(RATE_CREATURE_NORMAL_DAMAGE_MIN);
+    case CREATURE_ELITE_ELITE:
+        return sWorld.getConfig(RATE_CREATURE_ELITE_ELITE_DAMAGE_MIN);
+    case CREATURE_ELITE_RAREELITE:
+        return sWorld.getConfig(RATE_CREATURE_ELITE_RAREELITE_DAMAGE_MIN);
+    case CREATURE_ELITE_WORLDBOSS:
+        return sWorld.getConfig(RATE_CREATURE_ELITE_WORLDBOSS_DAMAGE_MIN);
+    case CREATURE_ELITE_RARE:
+        return sWorld.getConfig(RATE_CREATURE_ELITE_RARE_DAMAGE_MIN);
+    default:
+        return sWorld.getConfig(RATE_CREATURE_ELITE_ELITE_DAMAGE_MIN);
+    }
+}
+
+float Creature::_GetDamageModMax(int32 Rank)
+{
+    switch (Rank)                                           // define rates for each elite rank
+    {
+    case CREATURE_ELITE_NORMAL:
+        return sWorld.getConfig(RATE_CREATURE_NORMAL_DAMAGE_MAX);
+    case CREATURE_ELITE_ELITE:
+        return sWorld.getConfig(RATE_CREATURE_ELITE_ELITE_DAMAGE_MAX);
+    case CREATURE_ELITE_RAREELITE:
+        return sWorld.getConfig(RATE_CREATURE_ELITE_RAREELITE_DAMAGE_MAX);
+    case CREATURE_ELITE_WORLDBOSS:
+        return sWorld.getConfig(RATE_CREATURE_ELITE_WORLDBOSS_DAMAGE_MAX);
+    case CREATURE_ELITE_RARE:
+        return sWorld.getConfig(RATE_CREATURE_ELITE_RARE_DAMAGE_MAX);
+    default:
+        return sWorld.getConfig(RATE_CREATURE_ELITE_ELITE_DAMAGE_MAX);
     }
 }
 

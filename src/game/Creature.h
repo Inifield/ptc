@@ -878,7 +878,8 @@ class Creature : public Unit, public GridObject<Creature>
         void _RealtimeSetCreatureInfo();
 
         static float _GetHealthMod(int32 Rank);
-        static float _GetDamageMod(int32 Rank);
+        static float _GetDamageModMin(int32 Rank);
+        static float _GetDamageModMax(int32 Rank);
 
         uint32 m_lootMoney;
         uint64 m_lootRecipient;
