@@ -954,6 +954,8 @@ class Player : public Unit, public GridObject<Player>
         explicit Player(WorldSession* session);
         ~Player();
 
+        uint32 VisibilityUpdateTimer;
+
         void CleanupsBeforeDelete();
 
         static UpdateMask updateVisualBits;

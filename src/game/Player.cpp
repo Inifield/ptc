@@ -437,6 +437,8 @@ Player::Player (WorldSession* session): Unit(true)
     m_ControlledByPlayer = true;
 
     m_globalCooldowns.clear();
+
+    VisibilityUpdateTimer = 500;
 }
 
 Player::~Player()
@@ -1042,6 +1044,14 @@ void Player::Update(uint32 p_time)
 {
     if (!IsInWorld())
         return;
+
+    if (VisibilityUpdateTimer <= p_time)
+    {
+        UpdateObjectVisibility();
+        VisibilityUpdateTimer = 500;
+    }
+    else
+        VisibilityUpdateTimer -= p_time;
 
     // undelivered mail
     if (m_nextMailDelivereTime && m_nextMailDelivereTime <= time(NULL))

@@ -2951,10 +2951,7 @@ void Spell::finish(bool ok)
     m_spellState = SPELL_STATE_FINISHED;
 
     if (IsChanneledSpell(m_spellInfo))
-    {
         m_caster->UpdateInterruptMask();
-        m_caster->UpdateObjectVisibility(); // Xpearlis: Fix that bug the Player can see animation of spell after channeled spell is finished
-    }
 
     if (m_caster->HasUnitState(UNIT_STATE_CASTING) && !m_caster->IsNonMeleeSpellCast(false, false, true))
         m_caster->ClearUnitState(UNIT_STATE_CASTING);
