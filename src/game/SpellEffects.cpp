@@ -6409,7 +6409,8 @@ void Spell::EffectMomentMove(SpellEffIndex effIndex)
     if (!m_targets.HasDst())
         return;
 
-    float distance = GetSpellRadius(m_spellInfo, effIndex, false);
+    float selfAddition = 1.5f;
+    float distance = GetSpellRadius(m_spellInfo, effIndex, false) + selfAddition;
     Map* map = unitTarget->GetMap();
     float x, y, z;
     float destX, destY, destZ, ground;
