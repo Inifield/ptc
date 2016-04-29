@@ -2606,6 +2606,9 @@ void SpellMgr::LoadSpellCustomAttr()
             spellInfo->Effect[1] = SPELL_EFFECT_DUMMY;
             spellInfo->EffectImplicitTargetA[1] = TARGET_UNIT_CASTER;
             break;
+        case 1953: // Blink
+            spellInfo->DurationIndex = 328; // 250ms
+            break;
         default:
             break;
         }
