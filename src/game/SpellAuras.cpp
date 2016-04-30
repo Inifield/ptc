@@ -526,6 +526,25 @@ void Aura::SetModifier(AuraType t, int32 a, uint32 pt, int32 miscValue)
     m_modifier.periodictime = pt;
 }
 
+bool IsArcaneMissiles(uint32 SpellId)
+{
+	switch (SpellId)
+	{
+        case 5143:    // Arcane Missiles, rank 1
+        case 5144:    // Arcane Missiles, rank 2
+        case 5145:    // Arcane Missiles, rank 3
+        case 8416:    // Arcane Missiles, rank 4
+        case 8417:    // Arcane Missiles, rank 5
+        case 10211:   // Arcane Missiles, rank 6
+        case 10212:   // Arcane Missiles, rank 7
+        case 25345:   // Arcane Missiles, rank 8
+        case 27075:   // Arcane Missiles, rank 9
+        case 38699:   // Arcane Missiles, rank 10
+            return true;
+	    default:
+		    return false;
+	}
+}
 void Aura::Update(uint32 diff)
 {
     if (m_duration > 0)
@@ -587,7 +606,7 @@ void Aura::Update(uint32 diff)
         if (Player* modOwner = caster->GetSpellModOwner())
             modOwner->ApplySpellMod(GetId(), mod, radius, NULL);
 
-        if (!caster->IsWithinDistInMap(pRealTarget, radius))
+        if (!caster->IsWithinDistInMap(pRealTarget, radius) && !IsArcaneMissiles(m_spellProto->Id))
             return;
     }
 
