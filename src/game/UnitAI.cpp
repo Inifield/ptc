@@ -47,7 +47,7 @@ void UnitAI::DoMeleeAttackIfReady()
     if (me->HasUnitState(UNIT_STATE_CASTING))
         return;
 
-    if (me->GetEntry() == 510) // Water Elemental
+    if (me->GetEntry() == 510 || me->GetEntry() == 416) // Water Elemental || Imp
         return; 
 
     //Make sure our attack is ready and we aren't currently casting before checking distance
