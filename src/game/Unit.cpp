@@ -2006,7 +2006,7 @@ void Unit::CalcAbsorbResist(Unit* pVictim, SpellSchoolMask schoolMask, DamageEff
             currentAbsorb = RemainingDamage;
 
         float manaMultiplier = (*i)->GetSpellProto()->EffectMultipleValue[(*i)->GetEffIndex()];
-        if (Player* modOwner = GetSpellModOwner())
+        if (Player* modOwner = pVictim->GetSpellModOwner())
             modOwner->ApplySpellMod((*i)->GetId(), SPELLMOD_MULTIPLE_VALUE, manaMultiplier);
 
         if (manaMultiplier)
