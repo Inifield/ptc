@@ -601,6 +601,12 @@ bool IsPositiveEffect(uint32 spellId, uint32 effIndex)
                 case 31579:                                         // Arcane Empowerment Rank1 talent aura with one positive and one negative (check not needed in wotlk)
                 case 31582:                                         // Arcane Empowerment Rank2
                 case 31583:                                         // Arcane Empowerment Rank3
+                case 1008:                                          // Amplify Magic Rank 1
+                case 8455:                                          // Amplify Magic Rank 2
+                case 10169:                                         // Amplify Magic Rank 3
+                case 10170:                                         // Amplify Magic Rank 4
+                case 27130:                                         // Amplify Magic Rank 5
+                case 33946:                                         // Amplify Magic Rank 6
                     return true;
                 default:
                     break;
