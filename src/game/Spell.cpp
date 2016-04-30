@@ -2405,7 +2405,7 @@ void Spell::cast(bool skipCheck)
     if (m_caster->GetTypeId() != TYPEID_PLAYER && m_targets.getUnitTarget() && m_targets.getUnitTarget() != m_caster)
         m_caster->SetInFront(m_targets.getUnitTarget());
 
-    if (!m_IsTriggeredSpell)
+    if (!m_IsTriggeredSpell  || m_spellInfo->Id == 33395) // hack for water elemental freeze since it is casted as triggered spell
     {
         castResult = CheckPower();
         if (castResult != SPELL_CAST_OK)
@@ -2504,7 +2504,7 @@ void Spell::cast(bool skipCheck)
     }
 
     // combo points should not be taken before SPELL_AURA_ADD_TARGET_TRIGGER auras are handled
-    if (!m_IsTriggeredSpell)
+    if (!m_IsTriggeredSpell || m_spellInfo->Id == 33395) // hack for water elemental freeze since it is casted as triggered spell
         TakePower();
 
     if (m_customAttr & SPELL_ATTR_CU_LINK_CAST)
@@ -3948,7 +3948,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             return castResult;
     }
 
-    if (!m_IsTriggeredSpell)
+    if (!m_IsTriggeredSpell || m_spellInfo->Id == 33395) // hack for water elemental freeze since it is casted as triggered spell
     {
         if (!m_triggeredByAuraSpell)
         {

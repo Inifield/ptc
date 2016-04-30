@@ -13154,9 +13154,33 @@ bool CharmInfo::IsCommandAttack()
     return m_isCommandAttack;
 }
 
-void CharmInfo::SaveStayPosition()
+void CharmInfo::SetIsCommandFollow(bool val)
 {
-    m_unit->GetPosition(m_stayX, m_stayY, m_stayZ);
+    m_isCommandFollow = val;
+}
+
+bool CharmInfo::IsCommandFollow()
+{
+    return m_isCommandFollow;
+}
+
+void CharmInfo::SaveStayPosition(bool atCurrentPos)
+{
+    //! At this point a new spline destination is enabled because of Unit::StopMoving()
+    G3D::Vector3 stayPos = G3D::Vector3();
+
+    if (atCurrentPos)
+    {
+        float z = INVALID_HEIGHT;
+        m_unit->UpdateAllowedPositionZ(m_unit->GetPositionX(), m_unit->GetPositionY(), z);
+        stayPos = G3D::Vector3(m_unit->GetPositionX(), m_unit->GetPositionY(), z != INVALID_HEIGHT ? z : m_unit->GetPositionZ());
+    }
+    else
+        stayPos = m_unit->movespline->FinalDestination();
+
+    m_stayX = stayPos.x;
+    m_stayY = stayPos.y;
+    m_stayZ = stayPos.z;
 }
 
 void CharmInfo::GetStayPosition(float& x, float& y, float& z)

@@ -68,7 +68,7 @@ Pet::Pet(Player* owner, PetType type) : Guardian(NULL, owner, true),
     }
 
     if (type == CLASS_PET)
-        SetReactState(REACT_AGGRESSIVE);
+        owner->getClass() == CLASS_MAGE ? SetReactState(REACT_DEFENSIVE) : SetReactState(REACT_AGGRESSIVE);
 
     m_name = "Pet";
 
@@ -110,6 +110,7 @@ void Pet::AddToWorld()
     if (this->GetCharmInfo() && this->GetCharmInfo()->HasCommandState(COMMAND_FOLLOW))
     {
         this->GetCharmInfo()->SetIsCommandAttack(false);
+        this->GetCharmInfo()->SetIsCommandFollow(false);
         this->GetCharmInfo()->SetIsAtStay(false);
         this->GetCharmInfo()->SetIsFollowing(false);
         this->GetCharmInfo()->SetIsReturning(false);
@@ -1482,6 +1483,9 @@ bool Pet::addSpell(uint16 spell_id, uint16 active /*= ACT_DECIDE*/, PetSpellStat
 
         return false;
     }
+
+    if (spellInfo->Id == 31707)
+        active = ACT_ENABLED;
 
     PetSpellMap::iterator itr = m_spells.find(spell_id);
     if (itr != m_spells.end())
