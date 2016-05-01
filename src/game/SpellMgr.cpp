@@ -2615,6 +2615,9 @@ void SpellMgr::LoadSpellCustomAttr()
         case 1953: // Blink
             spellInfo->DurationIndex = 328; // 250ms
             break;
+        case 20271: // Paladins Judgement
+            spellInfo->AttributesEx3 &= ~SPELL_ATTR3_CANT_TRIGGER_PROC;
+            break;
         default:
             break;
         }
