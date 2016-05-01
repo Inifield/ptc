@@ -8089,11 +8089,15 @@ uint32 Unit::SpellDamageBonus(Unit* pVictim, SpellEntry const* spellProto, uint3
             // Judgement of Righteousness - 71.43%
             else if ((spellProto->SpellFamilyFlags & 1024) && spellProto->SpellIconID == 25)
                 CastingTime = 2500;
-            // Seal of Vengeance - 17% per Fully Stacked Tick - 5 Applications
+            // Seal of Vengeance - DOT: 17% per Application, DIRECT: 1.1%
             else if ((spellProto->SpellFamilyFlags & 0x80000000000LL) && spellProto->SpellIconID == 2292)
             {
                 DotFactor = damagetype == DOT ? 0.17f : 0.022f;
                 CastingTime = 3500;
+            }
+            else if (spellProto->Id == 42463)
+            {
+                CastingTime = 160;
             }
             // Holy shield - 5% of Holy Damage
             else if ((spellProto->SpellFamilyFlags & 0x4000000000LL) && spellProto->SpellIconID == 453)
