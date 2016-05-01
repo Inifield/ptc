@@ -5873,7 +5873,7 @@ void Spell::EffectScriptEffect(SpellEffIndex effIndex)
 
                     break;
                 }
-                m_caster->CastSpell(unitTarget, spellId2, false);
+                m_caster->CastSpell(unitTarget, spellId2, true);
                 return;
             }
         }
